@@ -5,6 +5,7 @@ const { logger } = require('@librechat/data-schemas');
 const {
   math,
   isEnabled,
+  createGuestUser,
   findOpenIDUser,
   getOpenIdIssuer,
   buildOpenIDRefreshParams,
@@ -23,8 +24,10 @@ const {
   findSession,
   updateUser,
   findUser,
+  createUser,
 } = require('~/models');
 const { getGraphApiToken } = require('~/server/services/GraphTokenService');
+const { getAppConfig } = require('~/server/services/Config');
 const { getOpenIdConfig, getOpenIdEmail } = require('~/strategies');
 
 const AUTH_REFRESH_USER_PROJECTION = '-password -__v -totpSecret -backupCodes -federatedTokens';
@@ -50,6 +53,22 @@ const registrationController = async (req, res) => {
   } catch (err) {
     logger.error('[registrationController]', err);
     return res.status(500).json({ message: err.message });
+  }
+};
+
+const guestController = async (req, res) => {
+  if (!isEnabled(process.env.PUBLIC_GUEST_MODE)) {
+    return res.sendStatus(404);
+  }
+
+  try {
+    const appConfig = await getAppConfig();
+    const user = await createUser(createGuestUser(), appConfig?.balance, false, true);
+    const token = await setAuthTokens(user._id, res, null, req);
+    return res.status(200).send({ token, user: sanitizeUserForAuthResponse(user) });
+  } catch (err) {
+    logger.error('[guestController]', err);
+    return res.status(500).json({ message: 'Unable to start a guest session' });
   }
 };
 
@@ -344,6 +363,7 @@ const graphTokenController = async (req, res) => {
 };
 
 module.exports = {
+  guestController,
   refreshController,
   registrationController,
   resetPasswordController,

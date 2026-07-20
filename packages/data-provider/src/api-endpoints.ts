@@ -177,6 +177,8 @@ export const loginGoogle = () => `${BASE_URL}/api/auth/google`;
 export const refreshToken = (retry?: boolean) =>
   `${BASE_URL}/api/auth/refresh${retry === true ? '?retry=true' : ''}`;
 
+export const guestSession = () => `${BASE_URL}/api/auth/guest`;
+
 export const requestPasswordReset = () => `${BASE_URL}/api/auth/requestPasswordReset`;
 
 export const resetPassword = () => `${BASE_URL}/api/auth/resetPassword`;

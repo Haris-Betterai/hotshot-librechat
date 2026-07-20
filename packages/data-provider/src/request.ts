@@ -81,6 +81,8 @@ type AuthRecoveryWindow = Window & {
 const refreshToken = (retry?: boolean): Promise<t.TRefreshTokenResponse | undefined> =>
   _post(endpoints.refreshToken(retry));
 
+const guestSession = (): Promise<t.TRefreshTokenResponse> => _post(endpoints.guestSession());
+
 const SHARE_PAGE_PATH_REGEX = /^\/share\/[^/]+\/?$/;
 const SHARED_MESSAGES_PATH_REGEX = /^\/api\/share\/[^/]+$/;
 const SHARE_FORK_PATH_REGEX = /^\/api\/share\/[^/]+\/fork$/;
@@ -385,5 +387,6 @@ export default {
   deleteWithOptions: _deleteWithOptions,
   patch: _patch,
   refreshToken,
+  guestSession,
   dispatchTokenUpdatedEvent,
 };

@@ -6,7 +6,13 @@ import { useLocalize, useNewConvo } from '~/hooks';
 import { clearMessagesCache, cn } from '~/utils';
 import store from '~/store';
 
-export default function NewChat({ className }: { className?: string }) {
+export default function NewChat({
+  className,
+  showOnMobile = false,
+}: {
+  className?: string;
+  showOnMobile?: boolean;
+}) {
   const localize = useLocalize();
   const queryClient = useQueryClient();
   const { newConversation } = useNewConvo();
@@ -33,6 +39,7 @@ export default function NewChat({ className }: { className?: string }) {
           aria-label={localize('com_ui_new_chat')}
           className={cn(
             'size-9 rounded-xl bg-presentation duration-0 hover:bg-surface-active-alt max-md:hidden',
+            showOnMobile && 'max-md:flex',
             className,
           )}
           onClick={clickHandler}

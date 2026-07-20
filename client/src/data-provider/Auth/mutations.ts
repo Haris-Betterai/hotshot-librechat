@@ -71,6 +71,15 @@ export const useRefreshTokenMutation = (
   });
 };
 
+export const useGuestSessionMutation = (
+  options?: t.MutationOptions<t.TRefreshTokenResponse, undefined, unknown, unknown>,
+): UseMutationResult<t.TRefreshTokenResponse, unknown, undefined, unknown> => {
+  return useMutation([MutationKeys.guestSession], {
+    mutationFn: () => request.guestSession(),
+    ...(options || {}),
+  });
+};
+
 /* User */
 export const useDeleteUserMutation = (
   options?: t.MutationOptions<unknown, t.TDeleteUserRequest | undefined>,

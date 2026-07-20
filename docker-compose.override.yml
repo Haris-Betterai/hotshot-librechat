@@ -21,6 +21,16 @@ services:
     build:
       context: .
       target: node
+  mongodb:
+    volumes:
+      - mongo_data_colima:/data/db
+  meilisearch:
+    volumes:
+      - meili_data_colima:/meili_data
+
+volumes:
+  mongo_data_colima:
+  meili_data_colima:
 
 # ---------------------------------------------------
 

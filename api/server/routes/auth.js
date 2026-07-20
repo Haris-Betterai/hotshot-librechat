@@ -5,6 +5,7 @@ const {
   resetPasswordController,
   registrationController,
   graphTokenController,
+  guestController,
   refreshController,
 } = require('~/server/controllers/AuthController');
 const {
@@ -51,6 +52,7 @@ router.post(
   loginController,
 );
 router.post('/refresh', refreshController);
+router.post('/guest', middleware.registerLimiter, middleware.checkBan, guestController);
 router.post('/cloudfront/refresh', middleware.requireJwtAuth, (req, res) => {
   const result = getCloudFrontAuthCookieRefreshResult(req, res);
   if (!result.enabled) {

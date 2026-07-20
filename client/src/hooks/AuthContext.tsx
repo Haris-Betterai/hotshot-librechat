@@ -22,6 +22,7 @@ import type { ReactNode } from 'react';
 import {
   useGetRole,
   useGetUserQuery,
+  useGuestSessionMutation,
   useLoginUserMutation,
   useLogoutUserMutation,
   useRefreshTokenMutation,
@@ -153,7 +154,8 @@ const AuthContextProvider = ({
       });
     },
   });
-  const refreshToken = useRefreshTokenMutation();
+  const { mutate: refreshToken } = useRefreshTokenMutation();
+  const { mutate: createGuestSession } = useGuestSessionMutation();
 
   const logout = useCallback(
     (redirect?: string) => {
@@ -171,6 +173,25 @@ const AuthContextProvider = ({
     loginUser.mutate(data);
   };
 
+  const startGuestSession = useCallback(() => {
+    const isManualAuthPage = /^\/(login|register|forgot-password|reset-password)(\/|$)/.test(
+      window.location.pathname,
+    );
+    if (isManualAuthPage) {
+      navigate(buildLoginRedirectUrl());
+      return;
+    }
+
+    createGuestSession(undefined, {
+      onSuccess: ({ user, token }) => {
+        setUserContext({ user, token, isAuthenticated: true, redirect: '/c/new' });
+      },
+      onError: () => {
+        navigate(buildLoginRedirectUrl());
+      },
+    });
+  }, [createGuestSession, navigate, setUserContext]);
+
   const silentRefresh = useCallback(() => {
     if (authConfig?.test === true) {
       console.log('Test mode. Skipping silent refresh.');
@@ -179,7 +200,7 @@ const AuthContextProvider = ({
     if (isExternalRedirectRef.current) {
       return;
     }
-    refreshToken.mutate(undefined, {
+    refreshToken(undefined, {
       onSuccess: (data: t.TRefreshTokenResponse | undefined) => {
         if (isExternalRedirectRef.current) {
           return;
@@ -205,7 +226,7 @@ const AuthContextProvider = ({
         if (authConfig?.test === true) {
           return;
         }
-        navigate(buildLoginRedirectUrl());
+        startGuestSession();
       },
       onError: (error) => {
         if (isExternalRedirectRef.current) {
@@ -215,11 +236,10 @@ const AuthContextProvider = ({
         if (authConfig?.test === true) {
           return;
         }
-        navigate(buildLoginRedirectUrl());
+        startGuestSession();
       },
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- deps are stable at mount; adding refreshToken causes infinite re-fire
-  }, []);
+  }, [authConfig?.test, refreshToken, setUserContext, startGuestSession]);
 
   useEffect(() => {
     if (isExternalRedirectRef.current) {

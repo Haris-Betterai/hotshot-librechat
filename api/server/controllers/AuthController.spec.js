@@ -4,6 +4,9 @@ jest.mock('@librechat/data-schemas', () => ({
 jest.mock('~/server/services/GraphTokenService', () => ({
   getGraphApiToken: jest.fn(),
 }));
+jest.mock('~/server/services/Config', () => ({
+  getAppConfig: jest.fn(),
+}));
 jest.mock('~/server/services/AuthService', () => ({
   requestPasswordReset: jest.fn(),
   setOpenIDAuthTokens: jest.fn(),
@@ -20,10 +23,12 @@ jest.mock('~/models', () => ({
   findSession: jest.fn(),
   updateUser: jest.fn(),
   findUser: jest.fn(),
+  createUser: jest.fn(),
 }));
 jest.mock('@librechat/api', () => ({
   math: jest.fn((value, fallback) => fallback),
   isEnabled: jest.fn(),
+  createGuestUser: jest.fn(),
   findOpenIDUser: jest.fn(),
   getOpenIdIssuer: jest.fn(() => 'https://issuer.example.com'),
   buildOpenIDRefreshParams: jest.fn(() => {
@@ -41,21 +46,92 @@ jest.mock('@librechat/api', () => ({
 const openIdClient = require('openid-client');
 const jwt = require('jsonwebtoken');
 const { logger } = require('@librechat/data-schemas');
-const { isEnabled, findOpenIDUser, buildOpenIDRefreshParams } = require('@librechat/api');
-const { graphTokenController, refreshController } = require('./AuthController');
+const {
+  isEnabled,
+  createGuestUser,
+  findOpenIDUser,
+  buildOpenIDRefreshParams,
+} = require('@librechat/api');
+const { graphTokenController, guestController, refreshController } = require('./AuthController');
 const { getGraphApiToken } = require('~/server/services/GraphTokenService');
+const { getAppConfig } = require('~/server/services/Config');
 const {
   setOpenIDAuthTokens,
   setCloudFrontAuthCookies,
   setAuthTokens,
 } = require('~/server/services/AuthService');
 const { getOpenIdConfig, getOpenIdEmail } = require('~/strategies');
-const { getUserById, findSession, updateUser } = require('~/models');
+const { getUserById, findSession, updateUser, createUser } = require('~/models');
 
 const ORIGINAL_OPENID_SCOPE = process.env.OPENID_SCOPE;
 const ORIGINAL_OPENID_REFRESH_AUDIENCE = process.env.OPENID_REFRESH_AUDIENCE;
 const ORIGINAL_JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
 const ORIGINAL_NODE_ENV = process.env.NODE_ENV;
+const ORIGINAL_PUBLIC_GUEST_MODE = process.env.PUBLIC_GUEST_MODE;
+
+describe('guestController', () => {
+  let req;
+  let res;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    process.env.PUBLIC_GUEST_MODE = 'true';
+    isEnabled.mockReturnValue(true);
+    req = {};
+    res = {
+      sendStatus: jest.fn(),
+      status: jest.fn().mockReturnThis(),
+      send: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+    };
+    createGuestUser.mockReturnValue({
+      email: 'guest-id@anonymous.local',
+      provider: 'anonymous',
+      role: 'USER',
+    });
+    getAppConfig.mockResolvedValue({ balance: { enabled: false } });
+    createUser.mockResolvedValue({
+      _id: 'guest-id',
+      email: 'guest-id@anonymous.local',
+      provider: 'anonymous',
+      role: 'USER',
+    });
+    setAuthTokens.mockResolvedValue('guest-token');
+  });
+
+  afterAll(() => {
+    if (ORIGINAL_PUBLIC_GUEST_MODE === undefined) {
+      delete process.env.PUBLIC_GUEST_MODE;
+    } else {
+      process.env.PUBLIC_GUEST_MODE = ORIGINAL_PUBLIC_GUEST_MODE;
+    }
+  });
+
+  it('returns 404 without creating a user when guest mode is disabled', async () => {
+    isEnabled.mockReturnValue(false);
+
+    await guestController(req, res);
+
+    expect(res.sendStatus).toHaveBeenCalledWith(404);
+    expect(createUser).not.toHaveBeenCalled();
+  });
+
+  it('creates an expiring guest and starts an isolated auth session', async () => {
+    await guestController(req, res);
+
+    expect(createUser).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: 'anonymous', role: 'USER' }),
+      { enabled: false },
+      false,
+      true,
+    );
+    expect(setAuthTokens).toHaveBeenCalledWith('guest-id', res, null, req);
+    expect(res.send).toHaveBeenCalledWith({
+      token: 'guest-token',
+      user: expect.objectContaining({ provider: 'anonymous', role: 'USER' }),
+    });
+  });
+});
 
 describe('graphTokenController', () => {
   let req, res;

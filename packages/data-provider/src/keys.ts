@@ -103,6 +103,7 @@ export enum MutationKeys {
   loginUser = 'loginUser',
   logoutUser = 'logoutUser',
   refreshToken = 'refreshToken',
+  guestSession = 'guestSession',
   avatarUpload = 'avatarUpload',
   speechToText = 'speechToText',
   textToSpeech = 'textToSpeech',
