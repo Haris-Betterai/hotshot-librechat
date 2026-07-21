@@ -659,8 +659,10 @@ modelSpecs:
       description: "AI support agent - default"
       default: true
       preset:
-        endpoint: "agents"
-        agent_id: "agent_0MfryHPf-3lu93P9Kr5dH"
+        endpoint: "DeepSeek"
+        model: "deepseek-v4-flash"
+        # endpoint: "agents"
+        # agent_id: "agent_0MfryHPf-3lu93P9Kr5dH"
 
 # fileConfig:
 #   endpoints:
