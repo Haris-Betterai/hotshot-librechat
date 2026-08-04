@@ -18,12 +18,17 @@ TUNNEL_REMOTE="127.0.0.1:27017"
 APP_URL="${APP_URL:-http://localhost:3080}"
 ADMIN_URL="${ADMIN_URL:-http://localhost:3000}"
 
-export UID="${UID:-$(id -u)}"
-export GID="${GID:-$(id -g)}"
+# UID is readonly in bash — pass via env when invoking compose
+HOST_UID="$(id -u)"
+HOST_GID="$(id -g)"
 export COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.yml:docker-compose.override.yml:docker-compose.local.yml}"
 
 log() { printf '%s\n' "$*"; }
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
+
+compose() {
+  env UID="$HOST_UID" GID="$HOST_GID" docker compose "$@"
+}
 
 ensure_docker() {
   if ! docker info >/dev/null 2>&1; then
@@ -64,7 +69,7 @@ wait_http() {
 }
 
 cmd_status() {
-  docker compose ps
+  compose ps
   echo
   curl -fsS --max-time 3 "${APP_URL}/api/config" \
     | python3 -c 'import sys,json; d=json.load(sys.stdin); print("appTitle:", d.get("appTitle"))' \
@@ -80,7 +85,7 @@ cmd_up() {
   [[ -f docker-compose.local.yml ]] || die "Missing docker-compose.local.yml (live Mongo tunnel config)"
   tunnel_up
   log "Starting containers..."
-  docker compose up -d
+  compose up -d
   wait_http "${APP_URL}/api/config" "LibreChat"
   log ""
   log "Guest:  ${APP_URL}"
@@ -91,14 +96,14 @@ cmd_up() {
 
 cmd_down() {
   ensure_docker
-  docker compose down
+  compose down
   log "Stack stopped. SSH tunnel left running (kill via: lsof -tiTCP:${TUNNEL_LOCAL_PORT} | xargs kill)."
 }
 
 cmd_restart() {
   ensure_docker
   tunnel_up
-  docker compose up -d --force-recreate api admin-panel
+  compose up -d --force-recreate api admin-panel
   wait_http "${APP_URL}/api/config" "LibreChat"
   log "Restarted. Guest ${APP_URL} · Admin ${ADMIN_URL}"
 }
