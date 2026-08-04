@@ -17,10 +17,18 @@ services:
     - type: bind
       source: ./librechat.yaml
       target: /app/librechat.yaml
+    - type: bind
+      source: ./admin-branding/guest/index.html
+      target: /app/client/dist/index.html
     image: librechat
     build:
       context: .
       target: node
+  admin-panel:
+    volumes:
+      - ./admin-branding/client-assets/main-CHBMUFkI.js:/app/dist/client/assets/main-CHBMUFkI.js:ro
+      - ./admin-branding/client-assets/manifest.json:/app/dist/client/manifest.json:ro
+      - ./admin-branding/server-assets/router-WIbrnePb.js:/app/dist/server/assets/router-WIbrnePb.js:ro
   mongodb:
     volumes:
       - mongo_data_colima:/data/db
