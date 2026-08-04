@@ -107,6 +107,10 @@ junit.xml
 # docker override file
 # docker-compose.override.yaml
 # docker-compose.override.yml
+docker-compose.local.yml
+
+# local DB sync dumps
+scripts/sync/
 
 # meilisearch
 meilisearch

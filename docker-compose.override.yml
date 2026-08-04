@@ -30,6 +30,8 @@ services:
       - ./admin-branding/client-assets/manifest.json:/app/dist/client/manifest.json:ro
       - ./admin-branding/server-assets/router-WIbrnePb.js:/app/dist/server/assets/router-WIbrnePb.js:ro
   mongodb:
+    ports:
+      - "127.0.0.1:27017:27017"
     volumes:
       - mongo_data_colima:/data/db
   meilisearch:
