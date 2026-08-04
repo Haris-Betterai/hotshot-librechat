@@ -120,7 +120,7 @@ interface:
   presets: false
   prompts:
     use: false
-    create: false 
+    create: false
     share: false
     public: false
   bookmarks: false
@@ -654,13 +654,15 @@ endpoints:
 #   Portkey:     endpoint: "Portkey"             model: "gpt-4o-mini"
 modelSpecs:
   list:
-    - name: "hotshot-secret-agent"
-      label: "Hotshot Secret Agent"
-      description: "AI support agent - default"
+    - name: "hotshot-secret-ai"
+      label: "Hotshot Secret AI"
+      description: "Hotshot Secret AI Agent to help customers with hotshot products and vehicle diagnosis"
       default: true
       preset:
-        endpoint: "DeepSeek"
-        model: "deepseek-v4-flash"
+        endpoint: "agents"
+        agent_id: "agent_nKWTo2vBXJZCNFl57pA6K"
+        # endpoint: "DeepSeek"
+        # model: "deepseek-v4-flash"
         # endpoint: "agents"
         # agent_id: "agent_0MfryHPf-3lu93P9Kr5dH"
 
