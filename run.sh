@@ -134,10 +134,28 @@ ensure_local_compose() {
   log "Created docker-compose.local.yml from example (points API at live Mongo via :${TUNNEL_LOCAL_PORT})"
 }
 
+ensure_data_dirs() {
+  local dir
+  for dir in logs uploads images skill; do
+    mkdir -p "$dir"
+  done
+  # Container runs as host UID:GID; root-owned bind mounts cause EACCES on log files.
+  if [[ -O logs && -O uploads && -O images ]]; then
+    return 0
+  fi
+  if chown -R "${HOST_UID}:${HOST_GID}" logs uploads images skill 2>/dev/null; then
+    return 0
+  fi
+  die "Permission denied on ./logs (or uploads/images). Fix with:
+  sudo chown -R \"\$(id -u):\$(id -g)\" logs uploads images skill
+Then re-run: ./run.sh"
+}
+
 cmd_up() {
   ensure_docker
   [[ -f .env ]] || die "Missing .env — copy from .env.example first"
   ensure_local_compose
+  ensure_data_dirs
   tunnel_up
   log "Starting containers (API -> host.docker.internal:${TUNNEL_LOCAL_PORT}/LibreChat)..."
   compose up -d

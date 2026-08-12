@@ -182,6 +182,17 @@ docker info
 ./run.sh
 ```
 
+### `EACCES: permission denied, open '/app/logs/...'`
+
+The API container runs as your Linux user, but `./logs` (or `uploads`/`images`) is owned by root.
+
+```bash
+sudo chown -R "$(id -u):$(id -g)" logs uploads images skill
+docker restart LibreChat
+sleep 15
+curl -fsS http://localhost:3080/api/config | head
+```
+
 ### LibreChat containers start but `did not become ready`
 
 Often the SSH tunnel only listens on `127.0.0.1`, so Docker cannot reach Mongo via `host.docker.internal`.
