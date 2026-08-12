@@ -182,6 +182,35 @@ docker info
 ./run.sh
 ```
 
+### Blank white page at localhost:3080 (tab still says Hotshot AI)
+
+`docker-compose.override.yml` bind-mounts `admin-branding/guest/index.html` over the built UI. That file hardcodes Vite asset hashes from an older build. A new local image gets new hashes → JS 404 → blank page.
+
+Check:
+
+```bash
+curl -sI "http://localhost:3080/assets/index.DBXILOtF.js" | head -5
+# If 404, hashes are stale.
+```
+
+Fix — refresh guest `index.html` from **your** image (not the mounted file):
+
+```bash
+cd ~/better-ai-projects/hotshot-librechat
+
+# Extract the index that matches this image's assets
+docker run --rm --entrypoint cat librechat /app/client/dist/index.html \
+  > admin-branding/guest/index.html
+
+# Keep Hotshot title (optional)
+sed -i 's#<title>[^<]*</title>#<title>Hotshot AI</title>#' admin-branding/guest/index.html
+
+docker restart LibreChat
+# hard-refresh browser: Ctrl+Shift+R
+```
+
+Then open http://localhost:3080 again.
+
 ### `EACCES: permission denied, open '/app/logs/...'`
 
 The API container runs as your Linux user, but `./logs` (or `uploads`/`images`) is owned by root.
