@@ -24,6 +24,16 @@ Same LibreChat app, logged in as admin.
 | Laptop | http://localhost:3080/login?staff=1 |
 | Live | https://hotshotai.thebetterai.com/login?staff=1 |
 
+**If `/login?staff=1` keeps sending you back to chat:** you are still a guest.
+In the browser console run:
+
+```js
+sessionStorage.setItem('lc-staff-login', '1');
+location.href = '/login?staff=1';
+```
+
+Or open a **private/incognito** window → go to `/login?staff=1`.
+
 Login with:
 
 - Email: `betteraibots@gmail.com`
