@@ -1,67 +1,54 @@
-# Customer view vs Admin / Staff — no more env restarts
+# Customer view vs Staff (edit agents)
 
 **Keep `PUBLIC_GUEST_MODE=true` always.** Do not flip it and restart.
 
-Both views stay available at the same time.
+You only need **two** views. Ignore the separate Admin Panel (`:3000`) for Hotshot agent work — it does not show/edit your chat agents.
 
 ---
 
-## Three URLs (bookmark these)
+## The two URLs that matter
 
 ### 1) Customer chat (guest)
-Anyone can chat as Hotshot Secret AI — no login.
+No login. Customers talk to Hotshot Secret AI.
 
 | Where | URL |
 |-------|-----|
 | Laptop | http://localhost:3080 |
 | Live | https://hotshotai.thebetterai.com |
 
-### 2) Staff login (edit agents inside LibreChat)
-Same app, but **log in as your admin user**.
+### 2) Staff login (see + edit agents)
+Same LibreChat app, logged in as admin.
 
 | Where | URL |
 |-------|-----|
 | Laptop | http://localhost:3080/login?staff=1 |
 | Live | https://hotshotai.thebetterai.com/login?staff=1 |
 
-Or click **Staff login** in the guest chat header.
+Login with:
 
-### 3) Admin panel (LibreChat Admin UI)
-Separate app (already running next to LibreChat).
+- Email: `betteraibots@gmail.com`
+- Your admin password
 
-| Where | URL |
-|-------|-----|
-| Laptop | http://localhost:3000 |
-| Server | http://SERVER_IP:3000 (or SSH tunnel) |
+Then open **Agents** in the side panel to view/edit Hotshot Secret AI.
 
-No env change. No restart.
+(Or click **Staff login** in the guest header after you deploy the latest UI.)
 
 ---
 
-## What NOT to do anymore
+## What NOT to do
 
 ```bash
-# DON'T do this anymore:
+# DON'T:
 # edit .env PUBLIC_GUEST_MODE=false
-# docker restart LibreChat
-# ... then flip back to true later
+# docker restart
+# use :3000 admin panel to edit agents  ← wrong tool for this
 ```
-
-That was the painful loop. It is unnecessary now.
 
 ---
 
-## How to switch as a human
+## Switch back to customer view
 
-| I want… | I open… |
-|---------|---------|
-| Customer experience | `/` (guest auto-starts) |
-| Staff / agent builder in chat app | `/login?staff=1` then sign in |
-| Admin panel | `:3000` |
-
-To go back to customer view after staff login: open `/` in a private window, or log out and clear `sessionStorage` key `lc-staff-login`, then visit `/`.
-
-Quick customer reset in the browser console:
+Private window on `/`, or:
 
 ```js
 sessionStorage.removeItem('lc-staff-login');
@@ -70,23 +57,17 @@ location.href = '/';
 
 ---
 
-## Server `.env` (set once)
+## Server `.env` (once)
 
 ```env
 PUBLIC_GUEST_MODE=true
 ```
 
-Leave it. Forever (until you intentionally disable public guest chat).
+Leave it on.
 
 ---
 
-## After UI code changes
+## Related
 
-Staff login button ships with the app build. Deploy with:
-
-```bash
-# on server
-./deploy.sh
-```
-
-See **[WORKFLOW.md](./WORKFLOW.md)**.
+- Local setup: [LOCAL_DEV.md](./LOCAL_DEV.md)
+- Push / deploy: [WORKFLOW.md](./WORKFLOW.md)

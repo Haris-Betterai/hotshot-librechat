@@ -4,7 +4,7 @@ Simple rules for the whole team.
 
 ---
 
-## Customer vs staff vs admin panel
+## Customer vs staff (edit agents)
 
 **Do not toggle `PUBLIC_GUEST_MODE` and restart.** Keep it `true`.
 
@@ -13,8 +13,9 @@ See **[VIEWS.md](./VIEWS.md)**:
 | View | URL |
 |------|-----|
 | Customer guest chat | `/` |
-| Staff login (agents) | `/login?staff=1` |
-| Admin panel | `:3000` |
+| Staff login — **see/edit agents** | `/login?staff=1` |
+
+The separate Admin Panel (`:3000`) is **not** used for Hotshot agent editing.
 
 ---
 
