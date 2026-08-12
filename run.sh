@@ -37,14 +37,37 @@ compose() {
 }
 
 ensure_docker() {
-  if ! docker info >/dev/null 2>&1; then
-    if command -v colima >/dev/null 2>&1; then
-      log "Starting Colima..."
-      colima start
-    else
-      die "Docker is not running"
-    fi
+  if docker info >/dev/null 2>&1; then
+    return 0
   fi
+
+  local err
+  err="$(docker info 2>&1 || true)"
+
+  if command -v colima >/dev/null 2>&1; then
+    log "Starting Colima..."
+    colima start
+    docker info >/dev/null 2>&1 && return 0
+  fi
+
+  if printf '%s' "$err" | grep -qiE 'permission denied|connect: permission denied|dial unix .*docker.sock'; then
+    die "Docker is running but your user cannot access it (permission denied on docker.sock).
+
+Fix (pick one):
+  1) Add yourself to the docker group (recommended), then log out/in or reboot:
+       sudo usermod -aG docker \"\$USER\"
+       newgrp docker
+  2) Or test with: sudo docker info
+
+Then re-run: ./run.sh"
+  fi
+
+  if ! command -v docker >/dev/null 2>&1; then
+    die "Docker CLI not found. Install Docker Engine, then re-run ./run.sh"
+  fi
+
+  die "Docker daemon is not reachable. Check: sudo systemctl status docker
+Then: docker info"
 }
 
 tunnel_up() {

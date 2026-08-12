@@ -18,10 +18,33 @@ That is why **Hotshot Secret AI** (`agent_nKWTo2vBXJZCNFl57pA6K`) appears on the
 
 ## Prerequisites
 
-1. **Docker** (Docker Desktop or Colima) running in WSL.
-2. **SSH access** to the live server (same key you use for `ssh betterai-server` or `ssh root@187.77.205.200`).
-3. Repo checkout of this project.
-4. Recommended SSH config on your machine (`~/.ssh/config`):
+1. **Docker** (Docker Engine) running in WSL.
+2. Your Linux user must be able to run `docker info` **without sudo**.
+3. **SSH access** to the live server (same key you use for `ssh betterai-server` or `ssh root@187.77.205.200`).
+4. Repo checkout of this project.
+
+### Docker permission (common WSL issue)
+
+`docker --version` can work while `./run.sh` still fails with “Docker is not running”.
+That usually means the **daemon is up**, but your user cannot access `/var/run/docker.sock`.
+
+Check:
+
+```bash
+sudo systemctl status docker    # should be active (running)
+docker info                     # must work WITHOUT sudo
+```
+
+If `docker info` says permission denied:
+
+```bash
+sudo usermod -aG docker "$USER"
+newgrp docker                   # or log out of WSL and back in
+docker info                     # confirm it works
+./run.sh
+```
+
+5. Recommended SSH config on your machine (`~/.ssh/config`):
 
 ```sshconfig
 Host betterai-server
