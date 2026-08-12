@@ -5,3 +5,5 @@ When adding or changing code that mutates user documents, invalidate the auth us
 ## Hotshot local development
 
 To run this project locally against the **live** MongoDB (required to see Hotshot Secret AI), follow **[LOCAL_DEV.md](./LOCAL_DEV.md)**. Use `./run.sh` — do not rely on a plain `docker compose up` with the empty local Mongo container.
+
+To push changes and update production: **[WORKFLOW.md](./WORKFLOW.md)** (`./deploy.sh` on the server).
