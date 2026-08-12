@@ -109,6 +109,12 @@ const AuthContextProvider = ({
         navigate(`/login/2fa?tempToken=${tempToken}`, { replace: true });
         return;
       }
+      // Staff is authenticated now — clear the flag so a later logout returns to guest.
+      try {
+        sessionStorage.removeItem('lc-staff-login');
+      } catch {
+        /* ignore */
+      }
       setError(undefined);
       setUserContext({ token, isAuthenticated: true, user, redirect: '/c/new' });
     },
@@ -138,20 +144,43 @@ const AuthContextProvider = ({
         window.location.replace(data.redirect);
         return;
       }
+      const staffLogout =
+        typeof logoutRedirectRef.current === 'string' &&
+        logoutRedirectRef.current.includes('staff=1');
+      if (!staffLogout) {
+        try {
+          sessionStorage.removeItem('lc-staff-login');
+        } catch {
+          /* ignore */
+        }
+      }
+      // Prefer guest home unless we know public guest mode is disabled.
+      const guestHome = startupConfig?.publicGuestMode === false ? '/login' : '/';
       setUserContext({
         token: undefined,
         isAuthenticated: false,
         user: undefined,
-        redirect: '/login',
+        redirect: guestHome,
       });
     },
     onError: (error) => {
       doSetError((error as Error).message);
+      const staffLogout =
+        typeof logoutRedirectRef.current === 'string' &&
+        logoutRedirectRef.current.includes('staff=1');
+      if (!staffLogout) {
+        try {
+          sessionStorage.removeItem('lc-staff-login');
+        } catch {
+          /* ignore */
+        }
+      }
+      const guestHome = startupConfig?.publicGuestMode === false ? '/login' : '/';
       setUserContext({
         token: undefined,
         isAuthenticated: false,
         user: undefined,
-        redirect: '/login',
+        redirect: guestHome,
       });
     },
   });
