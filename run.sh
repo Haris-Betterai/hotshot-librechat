@@ -1,11 +1,17 @@
 #!/usr/bin/env bash
 # Start Hotshot LibreChat locally against the live MongoDB.
+#
+# Full guide: LOCAL_DEV.md
+#
 # Usage:
 #   ./run.sh           # start tunnel + stack, wait until ready
 #   ./run.sh down      # stop local stack (keeps SSH tunnel)
 #   ./run.sh restart   # recreate api + admin-panel
 #   ./run.sh status    # show containers + health
 #   ./run.sh tunnel    # only ensure SSH tunnel is up
+#
+# Requires .env. Creates docker-compose.local.yml from the example if missing
+# so the API uses the SSH-tunneled live Mongo (where Hotshot Secret AI lives).
 
 set -euo pipefail
 
@@ -31,24 +37,49 @@ compose() {
 }
 
 ensure_docker() {
-  if ! docker info >/dev/null 2>&1; then
-    if command -v colima >/dev/null 2>&1; then
-      log "Starting Colima..."
-      colima start
-    else
-      die "Docker is not running"
-    fi
+  if docker info >/dev/null 2>&1; then
+    return 0
   fi
+
+  local err
+  err="$(docker info 2>&1 || true)"
+
+  if command -v colima >/dev/null 2>&1; then
+    log "Starting Colima..."
+    colima start
+    docker info >/dev/null 2>&1 && return 0
+  fi
+
+  if printf '%s' "$err" | grep -qiE 'permission denied|connect: permission denied|dial unix .*docker.sock'; then
+    die "Docker is running but your user cannot access it (permission denied on docker.sock).
+
+Fix (pick one):
+  1) Add yourself to the docker group (recommended), then log out/in or reboot:
+       sudo usermod -aG docker \"\$USER\"
+       newgrp docker
+  2) Or test with: sudo docker info
+
+Then re-run: ./run.sh"
+  fi
+
+  if ! command -v docker >/dev/null 2>&1; then
+    die "Docker CLI not found. Install Docker Engine, then re-run ./run.sh"
+  fi
+
+  die "Docker daemon is not reachable. Check: sudo systemctl status docker
+Then: docker info"
 }
 
 tunnel_up() {
   if lsof -nP -iTCP:"$TUNNEL_LOCAL_PORT" -sTCP:LISTEN >/dev/null 2>&1; then
-    log "SSH tunnel already on localhost:${TUNNEL_LOCAL_PORT}"
+    log "SSH tunnel already on :${TUNNEL_LOCAL_PORT}"
     return 0
   fi
-  log "Opening SSH tunnel ${TUNNEL_LOCAL_PORT} -> ${SERVER_SSH}:${TUNNEL_REMOTE}"
+  # Bind 0.0.0.0 so Docker containers can reach the tunnel via host.docker.internal
+  # (default SSH -L only listens on 127.0.0.1, which containers cannot use).
+  log "Opening SSH tunnel 0.0.0.0:${TUNNEL_LOCAL_PORT} -> ${SERVER_SSH}:${TUNNEL_REMOTE}"
   ssh -o BatchMode=yes -o ExitOnForwardFailure=yes -fN \
-    -L "${TUNNEL_LOCAL_PORT}:${TUNNEL_REMOTE}" \
+    -L "0.0.0.0:${TUNNEL_LOCAL_PORT}:${TUNNEL_REMOTE}" \
     "$SERVER_SSH" \
     || die "Could not open SSH tunnel to ${SERVER_SSH}"
   log "Tunnel ready"
@@ -71,27 +102,70 @@ wait_http() {
 cmd_status() {
   compose ps
   echo
-  curl -fsS --max-time 3 "${APP_URL}/api/config" \
-    | python3 -c 'import sys,json; d=json.load(sys.stdin); print("appTitle:", d.get("appTitle"))' \
-    2>/dev/null || log "API not reachable at ${APP_URL}"
-  lsof -nP -iTCP:"$TUNNEL_LOCAL_PORT" -sTCP:LISTEN >/dev/null 2>&1 \
-    && log "tunnel: up on :${TUNNEL_LOCAL_PORT}" \
-    || log "tunnel: down"
+  if curl -fsS --max-time 3 "${APP_URL}/api/config" >/tmp/librechat-config.json 2>/dev/null; then
+    python3 - <<'PY'
+import json
+d=json.load(open("/tmp/librechat-config.json"))
+print("appTitle:", d.get("appTitle"))
+specs=(d.get("modelSpecs") or {}).get("list") or []
+for s in specs:
+    preset=s.get("preset") or {}
+    print("modelSpec:", s.get("name"), "default=", s.get("default"), "agent_id=", preset.get("agent_id") or preset.get("model"))
+if not specs:
+    print("modelSpecs: (none)")
+PY
+  else
+    log "API not reachable at ${APP_URL}"
+  fi
+  if lsof -nP -iTCP:"$TUNNEL_LOCAL_PORT" -sTCP:LISTEN >/dev/null 2>&1; then
+    log "tunnel: up on :${TUNNEL_LOCAL_PORT}"
+  else
+    log "tunnel: down — Hotshot agent will not load from live Mongo"
+  fi
+}
+
+ensure_local_compose() {
+  if [[ -f docker-compose.local.yml ]]; then
+    return 0
+  fi
+  [[ -f docker-compose.local.yml.example ]] \
+    || die "Missing docker-compose.local.yml.example (live Mongo tunnel template)"
+  cp docker-compose.local.yml.example docker-compose.local.yml
+  log "Created docker-compose.local.yml from example (points API at live Mongo via :${TUNNEL_LOCAL_PORT})"
+}
+
+ensure_data_dirs() {
+  local dir
+  for dir in logs uploads images skill; do
+    mkdir -p "$dir"
+  done
+  # Container runs as host UID:GID; root-owned bind mounts cause EACCES on log files.
+  if [[ -O logs && -O uploads && -O images ]]; then
+    return 0
+  fi
+  if chown -R "${HOST_UID}:${HOST_GID}" logs uploads images skill 2>/dev/null; then
+    return 0
+  fi
+  die "Permission denied on ./logs (or uploads/images). Fix with:
+  sudo chown -R \"\$(id -u):\$(id -g)\" logs uploads images skill
+Then re-run: ./run.sh"
 }
 
 cmd_up() {
   ensure_docker
   [[ -f .env ]] || die "Missing .env — copy from .env.example first"
-  [[ -f docker-compose.local.yml ]] || die "Missing docker-compose.local.yml (live Mongo tunnel config)"
+  ensure_local_compose
+  ensure_data_dirs
   tunnel_up
-  log "Starting containers..."
+  log "Starting containers (API -> host.docker.internal:${TUNNEL_LOCAL_PORT}/LibreChat)..."
   compose up -d
   wait_http "${APP_URL}/api/config" "LibreChat"
   log ""
   log "Guest:  ${APP_URL}"
   log "Admin:  ${ADMIN_URL}"
   log ""
-  log "Keep this tunnel alive while developing. Re-run ./run.sh tunnel if it drops."
+  log "Hotshot Secret AI comes from live Mongo — keep the tunnel up."
+  log "Re-run ./run.sh tunnel if it drops."
 }
 
 cmd_down() {
@@ -117,7 +191,17 @@ main() {
     status|ps) cmd_status ;;
     tunnel) ensure_docker; tunnel_up ;;
     -h|--help|help)
-      sed -n '2,12p' "$0"
+      cat <<'EOF'
+Start Hotshot LibreChat locally against the live MongoDB.
+
+  ./run.sh           start SSH tunnel + Docker stack
+  ./run.sh down      stop containers (tunnel keeps running)
+  ./run.sh restart   recreate api + admin-panel
+  ./run.sh status    containers + tunnel
+  ./run.sh tunnel    ensure SSH tunnel only
+
+Guide: LOCAL_DEV.md
+EOF
       ;;
     *)
       die "Unknown command: $cmd (try: up|down|restart|status|tunnel)"

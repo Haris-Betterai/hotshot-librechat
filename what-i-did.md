@@ -22,3 +22,17 @@
 8. also in the same above config set the "image" to "librechat" instead of the registry image so that it uses the local and "build" block was added
     so that it builds and doens't default to dockerhub.
 
+## Local + live Mongo (Hotshot Secret AI)
+
+Plain `docker compose up` uses an empty local Mongo — you will not see Hotshot Secret AI.
+
+To run locally against the live DB (recommended for this fork):
+
+See **[LOCAL_DEV.md](./LOCAL_DEV.md)** — short path:
+
+```bash
+cp .env.example .env          # once; fill secrets
+./run.sh                      # SSH tunnel + compose (creates docker-compose.local.yml)
+# open http://localhost:3080
+```
+

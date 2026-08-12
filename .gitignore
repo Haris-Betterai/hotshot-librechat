@@ -108,6 +108,7 @@ junit.xml
 # docker-compose.override.yaml
 # docker-compose.override.yml
 docker-compose.local.yml
+!docker-compose.local.yml.example
 
 # local DB sync dumps
 scripts/sync/
