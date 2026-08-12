@@ -115,7 +115,7 @@ interface:
   #     *Effective Date: February 18, 2024*
   #     Welcome to LibreChat... (see commented block below for full content)
 
-  modelSelect: false
+  modelSelect: true
   parameters: false
   presets: false
   prompts:
