@@ -1526,6 +1526,8 @@ export type TStartupConfig = {
   modelDescriptions?: Record<string, Record<string, string>>;
   sharedLinksEnabled: boolean;
   publicSharedLinksEnabled: boolean;
+  /** When true, unauthenticated visitors are auto-signed in as anonymous guests. */
+  publicGuestMode?: boolean;
   /** Whether shared links snapshot conversation files (gates the per-link "share files" checkbox). */
   sharedLinksSnapshotFilesEnabled?: boolean;
   /** Effective default timing for when conversation titles become fetchable.
