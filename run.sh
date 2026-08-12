@@ -6,6 +6,9 @@
 #   ./run.sh restart   # recreate api + admin-panel
 #   ./run.sh status    # show containers + health
 #   ./run.sh tunnel    # only ensure SSH tunnel is up
+#
+# Requires .env. Creates docker-compose.local.yml from the example if missing
+# so the API uses the SSH-tunneled live Mongo (where Hotshot Secret AI lives).
 
 set -euo pipefail
 
@@ -79,19 +82,30 @@ cmd_status() {
     || log "tunnel: down"
 }
 
+ensure_local_compose() {
+  if [[ -f docker-compose.local.yml ]]; then
+    return 0
+  fi
+  [[ -f docker-compose.local.yml.example ]] \
+    || die "Missing docker-compose.local.yml.example (live Mongo tunnel template)"
+  cp docker-compose.local.yml.example docker-compose.local.yml
+  log "Created docker-compose.local.yml from example (points API at live Mongo via :${TUNNEL_LOCAL_PORT})"
+}
+
 cmd_up() {
   ensure_docker
   [[ -f .env ]] || die "Missing .env — copy from .env.example first"
-  [[ -f docker-compose.local.yml ]] || die "Missing docker-compose.local.yml (live Mongo tunnel config)"
+  ensure_local_compose
   tunnel_up
-  log "Starting containers..."
+  log "Starting containers (API -> host.docker.internal:${TUNNEL_LOCAL_PORT}/LibreChat)..."
   compose up -d
   wait_http "${APP_URL}/api/config" "LibreChat"
   log ""
   log "Guest:  ${APP_URL}"
   log "Admin:  ${ADMIN_URL}"
   log ""
-  log "Keep this tunnel alive while developing. Re-run ./run.sh tunnel if it drops."
+  log "Hotshot Secret AI comes from live Mongo — keep the tunnel up."
+  log "Re-run ./run.sh tunnel if it drops."
 }
 
 cmd_down() {

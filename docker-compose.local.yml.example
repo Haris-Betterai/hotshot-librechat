@@ -1,0 +1,27 @@
+# Live-Mongo tunnel overlay for local development.
+# Used by ./run.sh together with an SSH tunnel on localhost:27018.
+#
+# Setup:
+#   cp docker-compose.local.yml.example docker-compose.local.yml
+#   ./run.sh
+#
+# docker-compose.local.yml is gitignored — do not commit it.
+# This file points the API at the tunneled production MongoDB so you
+# get the Hotshot Secret AI agent (and other live data). The local
+# mongodb service is replaced with a no-op so depends_on still succeeds
+# without starting an empty database.
+
+services:
+  api:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - MONGO_URI=mongodb://host.docker.internal:27018/LibreChat
+  mongodb:
+    image: tianon/true:latest
+    restart: "no"
+    entrypoint: ["true"]
+    command: []
+    ports: !reset []
+    volumes: !reset []
+    user: "0:0"
