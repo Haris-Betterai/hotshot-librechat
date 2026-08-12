@@ -20,10 +20,12 @@ services:
       - "host.docker.internal:host-gateway"
     environment:
       - MONGO_URI=mongodb://host.docker.internal:27018/LibreChat
+  # No-op stand-in so compose depends_on succeeds without a local DB.
+  # tianon/true's binary is /true (not PATH "true").
   mongodb:
     image: tianon/true:latest
     restart: "no"
-    entrypoint: ["true"]
+    entrypoint: ["/true"]
     command: []
     ports: !reset []
     volumes: !reset []
