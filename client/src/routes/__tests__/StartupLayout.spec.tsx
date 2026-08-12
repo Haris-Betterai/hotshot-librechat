@@ -24,6 +24,10 @@ jest.mock('~/data-provider', () => ({
 
 jest.mock('~/hooks', () => ({
   useLocalize: jest.fn(() => (key: string) => key),
+  useAuthContext: jest.fn(() => ({
+    user: null,
+    logout: jest.fn(),
+  })),
   TranslationKeys: {},
 }));
 

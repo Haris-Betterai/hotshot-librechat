@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import type { TStartupConfig } from 'librechat-data-provider';
-import { TranslationKeys, useLocalize } from '~/hooks';
+import { TranslationKeys, useLocalize, useAuthContext } from '~/hooks';
 import { useGetStartupConfig } from '~/data-provider';
 import AuthLayout from '~/components/Auth/AuthLayout';
 import { REDIRECT_PARAM, SESSION_KEY } from '~/utils';
@@ -13,6 +13,17 @@ const headerMap: Record<string, TranslationKeys> = {
   '/reset-password': 'com_auth_reset_password',
   '/login/2fa': 'com_auth_verify_your_identity',
 };
+
+function wantsStaffLogin(search: string): boolean {
+  try {
+    if (sessionStorage.getItem('lc-staff-login') === '1') {
+      return true;
+    }
+  } catch {
+    /* ignore */
+  }
+  return new URLSearchParams(search).has('staff');
+}
 
 export default function StartupLayout({ isAuthenticated }: { isAuthenticated?: boolean }) {
   const [error, setError] = useState<TranslationKeys | null>(null);
@@ -28,9 +39,22 @@ export default function StartupLayout({ isAuthenticated }: { isAuthenticated?: b
   const localize = useLocalize();
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, logout } = useAuthContext();
+  const isGuest = user?.provider === 'anonymous';
 
   useEffect(() => {
     if (isAuthenticated) {
+      // Guest sessions must not stick on /login?staff=1 — end guest and show login form.
+      if (wantsStaffLogin(location.search) && isGuest) {
+        try {
+          sessionStorage.setItem('lc-staff-login', '1');
+        } catch {
+          /* ignore */
+        }
+        logout('/login?staff=1');
+        return;
+      }
+
       const hasPendingRedirect =
         new URLSearchParams(window.location.search).has(REDIRECT_PARAM) ||
         sessionStorage.getItem(SESSION_KEY) != null;
@@ -41,7 +65,7 @@ export default function StartupLayout({ isAuthenticated }: { isAuthenticated?: b
     if (data) {
       setStartupConfig(data);
     }
-  }, [isAuthenticated, navigate, data]);
+  }, [isAuthenticated, isGuest, logout, navigate, data, location.search]);
 
   useEffect(() => {
     document.title = startupConfig?.appTitle || 'Hotshot AI';
