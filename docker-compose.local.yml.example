@@ -1,4 +1,7 @@
 # Live-Mongo tunnel overlay for local development.
+#
+# Full guide: LOCAL_DEV.md
+#
 # Used by ./run.sh together with an SSH tunnel on localhost:27018.
 #
 # Setup:

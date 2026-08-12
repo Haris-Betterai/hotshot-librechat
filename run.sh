@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 # Start Hotshot LibreChat locally against the live MongoDB.
+#
+# Full guide: LOCAL_DEV.md
+#
 # Usage:
 #   ./run.sh           # start tunnel + stack, wait until ready
 #   ./run.sh down      # stop local stack (keeps SSH tunnel)
@@ -74,12 +77,26 @@ wait_http() {
 cmd_status() {
   compose ps
   echo
-  curl -fsS --max-time 3 "${APP_URL}/api/config" \
-    | python3 -c 'import sys,json; d=json.load(sys.stdin); print("appTitle:", d.get("appTitle"))' \
-    2>/dev/null || log "API not reachable at ${APP_URL}"
-  lsof -nP -iTCP:"$TUNNEL_LOCAL_PORT" -sTCP:LISTEN >/dev/null 2>&1 \
-    && log "tunnel: up on :${TUNNEL_LOCAL_PORT}" \
-    || log "tunnel: down"
+  if curl -fsS --max-time 3 "${APP_URL}/api/config" >/tmp/librechat-config.json 2>/dev/null; then
+    python3 - <<'PY'
+import json
+d=json.load(open("/tmp/librechat-config.json"))
+print("appTitle:", d.get("appTitle"))
+specs=(d.get("modelSpecs") or {}).get("list") or []
+for s in specs:
+    preset=s.get("preset") or {}
+    print("modelSpec:", s.get("name"), "default=", s.get("default"), "agent_id=", preset.get("agent_id") or preset.get("model"))
+if not specs:
+    print("modelSpecs: (none)")
+PY
+  else
+    log "API not reachable at ${APP_URL}"
+  fi
+  if lsof -nP -iTCP:"$TUNNEL_LOCAL_PORT" -sTCP:LISTEN >/dev/null 2>&1; then
+    log "tunnel: up on :${TUNNEL_LOCAL_PORT}"
+  else
+    log "tunnel: down — Hotshot agent will not load from live Mongo"
+  fi
 }
 
 ensure_local_compose() {
@@ -131,7 +148,17 @@ main() {
     status|ps) cmd_status ;;
     tunnel) ensure_docker; tunnel_up ;;
     -h|--help|help)
-      sed -n '2,12p' "$0"
+      cat <<'EOF'
+Start Hotshot LibreChat locally against the live MongoDB.
+
+  ./run.sh           start SSH tunnel + Docker stack
+  ./run.sh down      stop containers (tunnel keeps running)
+  ./run.sh restart   recreate api + admin-panel
+  ./run.sh status    containers + tunnel
+  ./run.sh tunnel    ensure SSH tunnel only
+
+Guide: LOCAL_DEV.md
+EOF
       ;;
     *)
       die "Unknown command: $cmd (try: up|down|restart|status|tunnel)"
