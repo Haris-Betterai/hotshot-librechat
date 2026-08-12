@@ -9,3 +9,5 @@ To run this project locally against the **live** MongoDB (required to see Hotsho
 To push changes and update production: **[WORKFLOW.md](./WORKFLOW.md)** (`./deploy.sh` on the server).
 
 Customer / staff / admin panel without restarting: **[VIEWS.md](./VIEWS.md)**.
+
+Summary of Hotshot UI/workflow changes: **[CHANGES.md](./CHANGES.md)**.
