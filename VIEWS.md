@@ -41,6 +41,8 @@ Login with:
 
 Then open **Agents** in the side panel to view/edit Hotshot Secret AI.
 
+Staff also get the **model / agent dropdown** in the header (enabled via `interface.modelSelect` in `librechat.yaml`). Guests do not see it — they stay on Hotshot Secret AI only.
+
 (Or click **Staff login** in the guest header after you deploy the latest UI.)
 
 ---
