@@ -26,6 +26,7 @@ import {
   useLoginUserMutation,
   useLogoutUserMutation,
   useRefreshTokenMutation,
+  useGetStartupConfig,
 } from '~/data-provider';
 import { TAuthConfig, TUserContext, TAuthContext, TResError } from '~/common';
 import { SESSION_KEY, isSafeRedirect, getPostLoginRedirect } from '~/utils';
@@ -156,6 +157,7 @@ const AuthContextProvider = ({
   });
   const { mutate: refreshToken } = useRefreshTokenMutation();
   const { mutate: createGuestSession } = useGuestSessionMutation();
+  const { data: startupConfig } = useGetStartupConfig();
 
   const logout = useCallback(
     (redirect?: string) => {
@@ -173,11 +175,44 @@ const AuthContextProvider = ({
     loginUser.mutate(data);
   };
 
+  const wantsStaffLogin = useCallback(() => {
+    try {
+      if (sessionStorage.getItem('lc-staff-login') === '1') {
+        return true;
+      }
+    } catch {
+      /* ignore */
+    }
+    return new URLSearchParams(window.location.search).has('staff');
+  }, []);
+
   const startGuestSession = useCallback(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('guest')) {
+      try {
+        sessionStorage.removeItem('lc-staff-login');
+      } catch {
+        /* ignore */
+      }
+    }
+
     const isManualAuthPage = /^\/(login|register|forgot-password|reset-password)(\/|$)/.test(
       window.location.pathname,
     );
-    if (isManualAuthPage) {
+    if (isManualAuthPage || wantsStaffLogin()) {
+      if (wantsStaffLogin()) {
+        try {
+          sessionStorage.setItem('lc-staff-login', '1');
+        } catch {
+          /* ignore */
+        }
+      }
+      navigate('/login', { replace: true });
+      return;
+    }
+
+    // Only auto-guest when the server enables public guest mode.
+    if (startupConfig != null && startupConfig.publicGuestMode !== true) {
       navigate(buildLoginRedirectUrl());
       return;
     }
@@ -190,7 +225,7 @@ const AuthContextProvider = ({
         navigate(buildLoginRedirectUrl());
       },
     });
-  }, [createGuestSession, navigate, setUserContext]);
+  }, [createGuestSession, navigate, setUserContext, startupConfig, wantsStaffLogin]);
 
   const silentRefresh = useCallback(() => {
     if (authConfig?.test === true) {

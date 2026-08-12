@@ -4,6 +4,20 @@ Simple rules for the whole team.
 
 ---
 
+## Customer vs staff vs admin panel
+
+**Do not toggle `PUBLIC_GUEST_MODE` and restart.** Keep it `true`.
+
+See **[VIEWS.md](./VIEWS.md)**:
+
+| View | URL |
+|------|-----|
+| Customer guest chat | `/` |
+| Staff login (agents) | `/login?staff=1` |
+| Admin panel | `:3000` |
+
+---
+
 ## Two kinds of changes (important)
 
 ### A) Agent changes (prompt, tools, model in the UI)

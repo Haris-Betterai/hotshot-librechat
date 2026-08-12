@@ -4,6 +4,8 @@ This is the only guide you need to run Hotshot on your laptop.
 
 After local works, see **[WORKFLOW.md](./WORKFLOW.md)** for: edit → push → update the server.
 
+Customer vs staff vs admin panel (no env restart): **[VIEWS.md](./VIEWS.md)**.
+
 ---
 
 ## What is going on? (simple)

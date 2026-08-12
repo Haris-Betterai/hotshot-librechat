@@ -88,6 +88,7 @@ function buildPreLoginPayload() {
     emailLoginEnabled,
     registrationEnabled: !ldap?.enabled && isEnabled(process.env.ALLOW_REGISTRATION),
     socialLoginEnabled: isEnabled(process.env.ALLOW_SOCIAL_LOGIN),
+    publicGuestMode: isEnabled(process.env.PUBLIC_GUEST_MODE),
     emailEnabled:
       (!!process.env.EMAIL_SERVICE || !!process.env.EMAIL_HOST) &&
       !!process.env.EMAIL_USERNAME &&
