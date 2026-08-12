@@ -2,6 +2,8 @@
 
 This is the only guide you need to run Hotshot on your laptop.
 
+After local works, see **[WORKFLOW.md](./WORKFLOW.md)** for: edit → push → update the server.
+
 ---
 
 ## What is going on? (simple)
