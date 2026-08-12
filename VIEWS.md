@@ -60,12 +60,16 @@ Staff also get the **model / agent dropdown** in the header (enabled via `interf
 
 ## Switch back to customer view
 
-Private window on `/`, or:
+Just **Log out** from the staff account — you should return to guest chat automatically.
+
+If you are stuck on the login page:
 
 ```js
 sessionStorage.removeItem('lc-staff-login');
 location.href = '/';
 ```
+
+Or open a private window on `/`.
 
 ---
 
