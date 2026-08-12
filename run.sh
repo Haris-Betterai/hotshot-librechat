@@ -72,12 +72,14 @@ Then: docker info"
 
 tunnel_up() {
   if lsof -nP -iTCP:"$TUNNEL_LOCAL_PORT" -sTCP:LISTEN >/dev/null 2>&1; then
-    log "SSH tunnel already on localhost:${TUNNEL_LOCAL_PORT}"
+    log "SSH tunnel already on :${TUNNEL_LOCAL_PORT}"
     return 0
   fi
-  log "Opening SSH tunnel ${TUNNEL_LOCAL_PORT} -> ${SERVER_SSH}:${TUNNEL_REMOTE}"
+  # Bind 0.0.0.0 so Docker containers can reach the tunnel via host.docker.internal
+  # (default SSH -L only listens on 127.0.0.1, which containers cannot use).
+  log "Opening SSH tunnel 0.0.0.0:${TUNNEL_LOCAL_PORT} -> ${SERVER_SSH}:${TUNNEL_REMOTE}"
   ssh -o BatchMode=yes -o ExitOnForwardFailure=yes -fN \
-    -L "${TUNNEL_LOCAL_PORT}:${TUNNEL_REMOTE}" \
+    -L "0.0.0.0:${TUNNEL_LOCAL_PORT}:${TUNNEL_REMOTE}" \
     "$SERVER_SSH" \
     || die "Could not open SSH tunnel to ${SERVER_SSH}"
   log "Tunnel ready"

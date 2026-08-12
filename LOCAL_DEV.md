@@ -170,6 +170,40 @@ Expect `hotshot-secret-ai` with `agent_nKWTo2vBXJZCNFl57pA6K`.
 
 ## Troubleshooting
 
+### `./run.sh` says “Docker is not running” but `systemctl` shows Docker active
+
+Your user lacks permission on the Docker socket:
+
+```bash
+docker info    # if this fails with permission denied, fix the group:
+sudo usermod -aG docker "$USER"
+newgrp docker  # or close the terminal and open a new one
+docker info
+./run.sh
+```
+
+### LibreChat containers start but `did not become ready`
+
+Often the SSH tunnel only listens on `127.0.0.1`, so Docker cannot reach Mongo via `host.docker.internal`.
+
+```bash
+# See why the API failed
+docker logs LibreChat --tail 80
+
+# Fix tunnel bind (must be 0.0.0.0, not 127.0.0.1 only)
+lsof -tiTCP:27018 | xargs -r kill
+ssh -o BatchMode=yes -o ExitOnForwardFailure=yes -fN \
+  -L 0.0.0.0:27018:127.0.0.1:27017 \
+  "${SERVER_SSH:-root@187.77.205.200}"
+lsof -nP -iTCP:27018 -sTCP:LISTEN   # should show *:27018 or 0.0.0.0:27018
+
+docker restart LibreChat
+# wait ~30s then:
+curl -fsS http://localhost:3080/api/config | head
+```
+
+Updated `./run.sh` opens the tunnel on `0.0.0.0` automatically.
+
 ### “I don’t see Hotshot Secret AI”
 
 | Check | Fix |
