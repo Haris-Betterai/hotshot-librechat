@@ -4,7 +4,7 @@ When adding or changing code that mutates user documents, invalidate the auth us
 
 ## Hotshot local development
 
-**First-time (and daily) run:** follow **[LOCAL_DEV.md](./LOCAL_DEV.md)** only. Copy `.env` from the server, keep `PORT=6041`, set `DOMAIN_*` to `http://localhost:6041`, then `./run.sh`. Do not remap local to 3080. Do not use a plain `docker compose up` (empty local Mongo — no Hotshot Secret AI).
+**First-time setup:** **[LOCAL_DEV.md](./LOCAL_DEV.md)** — copy `.env`, keep port **6041**, **build the image once**, then `./run.sh`. Not a plain `docker compose up`.
 
 To push changes and update production: **[WORKFLOW.md](./WORKFLOW.md)** (`./deploy.sh` on the server).
 

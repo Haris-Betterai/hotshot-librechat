@@ -168,12 +168,26 @@ ensure_data_dirs() {
 Then re-run: ./run.sh"
 }
 
+refresh_guest_index() {
+  # Bind-mounted guest HTML must match JS hashes inside the librechat image.
+  # After a rebuild, old hashes 404 (Staff login JS never loads).
+  if ! docker image inspect librechat >/dev/null 2>&1; then
+    return 0
+  fi
+  [[ -f admin-branding/guest/index.html ]] || return 0
+  log "Refreshing admin-branding/guest/index.html from librechat image..."
+  docker run --rm --entrypoint cat librechat /app/client/dist/index.html \
+    > admin-branding/guest/index.html
+  sed -i 's#<title>[^<]*</title>#<title>Hotshot AI</title>#' admin-branding/guest/index.html || true
+}
+
 cmd_up() {
   ensure_docker
   [[ -f .env ]] || die "Missing .env — copy from .env.example first"
   ensure_local_compose
   ensure_data_dirs
   tunnel_up
+  refresh_guest_index
   log "Starting containers (API -> host.docker.internal:${TUNNEL_LOCAL_PORT}/LibreChat)..."
   compose up -d
   wait_http "${APP_URL}/api/config" "LibreChat"
@@ -194,6 +208,7 @@ cmd_down() {
 cmd_restart() {
   ensure_docker
   tunnel_up
+  refresh_guest_index
   compose up -d --force-recreate api admin-panel
   wait_http "${APP_URL}/api/config" "LibreChat"
   log "Restarted. Guest ${APP_URL} · Admin ${ADMIN_URL}"
