@@ -21,8 +21,25 @@ cd "$ROOT"
 SERVER_SSH="${SERVER_SSH:-root@187.77.205.200}"
 TUNNEL_LOCAL_PORT="${TUNNEL_LOCAL_PORT:-27018}"
 TUNNEL_REMOTE="127.0.0.1:27017"
-APP_URL="${APP_URL:-http://localhost:3080}"
 ADMIN_URL="${ADMIN_URL:-http://localhost:3000}"
+
+port_from_dotenv() {
+  local line value
+  line="$(grep -E '^[[:space:]]*PORT=' .env 2>/dev/null | tail -1 || true)"
+  value="${line#*=}"
+  value="${value%\"}"
+  value="${value#\"}"
+  value="${value%\'}"
+  value="${value#\'}"
+  printf '%s' "$value"
+}
+
+# Same port as the server (.env PORT, default 6041). Do not remap to 3080.
+APP_URL="${APP_URL:-http://localhost:$(port_from_dotenv)}"
+APP_URL="${APP_URL%/}"
+if [[ "$APP_URL" == "http://localhost:" ]]; then
+  APP_URL="http://localhost:6041"
+fi
 
 # UID is readonly in bash — pass via env when invoking compose
 HOST_UID="$(id -u)"

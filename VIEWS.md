@@ -13,7 +13,7 @@ No login. Customers talk to Hotshot Secret AI.
 
 | Where | URL |
 |-------|-----|
-| Laptop | http://localhost:3080 |
+| Laptop | http://localhost:6041 |
 | Live | https://hotshotai.thebetterai.com |
 
 ### 2) Staff login (see + edit agents)
@@ -21,7 +21,7 @@ Same LibreChat app, logged in as admin.
 
 | Where | URL |
 |-------|-----|
-| Laptop | http://localhost:3080/login?staff=1 |
+| Laptop | http://localhost:6041/login?staff=1 |
 | Live | https://hotshotai.thebetterai.com/login?staff=1 |
 
 **If `/login?staff=1` keeps sending you back to chat:** you are still a guest.

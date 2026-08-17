@@ -31,8 +31,8 @@ To run locally against the live DB (recommended for this fork):
 See **[LOCAL_DEV.md](./LOCAL_DEV.md)** — short path:
 
 ```bash
-cp .env.example .env          # once; fill secrets
+# copy .env from the server; keep PORT=6041; set DOMAIN_* to http://localhost:6041
 ./run.sh                      # SSH tunnel + compose (creates docker-compose.local.yml)
-# open http://localhost:3080
+# open http://localhost:6041
 ```
 

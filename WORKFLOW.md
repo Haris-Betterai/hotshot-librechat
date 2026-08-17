@@ -48,7 +48,7 @@ cd ~/better-ai-projects/hotshot-librechat
 git checkout main
 git pull
 ./run.sh
-# open http://localhost:3080
+# open http://localhost:6041
 ```
 
 Full local setup: **[LOCAL_DEV.md](./LOCAL_DEV.md)**

@@ -1,6 +1,6 @@
 # Hotshot LibreChat — simple local setup
 
-This is the only guide you need to run Hotshot on your laptop.
+**This is the guide to follow the first time** (and every day after) to run Hotshot on a laptop the same way production does: local app + **live** MongoDB.
 
 After local works, see **[WORKFLOW.md](./WORKFLOW.md)** for: edit → push → update the server.
 
@@ -12,20 +12,22 @@ Customer vs staff vs admin panel (no env restart): **[VIEWS.md](./VIEWS.md)**.
 
 There are **two parts**:
 
-1. **The app** (LibreChat) — can run on your laptop OR on the server  
+1. **The app** (LibreChat) — can run on your laptop OR on the server
 2. **The database** (MongoDB) — lives on the server and holds **Hotshot Secret AI**
 
 ```
 Your laptop                         Server (betterai-server)
 ┌──────────────────┐                ┌─────────────────────┐
 │ LibreChat        │  SSH tunnel    │ MongoDB             │
-│ localhost:3080   │ ─────────────► │ (Hotshot agent,     │
+│ localhost:6041   │ ─────────────► │ (Hotshot agent,     │
 │                  │   port 27018   │  chats, users)      │
 └──────────────────┘                └─────────────────────┘
 ```
 
-- If you only run Docker with a **local empty DB** → you **won’t** see Hotshot Secret AI.  
+- If you only run Docker with a **local empty DB** → you **won’t** see Hotshot Secret AI.
 - If you use `./run.sh` → local app + **live DB** → you **will** see the same agent as production.
+
+Local uses the **same port as the server: 6041**. Do not remap it to 3080.
 
 Production site (separate): https://hotshotai.thebetterai.com
 
@@ -81,65 +83,41 @@ cd ~/better-ai-projects/hotshot-librechat
 scp betterai-server:/root/better-ai-projects/hotshot-librechat/.env ./.env
 ```
 
-Then fix ports for your laptop (server uses 6041; local uses 3080):
+Keep **`PORT=6041`** as it is on the server. Only point the two domain lines at your laptop (so cookies and redirects work on localhost, not the live site).
 
-```bash
-sed -i \
-  -e 's/^HOST=.*/HOST=localhost/' \
-  -e 's/^PORT=.*/PORT=3080/' \
-  -e 's|^DOMAIN_CLIENT=.*|DOMAIN_CLIENT=http://localhost:3080|' \
-  -e 's|^DOMAIN_SERVER=.*|DOMAIN_SERVER=http://localhost:3080|' \
-  .env
+In `.env`, set:
+
+```env
+DOMAIN_CLIENT=http://localhost:6041
+DOMAIN_SERVER=http://localhost:6041
+PUBLIC_GUEST_MODE=true
 ```
+
+Leave `PORT=6041`. Do not change it to 3080.
 
 Check:
 
 ```bash
-grep -E '^(HOST|PORT|DOMAIN_)' .env
+grep -E '^(PORT|DOMAIN_|PUBLIC_GUEST_MODE)' .env
 ```
 
-Should show:
+Should include:
 
 ```
-HOST=localhost
-PORT=3080
-DOMAIN_CLIENT=http://localhost:3080
-DOMAIN_SERVER=http://localhost:3080
+PORT=6041
+DOMAIN_CLIENT=http://localhost:6041
+DOMAIN_SERVER=http://localhost:6041
+PUBLIC_GUEST_MODE=true
 ```
 
-### 5) Create the “use live DB” Docker file
-
-This file is **required**. It tells the local app to use the server database.
+### 5) Fix folder permissions
 
 ```bash
-cd ~/better-ai-projects/hotshot-librechat
-
-cat > docker-compose.local.yml <<'EOF'
-services:
-  api:
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    environment:
-      - MONGO_URI=mongodb://host.docker.internal:27018/LibreChat
-  mongodb:
-    image: tianon/true:latest
-    restart: "no"
-    entrypoint: ["/true"]
-    command: []
-    ports: !reset []
-    volumes: !reset []
-    user: "0:0"
-EOF
-```
-
-(Newer `./run.sh` can create this for you from `docker-compose.local.yml.example`.)
-
-### 6) Fix folder permissions
-
-```bash
-sudo chown -R "$(id -u):$(id -g)" logs uploads images skill 2>/dev/null || true
 mkdir -p logs uploads images skill
+sudo chown -R "$(id -u):$(id -g)" logs uploads images skill 2>/dev/null || true
 ```
+
+`./run.sh` creates `docker-compose.local.yml` from the example if it is missing. That file tells Docker to use live Mongo through the SSH tunnel. Do not commit it.
 
 ---
 
@@ -152,11 +130,16 @@ cd ~/better-ai-projects/hotshot-librechat
 
 What this does:
 
-1. Opens SSH tunnel → laptop `:27018` → server Mongo  
-2. Starts Docker containers  
-3. Points local LibreChat at the live DB  
+1. Opens SSH tunnel → laptop `:27018` → server Mongo
+2. Starts Docker containers
+3. Points local LibreChat at the live DB
 
-Then open: **http://localhost:3080**
+Then open: **http://localhost:6041**
+
+| Who | URL |
+|-----|-----|
+| Customer / guest | http://localhost:6041 |
+| Staff login | http://localhost:6041/login?staff=1 |
 
 ### Useful commands
 
@@ -194,13 +177,13 @@ lsof -tiTCP:27018 | xargs -r kill
 
 Each developer needs:
 
-1. This repo  
-2. Docker working (`docker info`)  
-3. Their **own SSH key** added on the server  
-4. Their **own** `.env` (from server or team vault) — never commit it  
-5. `./run.sh` every day  
+1. This repo
+2. Docker working (`docker info`)
+3. Their **own SSH key** added on the server
+4. Their **own** `.env` (from server or team vault) — never commit it
+5. `./run.sh` every day
 
-Everyone shares the **same live database**.  
+Everyone shares the **same live database**.
 So: be careful — your test chats and agent edits are real production data.
 
 ---
@@ -220,12 +203,17 @@ docker info
 
 ```bash
 scp betterai-server:/root/better-ai-projects/hotshot-librechat/.env ./.env
-# then run the sed PORT=3080 commands from setup step 4
 ```
+
+Then set `DOMAIN_CLIENT` and `DOMAIN_SERVER` to `http://localhost:6041` (keep `PORT=6041`). See setup step 4.
 
 ### “Missing docker-compose.local.yml”
 
-Run the `cat > docker-compose.local.yml <<'EOF' ...` block from setup step 5.
+Re-run `./run.sh` (it copies the example). Or create it by hand:
+
+```bash
+cp docker-compose.local.yml.example docker-compose.local.yml
+```
 
 ### App starts then dies: `EACCES ... /app/logs`
 
@@ -261,8 +249,10 @@ Hard refresh browser: **Ctrl+Shift+R**
 
 ### Check that Hotshot agent is wired
 
+After the app is up (guest or staff session):
+
 ```bash
-curl -fsS http://localhost:3080/api/config | python3 -c '
+curl -fsS http://localhost:6041/api/config | python3 -c '
 import sys, json
 d = json.load(sys.stdin)
 print("title:", d.get("appTitle"))
@@ -271,7 +261,7 @@ for s in d.get("modelSpecs", {}).get("list", []):
 '
 ```
 
-You want: `Hotshot Secret AI` and `agent_nKWTo2vBXJZCNFl57pA6K`.
+Unauthenticated `/api/config` may show no modelSpecs — that is normal. You want the chat UI to show **Hotshot Secret AI**.
 
 ---
 
@@ -280,6 +270,7 @@ You want: `Hotshot Secret AI` and `agent_nKWTo2vBXJZCNFl57pA6K`.
 | Do | Don’t |
 |----|--------|
 | Use `./run.sh` | Rely on plain `docker compose up` for Hotshot |
+| Keep `PORT=6041` (same as server) | Remap local to 3080 |
 | Keep tunnel up while developing | Commit `.env` or `docker-compose.local.yml` |
 | Pull `main` often | Delete data on live DB for experiments |
 
@@ -287,5 +278,5 @@ You want: `Hotshot Secret AI` and `agent_nKWTo2vBXJZCNFl57pA6K`.
 
 ## One-line summary
 
-**`./run.sh` = local LibreChat + live Hotshot database.**  
-Open http://localhost:3080.
+**`./run.sh` = local LibreChat + live Hotshot database.**
+Open http://localhost:6041.
