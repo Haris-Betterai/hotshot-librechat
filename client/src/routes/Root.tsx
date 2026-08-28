@@ -24,7 +24,7 @@ import { UnifiedSidebar } from '~/components/UnifiedSidebar';
 import { TermsAndConditionsModal } from '~/components/ui';
 import { useHealthCheck } from '~/data-provider';
 import { Banner } from '~/components/Banners';
-import { isEmbedWidget, isStaffPath } from '~/utils';
+import { isEmbedWidget, isStaffPath, markStaffLoginIntent } from '~/utils';
 import store from '~/store';
 
 /** Isolates keyboard shortcut listeners so they only mount after auth. */
@@ -55,11 +55,7 @@ export default function Root() {
 
   useEffect(() => {
     if (isStaffView && isGuest) {
-      try {
-        sessionStorage.setItem('lc-staff-login', '1');
-      } catch {
-        /* ignore */
-      }
+      markStaffLoginIntent();
       logout('/login?staff=1');
     }
   }, [isStaffView, isGuest, logout]);

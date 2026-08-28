@@ -4,7 +4,7 @@ import type { TStartupConfig } from 'librechat-data-provider';
 import { TranslationKeys, useLocalize, useAuthContext } from '~/hooks';
 import { useGetStartupConfig } from '~/data-provider';
 import AuthLayout from '~/components/Auth/AuthLayout';
-import { REDIRECT_PARAM, SESSION_KEY, staffHomePath } from '~/utils';
+import { REDIRECT_PARAM, SESSION_KEY, staffHomePath, wantsStaffLogin, markStaffLoginIntent } from '~/utils';
 
 const headerMap: Record<string, TranslationKeys> = {
   '/login': 'com_auth_welcome_back',
@@ -13,17 +13,6 @@ const headerMap: Record<string, TranslationKeys> = {
   '/reset-password': 'com_auth_reset_password',
   '/login/2fa': 'com_auth_verify_your_identity',
 };
-
-function wantsStaffLogin(search: string): boolean {
-  try {
-    if (sessionStorage.getItem('lc-staff-login') === '1') {
-      return true;
-    }
-  } catch {
-    /* ignore */
-  }
-  return new URLSearchParams(search).has('staff');
-}
 
 export default function StartupLayout({ isAuthenticated }: { isAuthenticated?: boolean }) {
   const [error, setError] = useState<TranslationKeys | null>(null);
@@ -45,12 +34,8 @@ export default function StartupLayout({ isAuthenticated }: { isAuthenticated?: b
   useEffect(() => {
     if (isAuthenticated) {
       // Guest sessions must not stick on /login?staff=1 — end guest and show login form.
-      if (wantsStaffLogin(location.search) && isGuest) {
-        try {
-          sessionStorage.setItem('lc-staff-login', '1');
-        } catch {
-          /* ignore */
-        }
+      if (wantsStaffLogin(location.search, location.pathname) && isGuest) {
+        markStaffLoginIntent();
         logout('/login?staff=1');
         return;
       }
@@ -65,7 +50,7 @@ export default function StartupLayout({ isAuthenticated }: { isAuthenticated?: b
     if (data) {
       setStartupConfig(data);
     }
-  }, [isAuthenticated, isGuest, logout, navigate, data, location.search]);
+  }, [isAuthenticated, isGuest, logout, navigate, data, location.search, location.pathname]);
 
   useEffect(() => {
     document.title = startupConfig?.appTitle || 'Hotshot AI';

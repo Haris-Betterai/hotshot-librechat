@@ -13,7 +13,7 @@ import AddMultiConvo from './AddMultiConvo';
 import { useAuthContext, useHasAccess, useLocalize } from '~/hooks';
 import { useChatContext, useAgentsMapContext } from '~/Providers';
 import NewChat from '~/components/Nav/NewChat';
-import { cn, isEmbedWidget, isStaffPath, publicHomePath, staffHomePath } from '~/utils';
+import { cn, isEmbedWidget, isStaffPath, markStaffLoginIntent, publicHomePath, staffHomePath } from '~/utils';
 import store from '~/store';
 
 const defaultInterface = getConfigDefaults().interface;
@@ -55,11 +55,7 @@ function Header() {
   const isSmallScreen = useMediaQuery('(max-width: 768px)');
 
   const openStaffLogin = useCallback(() => {
-    try {
-      sessionStorage.setItem('lc-staff-login', '1');
-    } catch {
-      /* ignore */
-    }
+    markStaffLoginIntent();
     logout('/login?staff=1');
   }, [logout]);
 

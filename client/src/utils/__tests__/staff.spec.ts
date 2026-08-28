@@ -1,4 +1,4 @@
-import { chatPath, isStaffPath, staffHomePath, viewPath } from '../staff';
+import { chatPath, clearStaffLoginIntent, isStaffPath, markStaffLoginIntent, staffHomePath, viewPath, wantsStaffLogin } from '../staff';
 
 describe('staff view paths', () => {
   it('detects staff routes', () => {
@@ -27,5 +27,13 @@ describe('staff view paths', () => {
 
   it('exposes the staff home chat route', () => {
     expect(staffHomePath()).toBe('/staff/c/new');
+  });
+
+  it('does not keep the staff-login flag on public chat after leaving /login', () => {
+    markStaffLoginIntent();
+    expect(wantsStaffLogin('?staff=1', '/login')).toBe(true);
+    expect(wantsStaffLogin('', '/c/new')).toBe(false);
+    expect(sessionStorage.getItem('lc-staff-login')).toBeNull();
+    clearStaffLoginIntent();
   });
 });

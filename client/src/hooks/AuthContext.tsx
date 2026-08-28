@@ -30,7 +30,7 @@ import {
   useGetStartupConfig,
 } from '~/data-provider';
 import { TAuthConfig, TUserContext, TAuthContext, TResError } from '~/common';
-import { SESSION_KEY, isSafeRedirect, getPostLoginRedirect, markEmbedWidget, isStaffPath, staffHomePath } from '~/utils';
+import { SESSION_KEY, isSafeRedirect, getPostLoginRedirect, markEmbedWidget, isStaffPath, staffHomePath, wantsStaffLogin, markStaffLoginIntent, clearStaffLoginIntent } from '~/utils';
 import useTimeout from './useTimeout';
 import store from '~/store';
 
@@ -121,7 +121,7 @@ const AuthContextProvider = ({
       }
       // Staff is authenticated now — clear the flag so a later logout returns to guest.
       try {
-        sessionStorage.removeItem('lc-staff-login');
+        clearStaffLoginIntent();
       } catch {
         /* ignore */
       }
@@ -161,7 +161,7 @@ const AuthContextProvider = ({
         logoutRedirectRef.current.includes('staff=1');
       if (!staffLogout) {
         try {
-          sessionStorage.removeItem('lc-staff-login');
+          clearStaffLoginIntent();
         } catch {
           /* ignore */
         }
@@ -182,7 +182,7 @@ const AuthContextProvider = ({
         logoutRedirectRef.current.includes('staff=1');
       if (!staffLogout) {
         try {
-          sessionStorage.removeItem('lc-staff-login');
+          clearStaffLoginIntent();
         } catch {
           /* ignore */
         }
@@ -256,17 +256,6 @@ const AuthContextProvider = ({
     loginUser.mutate(data);
   };
 
-  const wantsStaffLogin = useCallback(() => {
-    try {
-      if (sessionStorage.getItem('lc-staff-login') === '1') {
-        return true;
-      }
-    } catch {
-      /* ignore */
-    }
-    return new URLSearchParams(window.location.search).has('staff');
-  }, []);
-
   const fallbackToGuestMode = useCallback(() => {
     refreshHaltedRef.current = true;
     setTokenHeader(undefined);
@@ -309,7 +298,6 @@ const AuthContextProvider = ({
     setUserContext,
     startEmbedGuestSession,
     startupConfig?.publicGuestMode,
-    wantsStaffLogin,
   ]);
 
   const startGuestSession = useCallback(() => {
@@ -323,7 +311,7 @@ const AuthContextProvider = ({
     const params = new URLSearchParams(window.location.search);
     if (params.has('guest')) {
       try {
-        sessionStorage.removeItem('lc-staff-login');
+        clearStaffLoginIntent();
       } catch {
         /* ignore */
       }
@@ -332,11 +320,7 @@ const AuthContextProvider = ({
     const pathname = window.location.pathname;
     const staffWall = wantsStaffLogin() || isStaffPath();
     if (staffWall) {
-      try {
-        sessionStorage.setItem('lc-staff-login', '1');
-      } catch {
-        /* ignore */
-      }
+      markStaffLoginIntent();
       navigate('/login?staff=1', { replace: true });
       return;
     }
@@ -350,7 +334,7 @@ const AuthContextProvider = ({
 
     if (/^\/login\/?$/.test(pathname)) {
       try {
-        sessionStorage.removeItem('lc-staff-login');
+        clearStaffLoginIntent();
       } catch {
         /* ignore */
       }
@@ -375,7 +359,6 @@ const AuthContextProvider = ({
     navigate,
     setUserContext,
     startupConfig,
-    wantsStaffLogin,
     startEmbedGuestSession,
     getEmbedIdFromPath,
   ]);

@@ -3,18 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { buildLoginRedirectUrl } from 'librechat-data-provider';
 import { useGetStartupConfig } from '~/data-provider';
 import { useAuthContext } from '~/hooks';
-import { isStaffPath } from '~/utils';
-
-function wantsStaffLogin(search: string) {
-  try {
-    if (sessionStorage.getItem('lc-staff-login') === '1') {
-      return true;
-    }
-  } catch {
-    /* ignore */
-  }
-  return new URLSearchParams(search).has('staff');
-}
+import { isStaffPath, wantsStaffLogin } from '~/utils';
 
 export default function useAuthRedirect() {
   const { user, roles, isAuthenticated } = useAuthContext();
@@ -28,7 +17,7 @@ export default function useAuthRedirect() {
     }
 
     const staffRoute = isStaffPath(location.pathname);
-    const staffLogin = wantsStaffLogin(location.search) || staffRoute;
+    const staffLogin = wantsStaffLogin(location.search, location.pathname) || staffRoute;
     if (!staffLogin && startupConfig?.publicGuestMode === true) {
       return;
     }
