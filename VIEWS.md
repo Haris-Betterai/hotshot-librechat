@@ -17,6 +17,8 @@ No login. Customers talk to Hotshot Secret AI.
 | Laptop | http://localhost:6041 |
 | Live | https://hotshotai.thebetterai.com |
 
+Plain `/login` (no `?staff=1`) also starts this guest chat — customers never need an account. Staff login is only **Staff login** or `/login?staff=1`.
+
 Staff who are already logged in can open this same URL (or click **Customer view** in the header). It stays the public chrome — no sidebar — without ending the staff session.
 
 ### 2) Staff workspace

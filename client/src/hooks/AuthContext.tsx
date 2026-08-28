@@ -281,8 +281,12 @@ const AuthContextProvider = ({
     }
 
     const staffLoginRequested = wantsStaffLogin();
-    if (staffLoginRequested || isStaffPath() || startupConfig?.publicGuestMode !== true) {
-      navigate(isStaffPath() || staffLoginRequested ? '/login?staff=1' : '/login', { replace: true });
+    if (staffLoginRequested || isStaffPath()) {
+      navigate('/login?staff=1', { replace: true });
+      return;
+    }
+    if (startupConfig?.publicGuestMode === false) {
+      navigate('/login', { replace: true });
       return;
     }
 
@@ -325,19 +329,31 @@ const AuthContextProvider = ({
       }
     }
 
-    const isManualAuthPage = /^\/(login|register|forgot-password|reset-password)(\/|$)/.test(
-      window.location.pathname,
-    );
-    if (isManualAuthPage || wantsStaffLogin() || isStaffPath()) {
-      if (wantsStaffLogin() || isStaffPath()) {
-        try {
-          sessionStorage.setItem('lc-staff-login', '1');
-        } catch {
-          /* ignore */
-        }
+    const pathname = window.location.pathname;
+    const staffWall = wantsStaffLogin() || isStaffPath();
+    if (staffWall) {
+      try {
+        sessionStorage.setItem('lc-staff-login', '1');
+      } catch {
+        /* ignore */
       }
-      navigate(isStaffPath() || wantsStaffLogin() ? '/login?staff=1' : '/login', { replace: true });
+      navigate('/login?staff=1', { replace: true });
       return;
+    }
+
+    const isOtherAuthPage =
+      /^\/(register|forgot-password|reset-password)(\/|$)/.test(pathname) ||
+      /^\/login\/2fa(\/|$)/.test(pathname);
+    if (isOtherAuthPage) {
+      return;
+    }
+
+    if (/^\/login\/?$/.test(pathname)) {
+      try {
+        sessionStorage.removeItem('lc-staff-login');
+      } catch {
+        /* ignore */
+      }
     }
 
     // Only auto-guest when the server enables public guest mode.

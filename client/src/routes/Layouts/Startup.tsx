@@ -59,8 +59,7 @@ export default function StartupLayout({ isAuthenticated }: { isAuthenticated?: b
         new URLSearchParams(window.location.search).has(REDIRECT_PARAM) ||
         sessionStorage.getItem(SESSION_KEY) != null;
       if (!hasPendingRedirect) {
-        const home = isGuest ? '/c/new' : staffHomePath();
-        navigate(home, { replace: true });
+        navigate(isGuest ? '/c/new' : staffHomePath(), { replace: true });
       }
     }
     if (data) {

@@ -212,14 +212,30 @@ cmd_down() {
   log "Stack stopped. SSH tunnel left running (kill via: lsof -tiTCP:${TUNNEL_LOCAL_PORT} | xargs kill)."
 }
 
+# Laptop overlay. Missing on the server on purpose — never create it there.
+refuse_if_server_run_sh() {
+  if [[ -f docker-compose.local.yml ]]; then
+    return 0
+  fi
+  die "run.sh is the laptop script (it expects docker-compose.local.yml).
+
+On the SERVER do not create that file and do not use run.sh.
+Deploy with:
+
+  git pull
+  ./deploy.sh"
+}
+
 cmd_build() {
   ensure_docker
+  refuse_if_server_run_sh
   log "Building librechat image (do not set UID=... — it is readonly in bash)..."
   compose build api
 }
 
 cmd_restart() {
   ensure_docker
+  refuse_if_server_run_sh
   tunnel_up
   refresh_guest_index
   compose up -d --force-recreate api admin-panel
