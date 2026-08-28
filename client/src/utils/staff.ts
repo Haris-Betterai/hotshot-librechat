@@ -43,10 +43,6 @@ export function wantsStaffLogin(
   }
 }
 
-export function isStaffPath(pathname: string = currentPathname()): boolean {
-  return pathname === STAFF_BASE || pathname.startsWith(`${STAFF_BASE}/`);
-}
-
 export function viewPath(path: string, pathname: string = currentPathname()): string {
   const [pathnamePart, search = ''] = path.split('?');
   const normalized = pathnamePart.startsWith('/') ? pathnamePart : `/${pathnamePart}`;
