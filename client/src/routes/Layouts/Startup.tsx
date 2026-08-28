@@ -32,23 +32,47 @@ export default function StartupLayout({ isAuthenticated }: { isAuthenticated?: b
   const isGuest = user?.provider === 'anonymous';
 
   useEffect(() => {
-    if (isAuthenticated) {
-      // Guest sessions must not stick on /login?staff=1 — end guest and show login form.
-      if (wantsStaffLogin(location.search, location.pathname) && isGuest) {
-        markStaffLoginIntent();
-        logout('/login?staff=1');
-        return;
-      }
-
-      const hasPendingRedirect =
-        new URLSearchParams(window.location.search).has(REDIRECT_PARAM) ||
-        sessionStorage.getItem(SESSION_KEY) != null;
-      if (!hasPendingRedirect) {
-        navigate(isGuest ? '/c/new' : staffHomePath(), { replace: true });
-      }
-    }
     if (data) {
       setStartupConfig(data);
+    }
+
+    const staffWall = wantsStaffLogin(location.search, location.pathname);
+    const onLoginPage = /^\/login\/?$/.test(location.pathname);
+
+    if (!isAuthenticated) {
+      if (data?.publicGuestMode === true && onLoginPage && !staffWall) {
+        try {
+          sessionStorage.removeItem(SESSION_KEY);
+        } catch {
+          /* ignore */
+        }
+        navigate('/c/new', { replace: true });
+      }
+      return;
+    }
+
+    if (staffWall && isGuest) {
+      markStaffLoginIntent();
+      logout('/login?staff=1');
+      return;
+    }
+
+    const storedRedirect = sessionStorage.getItem(SESSION_KEY);
+    const hasPendingRedirect =
+      new URLSearchParams(window.location.search).has(REDIRECT_PARAM) || storedRedirect != null;
+
+    if (isGuest) {
+      try {
+        sessionStorage.removeItem(SESSION_KEY);
+      } catch {
+        /* ignore */
+      }
+      navigate('/c/new', { replace: true });
+      return;
+    }
+
+    if (!hasPendingRedirect) {
+      navigate(staffHomePath(), { replace: true });
     }
   }, [isAuthenticated, isGuest, logout, navigate, data, location.search, location.pathname]);
 

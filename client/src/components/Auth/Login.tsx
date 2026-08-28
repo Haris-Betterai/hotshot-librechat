@@ -3,7 +3,7 @@ import { ErrorTypes, registerPage } from 'librechat-data-provider';
 import { OpenIDIcon, useToastContext } from '@librechat/client';
 import { useOutletContext, useSearchParams, useLocation } from 'react-router-dom';
 import type { TLoginLayoutContext } from '~/common';
-import { getLoginError, persistRedirectToSession } from '~/utils';
+import { getLoginError, persistRedirectToSession, wantsStaffLogin } from '~/utils';
 import { ErrorMessage } from '~/components/Auth/ErrorMessage';
 import SocialButton from '~/components/Auth/SocialButton';
 import { useAuthContext } from '~/hooks/AuthContext';
@@ -27,6 +27,10 @@ function Login() {
   const [isAutoRedirectDisabled, setIsAutoRedirectDisabled] = useState(disableAutoRedirect);
 
   useEffect(() => {
+    if (startupConfig?.publicGuestMode === true && !wantsStaffLogin(location.search, location.pathname)) {
+      return;
+    }
+
     const redirectTo = searchParams.get('redirect_to');
     if (redirectTo) {
       persistRedirectToSession(redirectTo);
@@ -47,7 +51,7 @@ function Login() {
       newParams.delete('error');
       setSearchParams(newParams, { replace: true });
     }
-  }, [searchParams, setSearchParams, showToast, localize, location.state]);
+  }, [searchParams, setSearchParams, showToast, localize, location.state, location.search, location.pathname, startupConfig?.publicGuestMode]);
 
   useEffect(() => {
     if (disableAutoRedirect) {
