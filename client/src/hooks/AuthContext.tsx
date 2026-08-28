@@ -23,13 +23,14 @@ import {
   useGetRole,
   useGetUserQuery,
   useGuestSessionMutation,
+  useGuestEmbedSessionMutation,
   useLoginUserMutation,
   useLogoutUserMutation,
   useRefreshTokenMutation,
   useGetStartupConfig,
 } from '~/data-provider';
 import { TAuthConfig, TUserContext, TAuthContext, TResError } from '~/common';
-import { SESSION_KEY, isSafeRedirect, getPostLoginRedirect } from '~/utils';
+import { SESSION_KEY, isSafeRedirect, getPostLoginRedirect, markEmbedWidget, isStaffPath, staffHomePath } from '~/utils';
 import useTimeout from './useTimeout';
 import store from '~/store';
 
@@ -46,6 +47,7 @@ const AuthContextProvider = ({
   authConfig?: TAuthConfig;
   children: ReactNode;
 }) => {
+  const MAX_REFRESH_FAILURES = 2;
   const isExternalRedirectRef = useRef(false);
   const [user, setUser] = useRecoilState(store.user);
   const logoutRedirectRef = useRef<string | undefined>(undefined);
@@ -53,6 +55,10 @@ const AuthContextProvider = ({
   const [error, setError] = useState<string | undefined>(undefined);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const setQueriesEnabled = useSetRecoilState<boolean>(store.queriesEnabled);
+  const embedGuestInitAttemptedRef = useRef(false);
+  const currentEmbedIdRef = useRef<string | null>(null);
+  const refreshFailureCountRef = useRef(0);
+  const refreshHaltedRef = useRef(false);
 
   const userRoleName = user?.role ?? '';
   const isCustomRole = isAuthenticated && !!user?.role && !isSystemRoleName(user.role);
@@ -101,6 +107,10 @@ const AuthContextProvider = ({
     [navigate, setUser, setQueriesEnabled],
   );
   const doSetError = useTimeout({ callback: (error) => setError(error as string | undefined) });
+  const { mutate: refreshToken } = useRefreshTokenMutation();
+  const { mutate: createGuestSession } = useGuestSessionMutation();
+  const { mutate: createGuestEmbedSession } = useGuestEmbedSessionMutation();
+  const { data: startupConfig } = useGetStartupConfig();
 
   const loginUser = useLoginUserMutation({
     onSuccess: (data: t.TLoginResponse) => {
@@ -115,8 +125,10 @@ const AuthContextProvider = ({
       } catch {
         /* ignore */
       }
+      refreshFailureCountRef.current = 0;
+      refreshHaltedRef.current = false;
       setError(undefined);
-      setUserContext({ token, isAuthenticated: true, user, redirect: '/c/new' });
+      setUserContext({ token, isAuthenticated: true, user, redirect: staffHomePath() });
     },
     onError: (error: TResError | unknown) => {
       const resError = error as TResError;
@@ -184,9 +196,49 @@ const AuthContextProvider = ({
       });
     },
   });
-  const { mutate: refreshToken } = useRefreshTokenMutation();
-  const { mutate: createGuestSession } = useGuestSessionMutation();
-  const { data: startupConfig } = useGetStartupConfig();
+
+  const getEmbedIdFromPath = useCallback((): string | null => {
+    const match = window.location.pathname.match(/(?:^|\/)embed\/([^/]+)/);
+    return match?.[1] ?? null;
+  }, []);
+
+  const startEmbedGuestSession = useCallback(() => {
+    const embedId = getEmbedIdFromPath();
+    if (!embedId) {
+      return;
+    }
+
+    if (currentEmbedIdRef.current !== embedId) {
+      currentEmbedIdRef.current = embedId;
+      embedGuestInitAttemptedRef.current = false;
+    }
+
+    if (embedGuestInitAttemptedRef.current) {
+      return;
+    }
+
+    embedGuestInitAttemptedRef.current = true;
+
+    createGuestEmbedSession(embedId, {
+      onSuccess: ({ user, token, agent_id }) => {
+        markEmbedWidget();
+        setUserContext({
+          user,
+          token,
+          isAuthenticated: true,
+          redirect: `/c/new?agent_id=${encodeURIComponent(agent_id)}&embed=1`,
+        });
+      },
+      onError: () => {
+        navigate('/login', { replace: true });
+      },
+    });
+  }, [
+    createGuestEmbedSession,
+    getEmbedIdFromPath,
+    navigate,
+    setUserContext,
+  ]);
 
   const logout = useCallback(
     (redirect?: string) => {
@@ -215,7 +267,55 @@ const AuthContextProvider = ({
     return new URLSearchParams(window.location.search).has('staff');
   }, []);
 
+  const fallbackToGuestMode = useCallback(() => {
+    refreshHaltedRef.current = true;
+    setTokenHeader(undefined);
+    setToken(undefined);
+    setIsAuthenticated(false);
+    setQueriesEnabled(false);
+    setUser(undefined);
+
+    if (getEmbedIdFromPath() != null) {
+      startEmbedGuestSession();
+      return;
+    }
+
+    const staffLoginRequested = wantsStaffLogin();
+    if (staffLoginRequested || isStaffPath() || startupConfig?.publicGuestMode !== true) {
+      navigate(isStaffPath() || staffLoginRequested ? '/login?staff=1' : '/login', { replace: true });
+      return;
+    }
+
+    createGuestSession(undefined, {
+      onSuccess: ({ user, token }) => {
+        refreshFailureCountRef.current = 0;
+        refreshHaltedRef.current = false;
+        setUserContext({ user, token, isAuthenticated: true, redirect: '/c/new' });
+      },
+      onError: () => {
+        navigate('/login', { replace: true });
+      },
+    });
+  }, [
+    createGuestSession,
+    getEmbedIdFromPath,
+    navigate,
+    setQueriesEnabled,
+    setUser,
+    setUserContext,
+    startEmbedGuestSession,
+    startupConfig?.publicGuestMode,
+    wantsStaffLogin,
+  ]);
+
   const startGuestSession = useCallback(() => {
+    // If we're on an admin-generated embed widget URL, initialize the
+    // authorized embed guest session instead of relying on PUBLIC_GUEST_MODE.
+    if (getEmbedIdFromPath() != null) {
+      startEmbedGuestSession();
+      return;
+    }
+
     const params = new URLSearchParams(window.location.search);
     if (params.has('guest')) {
       try {
@@ -228,15 +328,15 @@ const AuthContextProvider = ({
     const isManualAuthPage = /^\/(login|register|forgot-password|reset-password)(\/|$)/.test(
       window.location.pathname,
     );
-    if (isManualAuthPage || wantsStaffLogin()) {
-      if (wantsStaffLogin()) {
+    if (isManualAuthPage || wantsStaffLogin() || isStaffPath()) {
+      if (wantsStaffLogin() || isStaffPath()) {
         try {
           sessionStorage.setItem('lc-staff-login', '1');
         } catch {
           /* ignore */
         }
       }
-      navigate('/login', { replace: true });
+      navigate(isStaffPath() || wantsStaffLogin() ? '/login?staff=1' : '/login', { replace: true });
       return;
     }
 
@@ -254,7 +354,15 @@ const AuthContextProvider = ({
         navigate(buildLoginRedirectUrl());
       },
     });
-  }, [createGuestSession, navigate, setUserContext, startupConfig, wantsStaffLogin]);
+  }, [
+    createGuestSession,
+    navigate,
+    setUserContext,
+    startupConfig,
+    wantsStaffLogin,
+    startEmbedGuestSession,
+    getEmbedIdFromPath,
+  ]);
 
   const silentRefresh = useCallback(() => {
     if (authConfig?.test === true) {
@@ -271,6 +379,8 @@ const AuthContextProvider = ({
         }
         const { user, token = '' } = data ?? {};
         if (token) {
+          refreshFailureCountRef.current = 0;
+          refreshHaltedRef.current = false;
           const storedRedirect = sessionStorage.getItem(SESSION_KEY);
           sessionStorage.removeItem(SESSION_KEY);
           const baseUrl = apiBaseUrl();
@@ -290,6 +400,11 @@ const AuthContextProvider = ({
         if (authConfig?.test === true) {
           return;
         }
+        refreshFailureCountRef.current += 1;
+        if (refreshFailureCountRef.current >= MAX_REFRESH_FAILURES) {
+          fallbackToGuestMode();
+          return;
+        }
         startGuestSession();
       },
       onError: (error) => {
@@ -300,10 +415,21 @@ const AuthContextProvider = ({
         if (authConfig?.test === true) {
           return;
         }
+        refreshFailureCountRef.current += 1;
+        if (refreshFailureCountRef.current >= MAX_REFRESH_FAILURES) {
+          fallbackToGuestMode();
+          return;
+        }
         startGuestSession();
       },
     });
-  }, [authConfig?.test, refreshToken, setUserContext, startGuestSession]);
+  }, [
+    authConfig?.test,
+    refreshToken,
+    setUserContext,
+    startGuestSession,
+    fallbackToGuestMode,
+  ]);
 
   useEffect(() => {
     if (isExternalRedirectRef.current) {
@@ -311,14 +437,14 @@ const AuthContextProvider = ({
     }
     if (userQuery.data) {
       setUser(userQuery.data);
-    } else if (userQuery.isError) {
+    } else if (userQuery.isError && startupConfig?.publicGuestMode !== true) {
       doSetError((userQuery.error as Error).message);
       navigate(buildLoginRedirectUrl(), { replace: true });
     }
     if (error != null && error && isAuthenticated) {
       doSetError(undefined);
     }
-    if (token == null || !token || !isAuthenticated) {
+    if (!refreshHaltedRef.current && (token == null || !token || !isAuthenticated)) {
       silentRefresh();
     }
   }, [
@@ -332,6 +458,7 @@ const AuthContextProvider = ({
     navigate,
     silentRefresh,
     setUserContext,
+    startupConfig?.publicGuestMode,
   ]);
 
   useEffect(() => {

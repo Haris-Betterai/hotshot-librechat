@@ -137,6 +137,11 @@ function AgentSelect({
           return;
         }
 
+        if (name === 'intelligence' && typeof value === 'object' && value !== null) {
+          formValues[name] = value;
+          return;
+        }
+
         if (!keys.has(name)) {
           return;
         }

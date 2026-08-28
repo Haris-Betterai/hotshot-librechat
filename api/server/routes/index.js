@@ -30,6 +30,7 @@ const roles = require('./roles');
 const oauth = require('./oauth');
 const files = require('./files');
 const share = require('./share');
+const embeds = require('./embeds');
 const tags = require('./tags');
 const auth = require('./auth');
 const keys = require('./keys');
@@ -57,6 +58,7 @@ module.exports = {
   oauth,
   files,
   share,
+  embeds,
   banner,
   agents,
   convos,

@@ -33,6 +33,7 @@ import {
   hasModelSelection,
   buildDefaultConvo,
   logger,
+  chatPath,
 } from '~/utils';
 import { useDeleteFilesMutation, useGetEndpointsQuery, useGetStartupConfig } from '~/data-provider';
 import useGetConversation from './Conversations/useGetConversation';
@@ -260,12 +261,12 @@ const useNewConvo = (index = 0) => {
           if (appTitle) {
             document.title = appTitle;
           }
-          const path = `/c/${Constants.NEW_CONVO}${getParams(conversation)}`;
+          const path = `${chatPath(Constants.NEW_CONVO)}${getParams(conversation)}`;
           navigate(path, { state: { focusChat: true } });
           return;
         }
 
-        const path = `/c/${conversation.conversationId}${getParams(conversation)}`;
+        const path = `${chatPath(conversation.conversationId)}${getParams(conversation)}`;
         navigate(path, {
           replace: true,
           state: disableFocus ? {} : { focusChat: true },

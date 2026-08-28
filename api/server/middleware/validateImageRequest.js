@@ -61,6 +61,28 @@ function createValidateImageRequest(secureImageLinks) {
    */
   return async function validateImageRequest(req, res, next) {
     try {
+      const basePath = getBasePath();
+      const imagesPath = `${basePath}/images`;
+
+      const agentAvatarPattern = new RegExp(
+        `^${imagesPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/[a-f0-9]{24}/agent-[^/]*$`,
+      );
+
+      let fullPathEarly;
+      try {
+        fullPathEarly = decodeURIComponent(req.originalUrl);
+      } catch {
+        fullPathEarly = req.originalUrl;
+      }
+      if (
+        req.originalUrl.length <= 2048 &&
+        !fullPathEarly.includes('\x00') &&
+        agentAvatarPattern.test(fullPathEarly)
+      ) {
+        logger.debug('[validateImageRequest] Public agent avatar');
+        return next();
+      }
+
       const cookieHeader = req.headers.cookie;
       if (!cookieHeader) {
         logger.warn('[validateImageRequest] No cookies provided');
@@ -127,17 +149,6 @@ function createValidateImageRequest(secureImageLinks) {
       } catch {
         logger.warn('[validateImageRequest] Invalid URL encoding');
         return res.status(403).send('Access Denied');
-      }
-
-      const basePath = getBasePath();
-      const imagesPath = `${basePath}/images`;
-
-      const agentAvatarPattern = new RegExp(
-        `^${imagesPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/[a-f0-9]{24}/agent-[^/]*$`,
-      );
-      if (agentAvatarPattern.test(fullPath)) {
-        logger.debug('[validateImageRequest] Image request validated');
-        return next();
       }
 
       const escapedUserId = userIdForPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

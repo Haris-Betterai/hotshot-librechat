@@ -81,6 +81,7 @@ export function composeAgentUpdatePayload(data: AgentForm, agent_id?: string | n
     skills,
     skills_enabled,
     memory_scope,
+    intelligence,
     avatar_action: avatarActionState,
   } = data;
 
@@ -116,6 +117,7 @@ export function composeAgentUpdatePayload(data: AgentForm, agent_id?: string | n
       tool_options,
       skills,
       skills_enabled,
+      intelligence,
       /** A hidden stale 'agent' scope must not survive disabling memory —
        *  runtime partitioning keys off memory_scope alone. */
       memory_scope: data.memory === true ? memory_scope : MemoryScope.user,

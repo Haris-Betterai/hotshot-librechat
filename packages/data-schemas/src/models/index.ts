@@ -9,6 +9,7 @@ import { createPromptGroupModel } from './promptGroup';
 import { createSystemGrantModel } from './systemGrant';
 import { createPluginAuthModel } from './pluginAuth';
 import { createSharedLinkModel } from './sharedLink';
+import { createEmbedWidgetLinkModel } from './embedWidgetLink';
 import { createAccessRoleModel } from './accessRole';
 import { createToolFavoriteModel } from './favorite';
 import { createMCPServerModel } from './mcpServer';
@@ -68,6 +69,7 @@ export function createModels(mongoose: typeof import('mongoose')): {
   SkillSyncStatus: ReturnType<typeof createSkillSyncStatusModel>;
   ConversationTag: ReturnType<typeof createConversationTagModel>;
   SharedLink: ReturnType<typeof createSharedLinkModel>;
+  EmbedWidgetLink: ReturnType<typeof createEmbedWidgetLinkModel>;
   ToolCall: ReturnType<typeof createToolCallModel>;
   MemoryEntry: ReturnType<typeof createMemoryModel>;
   ToolFavorite: ReturnType<typeof createToolFavoriteModel>;
@@ -107,6 +109,7 @@ export function createModels(mongoose: typeof import('mongoose')): {
     SkillSyncStatus: createSkillSyncStatusModel(mongoose),
     ConversationTag: createConversationTagModel(mongoose),
     SharedLink: createSharedLinkModel(mongoose),
+    EmbedWidgetLink: createEmbedWidgetLinkModel(mongoose),
     ToolCall: createToolCallModel(mongoose),
     MemoryEntry: createMemoryModel(mongoose),
     ToolFavorite: createToolFavoriteModel(mongoose),

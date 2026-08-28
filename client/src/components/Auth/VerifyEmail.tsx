@@ -3,6 +3,7 @@ import { Spinner, ThemeSelector } from '@librechat/client';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useVerifyEmailMutation, useResendVerificationEmail } from '~/data-provider';
 import { useLocalize } from '~/hooks';
+import { staffHomePath } from '~/utils';
 
 function RequestPasswordReset() {
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ function RequestPasswordReset() {
       setCountdown((prevCountdown) => {
         if (prevCountdown <= 1) {
           clearInterval(timer);
-          navigate('/c/new', { replace: true });
+          navigate(staffHomePath(), { replace: true });
           return 0;
         }
         return prevCountdown - 1;

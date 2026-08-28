@@ -25,7 +25,7 @@ import {
 import PendingManualSkillsChips from './PendingManualSkillsChips';
 import useAskAnswerMode from '~/hooks/Input/useAskAnswerMode';
 import AskUserQuestionPopover from './AskUserQuestionPopover';
-import { cn, getModelSpec, removeFocusRings } from '~/utils';
+import { cn, getModelSpec, removeFocusRings, isEmbedWidget } from '~/utils';
 import DuringRunSendButton from './DuringRunSendButton';
 import { useGetStartupConfig } from '~/data-provider';
 import { mainTextareaId, BadgeItem } from '~/common';
@@ -43,6 +43,7 @@ import CollapseChat from './CollapseChat';
 import QuoteButton from './QuoteButton';
 import StreamAudio from './StreamAudio';
 import TokenUsage from './TokenUsage';
+import Intelligence from './Intelligence';
 import StopButton from './StopButton';
 import SendButton from './SendButton';
 import EditBadges from './EditBadges';
@@ -96,6 +97,7 @@ const ChatForm = memo(function ChatForm({
   const maximizeChatSpace = useRecoilValue(store.maximizeChatSpace);
   const centerFormOnLanding = useRecoilValue(store.centerFormOnLanding);
   const isTemporary = useRecoilValue(store.isTemporary);
+  const isEmbed = isEmbedWidget();
 
   const [badges, setBadges] = useRecoilState(store.chatBadges);
   const [isEditingBadges, setIsEditingBadges] = useRecoilState(store.isEditingBadges);
@@ -400,13 +402,15 @@ const ChatForm = memo(function ChatForm({
       })}
       className={cn(
         'mx-auto flex w-full flex-row gap-3 transition-[max-width] duration-300 sm:px-2',
-        maximizeChatSpace ? 'max-w-full' : 'md:max-w-3xl xl:max-w-4xl',
-        centerFormOnLanding &&
-          (conversationId == null || conversationId === Constants.NEW_CONVO) &&
-          !isSubmitting &&
-          conversation?.messages?.length === 0
-          ? 'transition-all duration-200 sm:mb-28'
-          : 'sm:mb-10',
+        maximizeChatSpace || isEmbed ? 'max-w-full' : 'md:max-w-3xl xl:max-w-4xl',
+        isEmbed
+          ? 'mb-0 px-2 pb-2'
+          : centerFormOnLanding &&
+              (conversationId == null || conversationId === Constants.NEW_CONVO) &&
+              !isSubmitting &&
+              conversation?.messages?.length === 0
+            ? 'transition-all duration-200 sm:mb-28'
+            : 'sm:mb-10',
       )}
     >
       <div className="relative flex h-full flex-1 items-stretch md:flex-col">
@@ -535,6 +539,7 @@ const ChatForm = memo(function ChatForm({
                   </div>
                 </div>
               )}
+              <Intelligence />
               <div
                 className={cn(
                   '@container items-between flex gap-2 pb-2',
@@ -637,6 +642,7 @@ function ChatFormWrapper({ index = 0, placeholder }: { index?: number; placehold
       conversation?.spec,
       conversation?.useResponsesApi,
       conversation?.model,
+      conversation?.modelLabel,
       conversation?.maxContextTokens,
       hasMessages,
     ],

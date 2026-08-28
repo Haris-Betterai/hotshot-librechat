@@ -80,6 +80,15 @@ export const useGuestSessionMutation = (
   });
 };
 
+export const useGuestEmbedSessionMutation = (
+  options?: t.MutationOptions<t.TGuestEmbedSessionResponse, undefined, unknown, unknown>,
+): UseMutationResult<t.TGuestEmbedSessionResponse, unknown, undefined, unknown> => {
+  return useMutation([MutationKeys.guestEmbedSession], {
+    mutationFn: (embedId: string) => request.guestEmbedSession(embedId),
+    ...(options || {}),
+  });
+};
+
 /* User */
 export const useDeleteUserMutation = (
   options?: t.MutationOptions<unknown, t.TDeleteUserRequest | undefined>,

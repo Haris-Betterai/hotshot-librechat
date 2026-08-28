@@ -312,6 +312,11 @@ export type Agent = {
   subagents?: AgentSubagentsConfig;
   /** Memory partition: `agent` isolates memories per (user, agent); default shared pool */
   memory_scope?: MemoryScope;
+  /** Guest/embed intelligence slider: up to 4 labeled OpenAI models. */
+  intelligence?: {
+    heading?: string;
+    levels?: Array<{ label: string; model: string }>;
+  };
 };
 
 export type TAgentsMap = Record<string, Agent | undefined>;
@@ -342,6 +347,7 @@ export type AgentCreateParams = {
   | 'skills_enabled'
   | 'subagents'
   | 'memory_scope'
+  | 'intelligence'
 >;
 
 export type AgentUpdateParams = {
@@ -371,6 +377,7 @@ export type AgentUpdateParams = {
   | 'skills_enabled'
   | 'subagents'
   | 'memory_scope'
+  | 'intelligence'
 >;
 
 export type AgentListParams = {

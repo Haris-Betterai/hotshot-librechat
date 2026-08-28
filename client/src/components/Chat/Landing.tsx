@@ -9,6 +9,7 @@ import {
   createConfigHtmlSanitizer,
   CONFIG_HTML_MEDIA_TAGS,
   CONFIG_HTML_MEDIA_ATTR,
+  isEmbedWidget,
 } from '~/utils';
 import { useChatContext, useAgentsMapContext, useAssistantsMapContext } from '~/Providers';
 import { useGetEndpointsQuery, useGetStartupConfig } from '~/data-provider';
@@ -164,6 +165,14 @@ export default function Landing({ centerFormOnLanding }: { centerFormOnLanding: 
     typeof startupConfig?.interface?.customWelcome === 'string'
       ? getGreeting()
       : getGreeting() + (user?.name ? ', ' + user.name : '');
+
+  if (isEmbedWidget()) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center px-4 text-center">
+        <p className="text-sm text-text-secondary">{localize('com_ui_embed_start_conversation')}</p>
+      </div>
+    );
+  }
 
   return (
     <div

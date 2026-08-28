@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useRecoilValue } from 'recoil';
-import { Outlet } from 'react-router-dom';
-import { useMediaQuery } from '@librechat/client';
+import { useRecoilValue, useSetRecoilState } from 'recoil';
+import { Outlet, useLocation } from 'react-router-dom';
+import { useMediaQuery, Spinner } from '@librechat/client';
 import {
   PromptGroupsProvider,
   AssistantsMapContext,
@@ -24,6 +24,7 @@ import { UnifiedSidebar } from '~/components/UnifiedSidebar';
 import { TermsAndConditionsModal } from '~/components/ui';
 import { useHealthCheck } from '~/data-provider';
 import { Banner } from '~/components/Banners';
+import { isEmbedWidget, isStaffPath } from '~/utils';
 import store from '~/store';
 
 /** Isolates keyboard shortcut listeners so they only mount after auth. */
@@ -41,12 +42,27 @@ export default function Root() {
   const [showTerms, setShowTerms] = useState(false);
   const [bannerHeight, setBannerHeight] = useState(0);
   const sidebarExpanded = useRecoilValue(store.sidebarExpanded);
+  const setSpeechToText = useSetRecoilState(store.speechToText);
   const isSmallScreen = useMediaQuery('(max-width: 768px)');
 
+  const location = useLocation();
   const { user, isAuthenticated, logout } = useAuthContext();
   const isGuest = user?.provider === 'anonymous';
+  const isEmbed = isEmbedWidget();
+  const isStaffView = isStaffPath(location.pathname);
 
   useHealthCheck(isAuthenticated);
+
+  useEffect(() => {
+    if (isStaffView && isGuest) {
+      try {
+        sessionStorage.setItem('lc-staff-login', '1');
+      } catch {
+        /* ignore */
+      }
+      logout('/login?staff=1');
+    }
+  }, [isStaffView, isGuest, logout]);
 
   const assistantsMap = useAssistantsMap({ isAuthenticated });
   const agentsMap = useAgentsMap({ isAuthenticated });
@@ -58,6 +74,16 @@ export default function Root() {
   });
 
   useSearchEnabled(isAuthenticated);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('embed-widget', isEmbed);
+    if (isEmbed) {
+      setSpeechToText(true);
+    }
+    return () => {
+      document.documentElement.classList.remove('embed-widget');
+    };
+  }, [isEmbed, setSpeechToText]);
 
   useEffect(() => {
     if (termsData) {
@@ -75,7 +101,11 @@ export default function Root() {
   };
 
   if (!isAuthenticated) {
-    return null;
+    return (
+      <div className="flex h-screen items-center justify-center" aria-live="polite" role="status">
+        <Spinner className="text-text-primary" />
+      </div>
+    );
   }
 
   return (
@@ -84,20 +114,20 @@ export default function Root() {
         <AssistantsMapContext.Provider value={assistantsMap}>
           <AgentsMapContext.Provider value={agentsMap}>
             <PromptGroupsProvider>
-              <Banner onHeightChange={setBannerHeight} />
+              {!isEmbed && <Banner onHeightChange={setBannerHeight} />}
               <div className="flex" style={{ height: `calc(100dvh - ${bannerHeight}px)` }}>
                 <div className="relative z-0 flex h-full w-full overflow-hidden">
-                  {!isGuest && <UnifiedSidebar />}
+                  {isStaffView && <UnifiedSidebar />}
                   <div
                     className="relative flex h-full max-w-full flex-1 flex-col overflow-hidden"
                     style={{
                       transform:
-                        isSmallScreen && sidebarExpanded && !isGuest
+                        isSmallScreen && sidebarExpanded && isStaffView
                           ? 'translateX(min(85vw, 380px))'
                           : 'none',
                       transition: 'transform 300ms cubic-bezier(0.2, 0, 0, 1)',
                     }}
-                    inert={isSmallScreen && sidebarExpanded && !isGuest ? '' : undefined}
+                    inert={isSmallScreen && sidebarExpanded && isStaffView ? '' : undefined}
                   >
                     <Outlet />
                   </div>

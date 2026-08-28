@@ -57,6 +57,12 @@ describe('validateImageRequest middleware', () => {
       validateImageRequest = createValidateImageRequest(true);
     });
 
+    test('should allow agent avatars without cookies', async () => {
+      req.originalUrl = '/images/65cfb246f7ecadb8b1e8036c/agent-avatar-12345.png';
+      await validateImageRequest(req, res, next);
+      expect(next).toHaveBeenCalled();
+    });
+
     test('should return 401 if refresh token is not provided', async () => {
       await validateImageRequest(req, res, next);
       expect(res.status).toHaveBeenCalledWith(401);

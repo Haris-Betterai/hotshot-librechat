@@ -5,11 +5,12 @@ require('module-alias')({ base: path.resolve(__dirname, '..') });
 const cors = require('cors');
 const axios = require('axios');
 const express = require('express');
+const mongoose = require('mongoose');
 const passport = require('passport');
 const compression = require('compression');
 const cookieParser = require('cookie-parser');
 const mongoSanitize = require('express-mongo-sanitize');
-const { logger, runAsSystem, tenantStorage } = require('@librechat/data-schemas');
+const { logger, runAsSystem, tenantStorage, activeExpirationFilter } = require('@librechat/data-schemas');
 const {
   isEnabled,
   apiNotFound,
@@ -227,6 +228,45 @@ const startServer = async () => {
   }
 
   app.get('/index.html', sendIndexHtml);
+
+  /**
+   * Public iframe entrypoint for admin-generated guest widgets.
+   *
+   * Origin allowlisting for who can embed this page is enforced by
+   * `Content-Security-Policy: frame-ancestors` on the document response.
+   */
+  app.get('/embed/:embedId', async (req, res) => {
+    try {
+      const { embedId } = req.params;
+      if (!embedId) {
+        return res.status(400).end();
+      }
+
+      const EmbedWidgetLink = mongoose.models.EmbedWidgetLink;
+      const findEmbed = async () =>
+        (await EmbedWidgetLink.findOne({ embedId, ...activeExpirationFilter() }).lean()) ??
+        null;
+
+      // embedId is secret/unguessable; resolve in system scope so it can be
+      // looked up even if a viewer hits it under a different tenant.
+      const embed = await runAsSystem(findEmbed);
+      if (!embed) {
+        return res.status(404).end();
+      }
+
+      const allowedOrigins = Array.isArray(embed.allowedOrigins) ? embed.allowedOrigins : [];
+      const frameAncestors =
+        allowedOrigins.length > 0 ? `'self' ${allowedOrigins.join(' ')}` : `'self'`;
+
+      res.set('Content-Security-Policy', `frame-ancestors ${frameAncestors}`);
+      res.set('Permissions-Policy', 'microphone=(self), camera=()');
+      return sendIndexHtml(req, res);
+    } catch (err) {
+      logger.error('[embedRoute]', err);
+      return res.status(500).end();
+    }
+  });
+
   app.use(staticCache(appConfig.paths.dist));
   app.use(staticCache(appConfig.paths.fonts));
   app.use(staticCache(appConfig.paths.assets));
@@ -289,6 +329,7 @@ const startServer = async () => {
   app.use('/api/files', await routes.files.initialize());
   app.use('/images/', createValidateImageRequest(appConfig.secureImageLinks), routes.staticRoute);
   app.use('/api/share', preAuthTenantMiddleware, routes.share);
+  app.use('/api/embeds', preAuthTenantMiddleware, routes.embeds);
   app.use('/api/roles', routes.roles);
   app.use('/api/agents/chat', rejectChatStartsUntilReady);
   app.use('/api/agents', routes.agents);

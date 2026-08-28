@@ -12,7 +12,7 @@ import { areConversationRenderPropsEqual } from './utils';
 import { NotificationSeverity } from '~/common';
 import { ConvoOptions } from './ConvoOptions';
 import RenameForm from './RenameForm';
-import { cn, logger } from '~/utils';
+import { cn, logger, viewPath } from '~/utils';
 import ConvoLink from './ConvoLink';
 import store from '~/store';
 
@@ -145,7 +145,7 @@ function Conversation({
     if (ctrlOrMetaKey && !isGenerating) {
       toggleNav();
       const baseUrl = window.location.origin;
-      const path = `/c/${conversationId}`;
+      const path = viewPath(`/c/${conversationId}`);
       window.open(baseUrl + path, '_blank');
       return;
     }

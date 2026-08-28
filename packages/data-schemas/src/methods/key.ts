@@ -1,7 +1,14 @@
-import { ErrorTypes } from 'librechat-data-provider';
+import { ErrorTypes, SystemRoles } from 'librechat-data-provider';
 // Note: checkUserKeyExpiry moved to @librechat/api (utils/key.ts) as it's a pure validation utility
 import { encrypt, decrypt } from '~/crypto';
 import logger from '~/config/winston';
+
+const GUEST_PROVIDER = 'anonymous';
+
+type StoredKey = {
+  value: string;
+  expiresAt?: Date;
+};
 
 /** Factory function that takes mongoose instance and returns the key methods */
 export function createKeyMethods(mongoose: typeof import('mongoose')): {
@@ -19,31 +26,69 @@ export function createKeyMethods(mongoose: typeof import('mongoose')): {
     name: string;
   }) => Promise<{ expiresAt: Date | 'never' | null }>;
 } {
-  /**
-   * Retrieves and decrypts the key value for a given user identified by userId and identifier name.
-   * @param params - The parameters object
-   * @param params.userId - The unique identifier for the user
-   * @param params.name - The name associated with the key
-   * @returns The decrypted key value
-   * @throws Error if the key is not found or if there is a problem during key retrieval
-   * @description This function searches for a user's key in the database using their userId and name.
-   *              If found, it decrypts the value of the key and returns it. If no key is found, it throws
-   *              an error indicating that there is no user key available.
-   */
+  async function findAdminKeyForGuest(params: {
+    userId: string;
+    name: string;
+  }): Promise<StoredKey | null> {
+    const { userId, name } = params;
+    if (!userId) {
+      return null;
+    }
+
+    const User = mongoose.models.User;
+    const Key = mongoose.models.Key;
+    const user = (await User.findById(userId).select('provider tenantId').lean()) as {
+      provider?: string;
+      tenantId?: string;
+    } | null;
+
+    if (!user || user.provider !== GUEST_PROVIDER) {
+      return null;
+    }
+
+    const adminFilter: Record<string, unknown> = { role: SystemRoles.ADMIN };
+    if (typeof user.tenantId === 'string' && user.tenantId.length > 0) {
+      adminFilter.tenantId = user.tenantId;
+    }
+
+    let admins = (await User.find(adminFilter).select('_id').lean()) as Array<{ _id: unknown }>;
+    if (admins.length === 0 && adminFilter.tenantId != null) {
+      admins = (await User.find({ role: SystemRoles.ADMIN }).select('_id').lean()) as Array<{
+        _id: unknown;
+      }>;
+    }
+    if (admins.length === 0) {
+      return null;
+    }
+
+    const adminKey = (await Key.findOne({
+      name,
+      userId: { $in: admins.map((admin) => admin._id) },
+    })
+      .sort({ _id: -1 })
+      .lean()) as StoredKey | null;
+
+    return adminKey;
+  }
+
   async function getUserKey(params: { userId: string; name: string }): Promise<string> {
     const { userId, name } = params;
     const Key = mongoose.models.Key;
-    const keyValue = (await Key.findOne({ userId, name }).lean()) as {
-      value: string;
-    } | null;
-    if (!keyValue) {
-      throw new Error(
-        JSON.stringify({
-          type: ErrorTypes.NO_USER_KEY,
-        }),
-      );
+    const keyValue = (await Key.findOne({ userId, name }).lean()) as StoredKey | null;
+    if (keyValue) {
+      return await decrypt(keyValue.value);
     }
-    return await decrypt(keyValue.value);
+
+    const adminKey = await findAdminKeyForGuest({ userId, name });
+    if (adminKey) {
+      return await decrypt(adminKey.value);
+    }
+
+    throw new Error(
+      JSON.stringify({
+        type: ErrorTypes.NO_USER_KEY,
+      }),
+    );
   }
 
   /**
@@ -90,13 +135,17 @@ export function createKeyMethods(mongoose: typeof import('mongoose')): {
   }): Promise<{ expiresAt: Date | 'never' | null }> {
     const { userId, name } = params;
     const Key = mongoose.models.Key;
-    const keyValue = (await Key.findOne({ userId, name }).lean()) as {
-      expiresAt?: Date;
-    } | null;
-    if (!keyValue) {
-      return { expiresAt: null };
+    const keyValue = (await Key.findOne({ userId, name }).lean()) as StoredKey | null;
+    if (keyValue) {
+      return { expiresAt: keyValue.expiresAt || 'never' };
     }
-    return { expiresAt: keyValue.expiresAt || 'never' };
+
+    const adminKey = await findAdminKeyForGuest({ userId, name });
+    if (adminKey) {
+      return { expiresAt: adminKey.expiresAt || 'never' };
+    }
+
+    return { expiresAt: null };
   }
 
   /**

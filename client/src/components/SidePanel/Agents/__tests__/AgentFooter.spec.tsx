@@ -155,6 +155,11 @@ jest.mock('../DuplicateAgent', () => ({
   ),
 }));
 
+jest.mock('../embed/Widget', () => ({
+  __esModule: true,
+  default: () => <div data-testid="embed-widget" />,
+}));
+
 jest.mock('@librechat/client', () => ({
   Spinner: () => <div data-testid="spinner" />,
 }));

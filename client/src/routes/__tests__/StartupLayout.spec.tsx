@@ -25,7 +25,7 @@ jest.mock('~/data-provider', () => ({
 jest.mock('~/hooks', () => ({
   useLocalize: jest.fn(() => (key: string) => key),
   useAuthContext: jest.fn(() => ({
-    user: null,
+    user: { provider: 'local', email: 'staff@example.com' },
     logout: jest.fn(),
   })),
   TranslationKeys: {},
@@ -54,7 +54,7 @@ const createTestRouter = (initialEntry: string, isAuthenticated: boolean) =>
         children: [{ index: true, element: <ChildRoute /> }],
       },
       {
-        path: '/c/new',
+        path: '/staff/c/new',
         element: <NewConversation />,
       },
     ],
@@ -71,14 +71,14 @@ describe('StartupLayout — redirect race condition', () => {
     jest.restoreAllMocks();
   });
 
-  it('navigates to /c/new when authenticated with no pending redirect', async () => {
+  it('navigates to /staff/c/new when authenticated with no pending redirect', async () => {
     window.history.replaceState({}, '', '/login');
 
     const router = createTestRouter('/login', true);
     render(<RouterProvider router={router} />);
 
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe('/c/new');
+      expect(router.state.location.pathname).toBe('/staff/c/new');
     });
   });
 

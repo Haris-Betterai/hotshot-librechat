@@ -17,7 +17,7 @@ const dashboardRoutes = {
     },
     {
       path: '*',
-      element: <Navigate to="/c/new" replace={true} />,
+      element: <Navigate to="/staff/c/new" replace={true} />,
     },
   ],
 };

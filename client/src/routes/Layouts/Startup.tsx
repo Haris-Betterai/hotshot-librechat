@@ -4,7 +4,7 @@ import type { TStartupConfig } from 'librechat-data-provider';
 import { TranslationKeys, useLocalize, useAuthContext } from '~/hooks';
 import { useGetStartupConfig } from '~/data-provider';
 import AuthLayout from '~/components/Auth/AuthLayout';
-import { REDIRECT_PARAM, SESSION_KEY } from '~/utils';
+import { REDIRECT_PARAM, SESSION_KEY, staffHomePath } from '~/utils';
 
 const headerMap: Record<string, TranslationKeys> = {
   '/login': 'com_auth_welcome_back',
@@ -59,7 +59,8 @@ export default function StartupLayout({ isAuthenticated }: { isAuthenticated?: b
         new URLSearchParams(window.location.search).has(REDIRECT_PARAM) ||
         sessionStorage.getItem(SESSION_KEY) != null;
       if (!hasPendingRedirect) {
-        navigate('/c/new', { replace: true });
+        const home = isGuest ? '/c/new' : staffHomePath();
+        navigate(home, { replace: true });
       }
     }
     if (data) {

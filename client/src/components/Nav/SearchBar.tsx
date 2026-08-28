@@ -7,7 +7,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useShortcutAriaKey } from '~/hooks/useKeyboardShortcuts';
 import { useLocalize, useNewConvo } from '~/hooks';
-import { cn } from '~/utils';
+import { cn, viewPath } from '~/utils';
 import store from '~/store';
 
 type SearchBarProps = {
@@ -31,10 +31,10 @@ const SearchBar = forwardRef((props: SearchBarProps, ref: React.Ref<HTMLDivEleme
 
   const clearSearch = useCallback(
     (pathname?: string) => {
-      if (pathname?.includes('/search') || pathname === '/c/new') {
+      if (pathname?.includes('/search') || pathname?.endsWith('/c/new')) {
         queryClient.removeQueries([QueryKeys.messages]);
         newConvo({ disableFocus: true });
-        navigate('/c/new');
+        navigate(viewPath('/c/new', pathname));
       }
     },
     [newConvo, navigate, queryClient],
@@ -95,8 +95,8 @@ const SearchBar = forwardRef((props: SearchBarProps, ref: React.Ref<HTMLDivEleme
       isTyping: true,
     }));
     debouncedSetDebouncedQuery(value);
-    if (value.length > 0 && location.pathname !== '/search') {
-      navigate('/search', { replace: true });
+    if (value.length > 0 && !location.pathname.endsWith('/search')) {
+      navigate(viewPath('/search', location.pathname), { replace: true });
     }
   };
 

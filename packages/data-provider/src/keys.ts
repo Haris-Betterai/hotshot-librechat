@@ -85,6 +85,7 @@ export enum QueryKeys {
   skillStates = 'skillStates',
   /* General user favorites */
   favorites = 'favorites',
+  embedWidgets = 'embedWidgets',
 }
 
 // Dynamic query keys that require parameters
@@ -104,6 +105,7 @@ export enum MutationKeys {
   logoutUser = 'logoutUser',
   refreshToken = 'refreshToken',
   guestSession = 'guestSession',
+  guestEmbedSession = 'guestEmbedSession',
   avatarUpload = 'avatarUpload',
   speechToText = 'speechToText',
   textToSpeech = 'textToSpeech',

@@ -606,6 +606,40 @@ export type TRefreshTokenResponse = {
   user: TUser;
 };
 
+export type TGuestEmbedSessionResponse = TRefreshTokenResponse & {
+  /** Fixed agent configured for this embed widget link. */
+  agent_id: string;
+};
+
+export type TCreateEmbedWidgetLinkRequest = {
+  agent_id: string;
+  /**
+   * Exact origins (scheme + host) that are allowed to use the embed widget.
+   * Wildcards are not supported in MVP.
+   */
+  allowedOrigins: string[];
+  /** Optional ISO date string. */
+  expiresAt?: string;
+};
+
+export type TEmbedWidget = {
+  embedId: string;
+  agentId: string;
+  allowedOrigins: string[];
+  iconUrl?: string;
+  embedUrl?: string;
+};
+
+export type TEmbedWidgetListResponse = {
+  widgets: TEmbedWidget[];
+};
+
+export type TUpdateEmbedWidgetLinkRequest = {
+  allowedOrigins: string[];
+};
+
+export type TCreateEmbedWidgetLinkResponse = TEmbedWidget;
+
 export type TCheckUserKeyResponse = {
   expiresAt: string;
 };

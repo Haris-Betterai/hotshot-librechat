@@ -5,6 +5,7 @@
 #
 # Usage:
 #   ./run.sh           # start tunnel + stack, wait until ready
+#   ./run.sh build     # rebuild the librechat image after code changes
 #   ./run.sh down      # stop local stack (keeps SSH tunnel)
 #   ./run.sh restart   # recreate api + admin-panel
 #   ./run.sh status    # show containers + health
@@ -176,8 +177,14 @@ refresh_guest_index() {
   fi
   [[ -f admin-branding/guest/index.html ]] || return 0
   log "Refreshing admin-branding/guest/index.html from librechat image..."
-  docker run --rm --entrypoint cat librechat /app/client/dist/index.html \
-    > admin-branding/guest/index.html
+  if ! docker run --rm --entrypoint cat librechat /app/client/dist/index.html \
+    > admin-branding/guest/index.html; then
+    die "Image librechat is missing /app/client/dist/index.html (frontend build did not land in the image).
+Rebuild with:
+  ./run.sh build
+Then:
+  ./run.sh restart"
+  fi
   sed -i 's#<title>[^<]*</title>#<title>Hotshot AI</title>#' admin-branding/guest/index.html || true
 }
 
@@ -205,6 +212,12 @@ cmd_down() {
   log "Stack stopped. SSH tunnel left running (kill via: lsof -tiTCP:${TUNNEL_LOCAL_PORT} | xargs kill)."
 }
 
+cmd_build() {
+  ensure_docker
+  log "Building librechat image (do not set UID=... — it is readonly in bash)..."
+  compose build api
+}
+
 cmd_restart() {
   ensure_docker
   tunnel_up
@@ -219,6 +232,7 @@ main() {
   case "$cmd" in
     up|start|run) cmd_up ;;
     down|stop) cmd_down ;;
+    build) cmd_build ;;
     restart) cmd_restart ;;
     status|ps) cmd_status ;;
     tunnel) ensure_docker; tunnel_up ;;
@@ -227,6 +241,7 @@ main() {
 Start Hotshot LibreChat locally against the live MongoDB.
 
   ./run.sh           start SSH tunnel + Docker stack
+  ./run.sh build     rebuild the librechat image (needed after code changes)
   ./run.sh down      stop containers (tunnel keeps running)
   ./run.sh restart   recreate api + admin-panel
   ./run.sh status    containers + tunnel

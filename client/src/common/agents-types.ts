@@ -44,6 +44,10 @@ export type AgentForm = {
   skills_enabled?: boolean;
   /** Memory partition: 'agent' isolates memories per (user, agent); default shared pool */
   memory_scope?: MemoryScope;
+  intelligence?: {
+    heading?: string;
+    levels?: Array<{ label: string; model: string }>;
+  };
   provider?: AgentProvider | OptionWithIcon;
   /** @deprecated Use edges instead */
   agent_ids?: string[];

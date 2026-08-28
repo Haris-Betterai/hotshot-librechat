@@ -40,6 +40,7 @@ jest.mock('~/hooks', () => ({
 jest.mock('~/utils', () => ({
   clearMessagesCache: (...args: unknown[]) => mockClearMessagesCache(...args),
   cn: (...classes: unknown[]) => classes.filter(Boolean).join(' '),
+  viewPath: (path: string) => path,
 }));
 
 jest.mock('~/components/Chat/Menus/OpenSidebar', () => ({

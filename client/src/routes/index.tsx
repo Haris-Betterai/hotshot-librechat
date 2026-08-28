@@ -21,6 +21,8 @@ import ShareRoute from './ShareRoute';
 import ChatRoute from './ChatRoute';
 import Search from './Search';
 import Root from './Root';
+import EmbedRoute from './EmbedRoute';
+import { staffHomePath } from '~/utils';
 
 const AuthLayout = () => (
   <AuthContextProvider>
@@ -131,12 +133,86 @@ export const router = createBrowserRouter(
               element: <ChatRoute />,
             },
             {
+              path: 'embed/:embedId',
+              element: <EmbedRoute />,
+            },
+            {
               path: 'search',
               element: <Search />,
             },
             {
               path: 'prompts',
               element: <Navigate to="/prompts/new" replace={true} />,
+            },
+            {
+              path: 'prompts/new',
+              lazy: loadInlinePromptsView,
+            },
+            {
+              path: 'prompts/:promptId',
+              lazy: loadInlinePromptsView,
+            },
+            {
+              path: 'skills',
+              lazy: loadSkillsView,
+            },
+            {
+              path: 'skills/new',
+              lazy: loadSkillsView,
+            },
+            {
+              path: 'skills/:skillId',
+              lazy: loadSkillsView,
+            },
+            {
+              path: 'skills/:skillId/edit',
+              lazy: loadSkillsView,
+            },
+            {
+              path: 'projects',
+              lazy: loadProjectsView,
+            },
+            {
+              path: 'projects/:projectId',
+              lazy: loadProjectWorkspace,
+            },
+            {
+              path: 'agents',
+              element: (
+                <MarketplaceProvider>
+                  <AgentMarketplace />
+                </MarketplaceProvider>
+              ),
+            },
+            {
+              path: 'agents/:category',
+              element: (
+                <MarketplaceProvider>
+                  <AgentMarketplace />
+                </MarketplaceProvider>
+              ),
+            },
+          ],
+        },
+        {
+          path: '/staff',
+          element: <Root />,
+          children: [
+            {
+              index: true,
+              element: <Navigate to={staffHomePath()} replace={true} />,
+            },
+            {
+              path: 'c/:conversationId?',
+              element: <ChatRoute />,
+            },
+            {
+              path: 'search',
+              element: <Search />,
+            },
+            {
+              path: 'prompts',
+              element: <Navigate to="/staff/prompts/new" replace={true} />,
             },
             {
               path: 'prompts/new',

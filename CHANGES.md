@@ -85,6 +85,31 @@ More detail: **[VIEWS.md](./VIEWS.md)** · **[WORKFLOW.md](./WORKFLOW.md)**
 
 ---
 
+### 3) Embeddable floating chat widget
+
+**Problem:** Generated embed was a full 700px guest page iframe (Staff login, landing chrome). Guests also hit **No key found** because each anonymous user has no `user_provided` API key.
+
+**What we did:**
+
+- Admin **Embed widget** copies a floating launcher snippet (`/embed.js`), not a full-page iframe.
+- Embed chat UI is compact (header + messages + input; no staff login / footer).
+- Anonymous guests reuse the **admin-stored** endpoint API key.
+- Widget config (admin): upload a launcher **icon**, list/add/remove **allowed domains**.
+- Widget iframe allows **microphone** so the existing chat mic can transcribe into the input (HTTPS or localhost).
+- Mic keeps listening through pauses (tap again to stop).
+- Agent avatars load in the embed without relying on third-party cookies.
+- **Intelligence slider**: staff configure up to 4 labeled models on the agent; guests click the label in chat (full page and widget) to open a slider.
+
+**Snippet (after regenerate):**
+
+```html
+<script src="http://localhost:6041/embed.js" data-embed-id="YOUR_ID" async></script>
+```
+
+HTTPS host pages cannot load `http://localhost` (mixed content). Test on an HTTP page, or deploy Hotshot over HTTPS.
+
+---
+
 ## Deploy / server workflow (not UI, but required)
 
 **Problem:** Server was on branch `live`; updating production was unclear; local-dev compose overlay must never run on the server.

@@ -24,7 +24,7 @@ import ChatForm from './Input/ChatForm';
 import Landing from './Landing';
 import Header from './Header';
 import Footer from './Footer';
-import { cn } from '~/utils';
+import { cn, isEmbedWidget } from '~/utils';
 import store from '~/store';
 
 function LoadingSpinner() {
@@ -98,6 +98,7 @@ function ChatView({ index = 0, project }: { index?: number; project?: TChatProje
     isProjectLandingPage && project
       ? localize('com_ui_new_chat_in_project', { name: project.name })
       : undefined;
+  const isEmbed = isEmbedWidget();
 
   return (
     <ChatFormProvider {...methods}>
@@ -111,24 +112,30 @@ function ChatView({ index = 0, project }: { index?: number; project?: TChatProje
                   className={cn(
                     'flex flex-col',
                     isLandingPage
-                      ? 'flex-1 items-center justify-end sm:justify-center'
-                      : 'h-full overflow-y-auto',
+                      ? isEmbed
+                        ? 'flex-1 items-stretch justify-end'
+                        : 'flex-1 items-center justify-end sm:justify-center'
+                      : isEmbed
+                        ? 'min-h-0 flex-1 overflow-hidden'
+                        : 'h-full overflow-y-auto',
                   )}
                 >
                   {content}
                   <div
                     className={cn(
                       'w-full',
-                      isLandingPage && 'max-w-3xl transition-all duration-200 xl:max-w-4xl',
+                      isLandingPage &&
+                        !isEmbed &&
+                        'max-w-3xl transition-all duration-200 xl:max-w-4xl',
                     )}
                   >
                     {isProjectLandingPage && project && <ProjectLandingChip project={project} />}
-                    {isLandingPage && <ConversationStarters />}
+                    {isLandingPage && !isEmbed && <ConversationStarters />}
                     <ChatForm index={index} placeholder={chatFormPlaceholder} />
-                    {!isLandingPage && <Footer />}
+                    {!isLandingPage && !isEmbed && <Footer />}
                   </div>
                 </div>
-                {isLandingPage && <Footer />}
+                {isLandingPage && !isEmbed && <Footer />}
               </>
             </div>
           </Presentation>

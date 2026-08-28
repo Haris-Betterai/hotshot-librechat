@@ -4,4 +4,6 @@ const matchesRouteStart = (pathname: string, pattern: string) =>
   matchPath({ path: pattern, end: false }, pathname) != null;
 
 export const isArtifactRoute = (pathname: string) =>
-  matchesRouteStart(pathname, '/c/*') || matchesRouteStart(pathname, '/share/*');
+  matchesRouteStart(pathname, '/c/*') ||
+  matchesRouteStart(pathname, '/staff/c/*') ||
+  matchesRouteStart(pathname, '/share/*');

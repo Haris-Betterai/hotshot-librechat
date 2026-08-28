@@ -17,6 +17,7 @@ import VersionButton from './Version/VersionButton';
 import DuplicateAgent from './DuplicateAgent';
 import AdminSettings from './AdminSettings';
 import DeleteButton from './DeleteButton';
+import EmbedWidget from './embed/Widget';
 import { Panel } from '~/common';
 
 export default function AgentFooter({
@@ -62,6 +63,7 @@ export default function AgentFooter({
   const canShareRemoteAgent = hasRemoteAgentPermission(PermissionBits.SHARE);
   const isSaving = createMutation.isLoading || updateMutation.isLoading || isAvatarUploading;
   const saveLabel = agent_id ? localize('com_ui_save') : localize('com_ui_create');
+
   const renderSaveButton = () => (
     <span className="t-icon-swap" data-state={isSaving ? 'b' : 'a'} aria-hidden={false}>
       <span className="t-icon" data-icon="a">
@@ -125,6 +127,7 @@ export default function AgentFooter({
           )}
         {(agent?.author === user?.id || user?.role === SystemRoles.ADMIN || canEditThisAgent) &&
           !permissionsLoading && <DuplicateAgent agent_id={agent_id} />}
+
         {/* Submit Button */}
         <button
           className="btn btn-primary focus:shadow-outline flex h-9 w-full items-center justify-center px-4 py-2 font-semibold text-white hover:bg-green-600 focus:border-green-500"
@@ -135,6 +138,8 @@ export default function AgentFooter({
           {renderSaveButton()}
         </button>
       </div>
+
+      {user?.role === SystemRoles.ADMIN && !!agent_id && <EmbedWidget agentId={agent_id} />}
     </div>
   );
 }

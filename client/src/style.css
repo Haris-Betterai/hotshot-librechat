@@ -3027,3 +3027,11 @@ html {
 .sharepoint-picker-bg {
   background-color: #f5f5f5;
 }
+
+html.embed-widget,
+html.embed-widget body,
+html.embed-widget #root {
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+}

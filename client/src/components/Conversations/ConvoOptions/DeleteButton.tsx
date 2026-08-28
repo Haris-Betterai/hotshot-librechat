@@ -16,6 +16,7 @@ import {
 import type { TMessage } from 'librechat-data-provider';
 import { useDeleteConversationMutation } from '~/data-provider';
 import { useLocalize, useNewConvo } from '~/hooks';
+import { viewPath } from '~/utils';
 import { NotificationSeverity } from '~/common';
 
 type DeleteButtonProps = {
@@ -57,7 +58,7 @@ export function DeleteConversationDialog({
       setShowDeleteDialog(false);
       if (currentConvoId === conversationId || currentConvoId === 'new') {
         newConversation();
-        navigate('/c/new', { replace: true });
+        navigate(viewPath('/c/new'), { replace: true });
       }
       setMenuOpen?.(false);
       retainView();

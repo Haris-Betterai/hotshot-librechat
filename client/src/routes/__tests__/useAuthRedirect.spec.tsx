@@ -4,6 +4,7 @@ import { render, waitFor } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import useAuthRedirect from '../useAuthRedirect';
 import { useAuthContext } from '~/hooks';
+import { useGetStartupConfig } from '~/data-provider';
 
 // Polyfill Request for React Router in test environment
 if (typeof Request === 'undefined') {
@@ -17,6 +18,10 @@ if (typeof Request === 'undefined') {
 
 jest.mock('~/hooks', () => ({
   useAuthContext: jest.fn(),
+}));
+
+jest.mock('~/data-provider', () => ({
+  useGetStartupConfig: jest.fn(() => ({ data: { publicGuestMode: false } })),
 }));
 
 /**
@@ -48,6 +53,14 @@ const createTestRouter = (basename = '/', initialEntry?: string) => {
       },
       {
         path: '/c/:id',
+        element: <TestComponent />,
+      },
+      {
+        path: '/staff',
+        element: <TestComponent />,
+      },
+      {
+        path: '/staff/c/:id',
         element: <TestComponent />,
       },
     ],
@@ -271,6 +284,24 @@ describe('useAuthRedirect', () => {
          * because navigate() with basename will re-add the prefix */
         expect(redirectTo).toBe('/c/abc123');
         expect(redirectTo).not.toContain('/librechat/');
+      },
+      { timeout: 1000 },
+    );
+  });
+
+  it('should redirect unauthenticated /staff even when public guest mode is on', async () => {
+    (useGetStartupConfig as jest.Mock).mockReturnValue({ data: { publicGuestMode: true } });
+    (useAuthContext as jest.Mock).mockReturnValue({
+      user: null,
+      isAuthenticated: false,
+    });
+
+    const router = createTestRouter('/', '/staff');
+    render(<RouterProvider router={router} />);
+
+    await waitFor(
+      () => {
+        expect(router.state.location.pathname).toBe('/login');
       },
       { timeout: 1000 },
     );

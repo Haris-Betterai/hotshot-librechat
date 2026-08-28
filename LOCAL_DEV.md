@@ -38,7 +38,7 @@ sudo chown -R "$(id -u):$(id -g)" logs uploads images skill 2>/dev/null || true
 **Build the image** (required on a new machine). First build can take **~1 hour** and look stuck after `npm run frontend` — wait until `Image librechat Built`.
 
 ```bash
-UID="$(id -u)" GID="$(id -g)" docker compose build api
+./run.sh build
 ./run.sh
 ```
 
@@ -54,8 +54,9 @@ This uses the **live** DB. Test chats and agent edits are production data.
 
 ```bash
 ./run.sh                  # http://localhost:6041
-./run.sh status
+./run.sh build            # after code changes (not UID=... — readonly in bash)
 ./run.sh restart
+./run.sh status
 ./run.sh down             # tunnel stays up
 ```
 
@@ -67,7 +68,8 @@ Stop the tunnel: `lsof -tiTCP:27018 | xargs -r kill`
 
 | What you see | What to do |
 |--------------|------------|
-| No **Staff login**, `/api/config` has no `publicGuestMode` | Image is old. Run the **build** step above, then `./run.sh`. |
+| No **Staff login**, `/api/config` has no `publicGuestMode` | Image is old. Run `./run.sh build`, then `./run.sh`. |
+| `bash: UID: readonly variable` | Do not prefix commands with `UID=...`. Use `./run.sh build`. |
 | Console **404** on `hooks.*.js` / blank page after a rebuild | Stale guest HTML. `./run.sh` should fix it; then Ctrl+Shift+R. Or: `docker run --rm --entrypoint cat librechat /app/client/dist/index.html > admin-branding/guest/index.html` then `./run.sh restart`. |
 | Blank page, spam **401** on `/api/auth/refresh` | Old cookies. Incognito, or clear site data for `localhost:6041` + unregister service workers. A few 401s then guest chat is normal. |
 | Chat works but not Hotshot / empty Mongo errors | Tunnel down: `./run.sh tunnel`. Must listen on `0.0.0.0:27018`, not only 127.0.0.1. |

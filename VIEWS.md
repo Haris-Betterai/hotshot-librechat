@@ -2,13 +2,14 @@
 
 **Keep `PUBLIC_GUEST_MODE=true` always.** Do not flip it and restart.
 
-You only need **two** views. Ignore the separate Admin Panel (`:3000`) for Hotshot agent work — it does not show/edit your chat agents.
+Customer chat and staff tools are **different URLs**. You can keep both open at the same time. You do **not** need to log out to see the customer view.
 
 ---
 
 ## The two URLs that matter
 
-### 1) Customer chat (guest)
+### 1) Customer chat (public)
+
 No login. Customers talk to Hotshot Secret AI.
 
 | Where | URL |
@@ -16,13 +17,25 @@ No login. Customers talk to Hotshot Secret AI.
 | Laptop | http://localhost:6041 |
 | Live | https://hotshotai.thebetterai.com |
 
-### 2) Staff login (see + edit agents)
-Same LibreChat app, logged in as admin.
+Staff who are already logged in can open this same URL (or click **Customer view** in the header). It stays the public chrome — no sidebar — without ending the staff session.
+
+### 2) Staff workspace
+
+Logged-in staff: sidebar, agents, model selector.
 
 | Where | URL |
 |-------|-----|
-| Laptop | http://localhost:6041/login?staff=1 |
-| Live | https://hotshotai.thebetterai.com/login?staff=1 |
+| Laptop | http://localhost:6041/staff |
+| Live | https://hotshotai.thebetterai.com/staff |
+
+First time: http://localhost:6041/login?staff=1 (or **Staff login** on the public header).
+
+Login with:
+
+- Email: `betteraibots@gmail.com`
+- Your admin password
+
+After login you land on `/staff`. Open **Agents** in the side panel to view/edit Hotshot Secret AI.
 
 **If `/login?staff=1` keeps sending you back to chat:** you are still a guest.
 In the browser console run:
@@ -34,16 +47,18 @@ location.href = '/login?staff=1';
 
 Or open a **private/incognito** window → go to `/login?staff=1`.
 
-Login with:
+---
 
-- Email: `betteraibots@gmail.com`
-- Your admin password
+## Switch without logout
 
-Then open **Agents** in the side panel to view/edit Hotshot Secret AI.
+| You want | Open |
+|----------|------|
+| Customer UI | `/` or `/c/new` (or **Customer view**) |
+| Staff UI | `/staff` (or **Staff** on the public header) |
 
-Staff also get the **model / agent dropdown** in the header (enabled via `interface.modelSelect` in `librechat.yaml`). Guests do not see it — they stay on Hotshot Secret AI only.
+Two browser tabs — one on each URL — is the intended workflow.
 
-(Or click **Staff login** in the guest header after you deploy the latest UI.)
+Logout is only needed when you want to end the staff session entirely.
 
 ---
 
@@ -55,21 +70,6 @@ Staff also get the **model / agent dropdown** in the header (enabled via `interf
 # docker restart
 # use :3000 admin panel to edit agents  ← wrong tool for this
 ```
-
----
-
-## Switch back to customer view
-
-Just **Log out** from the staff account — you should return to guest chat automatically.
-
-If you are stuck on the login page:
-
-```js
-sessionStorage.removeItem('lc-staff-login');
-location.href = '/';
-```
-
-Or open a private window on `/`.
 
 ---
 

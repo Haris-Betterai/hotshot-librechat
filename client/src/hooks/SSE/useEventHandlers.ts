@@ -32,6 +32,8 @@ import {
   updateConvoInAllQueries,
   removeConvoFromAllQueries,
   findConversationInInfinite,
+  chatPath,
+  isChatConversationPath,
 } from '~/utils';
 import {
   startupConfigKey,
@@ -685,8 +687,8 @@ export default function useEventHandlers({
           queryClient.setQueryData<TMessage[]>([QueryKeys.messages, Constants.NEW_CONVO], []);
           setDraft({ id: String(Constants.NEW_CONVO), value: requestMessage?.text });
           restorePendingQuotes(String(Constants.NEW_CONVO), requestMessage?.quotes);
-          if (location.pathname !== `/c/${Constants.NEW_CONVO}`) {
-            navigate(`/c/${Constants.NEW_CONVO}`, { replace: true });
+          if (!isChatConversationPath(location.pathname, Constants.NEW_CONVO)) {
+            navigate(chatPath(Constants.NEW_CONVO, location.pathname), { replace: true });
           }
           return;
         }
@@ -744,14 +746,17 @@ export default function useEventHandlers({
           }
 
           const isNewChat =
-            location.pathname === `/c/${Constants.NEW_CONVO}` &&
+            isChatConversationPath(location.pathname, Constants.NEW_CONVO) &&
             currentConvoId === Constants.NEW_CONVO;
 
           setFinalMessages(currentConvoId, isNewChat ? [] : [...messages]);
           setDraft({ id: currentConvoId, value: requestMessage?.text });
           restorePendingQuotes(currentConvoId, requestMessage?.quotes);
           if (isNewChat) {
-            navigate(`/c/${Constants.NEW_CONVO}`, { replace: true, state: { focusChat: true } });
+            navigate(chatPath(Constants.NEW_CONVO, location.pathname), {
+              replace: true,
+              state: { focusChat: true },
+            });
           }
           return;
         }
@@ -856,9 +861,9 @@ export default function useEventHandlers({
             queryClient.invalidateQueries([QueryKeys.project, conversation.chatProjectId]);
           }
 
-          if (location.pathname === `/c/${Constants.NEW_CONVO}`) {
+          if (isChatConversationPath(location.pathname, Constants.NEW_CONVO)) {
             preserveSubagentAtomsForNewConvoIdRef.current = conversation.conversationId;
-            navigate(`/c/${conversation.conversationId}`, { replace: true });
+            navigate(chatPath(conversation.conversationId, location.pathname), { replace: true });
           }
         }
       } finally {

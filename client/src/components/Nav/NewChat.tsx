@@ -3,7 +3,7 @@ import { QueryKeys } from 'librechat-data-provider';
 import { useQueryClient } from '@tanstack/react-query';
 import { TooltipAnchor, Button, NewChatIcon } from '@librechat/client';
 import { useLocalize, useNewConvo } from '~/hooks';
-import { clearMessagesCache, cn } from '~/utils';
+import { clearMessagesCache, cn, viewPath } from '~/utils';
 import store from '~/store';
 
 export default function NewChat({
@@ -20,7 +20,7 @@ export default function NewChat({
 
   const clickHandler: React.MouseEventHandler<HTMLButtonElement> = (e) => {
     if (e.button === 0 && (e.ctrlKey || e.metaKey)) {
-      window.open('/c/new', '_blank');
+        window.open(viewPath('/c/new'), '_blank');
       return;
     }
     clearMessagesCache(queryClient, conversation?.conversationId);

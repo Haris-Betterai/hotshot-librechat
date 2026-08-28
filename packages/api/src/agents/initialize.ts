@@ -29,6 +29,7 @@ import type {
   EndpointTokenConfig,
   InitializeResultBase,
 } from '~/types';
+import { resolveIntelligenceModel } from './intelligence';
 import type { LCAvailableTools, RequestScopedMCPConnectionStore } from '../mcp/types';
 import type { ResolvedManualSkill, ResolvedAlwaysApplySkill } from './skills';
 import type { TFilterFilesByAgentAccess } from './resources';
@@ -626,6 +627,16 @@ export async function initializeAgent(
     throw new Error(
       `{ "type": "${ErrorTypes.INVALID_AGENT_PROVIDER}", "info": "${agent.provider}" }`,
     );
+  }
+
+  if (isInitialAgent === true) {
+    const overrideModel = resolveIntelligenceModel(
+      agent.intelligence,
+      endpointOption?.modelLabel,
+    );
+    if (overrideModel) {
+      agent.model = overrideModel;
+    }
   }
 
   let currentFiles: IMongoFile[] | undefined;

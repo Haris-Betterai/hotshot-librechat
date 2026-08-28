@@ -1,7 +1,8 @@
 const cookies = require('cookie');
 const jwt = require('jsonwebtoken');
 const openIdClient = require('openid-client');
-const { logger } = require('@librechat/data-schemas');
+const { logger, activeExpirationFilter, runAsSystem, getTenantId } = require('@librechat/data-schemas');
+const mongoose = require('mongoose');
 const {
   math,
   isEnabled,
@@ -362,8 +363,70 @@ const graphTokenController = async (req, res) => {
   }
 };
 
+/**
+ * Initialize an "authorized embed" guest session. Unlike PUBLIC_GUEST_MODE,
+ * this is gated by an admin-generated embedId (the allowed embed sites are
+ * enforced via CSP `frame-ancestors` on the `/embed/:embedId` document).
+ */
+const guestEmbedController = async (req, res) => {
+  const { embedId } = req.params;
+
+  if (!embedId) {
+    return res.status(400).json({ message: 'Missing embedId' });
+  }
+
+  const EmbedWidgetLink = mongoose.models.EmbedWidgetLink;
+  const viewerTenantId = getTenantId();
+
+  const findEmbed = async () =>
+    (await EmbedWidgetLink.findOne({ embedId, ...activeExpirationFilter() }).lean()) ?? null;
+
+  // Resolve within the viewer tenant first, then broaden to system scope so
+  // a share owned by another tenant can still resolve (authorization remains
+  // gated by allowedOrigins below).
+  let rawEmbed = viewerTenantId ? await findEmbed() : await runAsSystem(findEmbed);
+  if (!rawEmbed && viewerTenantId) {
+    rawEmbed = await runAsSystem(findEmbed);
+  }
+
+  if (!rawEmbed) {
+    return res.status(404).json({ message: 'Embed not found' });
+  }
+
+  /**
+   * Security: the browser doesn't reliably provide the embedding site's
+   * origin to an iframe's same-origin API calls. Instead, we use
+   * `Sec-Fetch-Site` to reject direct cross-site calls to this endpoint.
+   *
+   * - Requests coming from an embedded iframe to the same origin typically
+   *   report `same-origin`.
+   * - A caller from a random external site calling this API directly reports
+   *   `cross-site` and is rejected.
+   */
+  const secFetchSite = req.headers['sec-fetch-site'];
+  if (typeof secFetchSite === 'string' && secFetchSite.toLowerCase() === 'cross-site') {
+    return res.status(403).json({ message: 'Cross-site embed initialization is forbidden' });
+  }
+
+  try {
+    const appConfig = await getAppConfig();
+    const user = await createUser(createGuestUser(), appConfig?.balance, false, true);
+    const token = await setAuthTokens(user._id, res, null, req);
+
+    return res.status(200).send({
+      token,
+      user: sanitizeUserForAuthResponse(user),
+      agent_id: rawEmbed.agentId,
+    });
+  } catch (err) {
+    logger.error('[guestEmbedController]', err);
+    return res.status(500).json({ message: 'Unable to start an embed guest session' });
+  }
+};
+
 module.exports = {
   guestController,
+  guestEmbedController,
   refreshController,
   registrationController,
   resetPasswordController,

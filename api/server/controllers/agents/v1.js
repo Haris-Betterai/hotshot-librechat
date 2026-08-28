@@ -14,6 +14,7 @@ const {
   collectToolResourceFileIds,
   convertOcrToContextInPlace,
   stripFileIdsFromToolResources,
+  parseIntelligence,
 } = require('@librechat/api');
 const {
   Time,
@@ -356,6 +357,9 @@ const createAgentHandler = async (req, res) => {
   try {
     const validatedData = agentCreateSchema.parse(req.body);
     const { tools = [], ...agentData } = removeNullishValues(validatedData);
+    if (Object.prototype.hasOwnProperty.call(req.body ?? {}, 'intelligence')) {
+      agentData.intelligence = parseIntelligence(req.body.intelligence);
+    }
 
     if (agentData.model_parameters && typeof agentData.model_parameters === 'object') {
       agentData.model_parameters = removeNullishValues(
@@ -549,6 +553,7 @@ const getAgentHandler = async (req, res, expandProperties = false) => {
         provider: agent.provider,
         model: agent.model,
         model_parameters: getSafeModelParameters(agent.model_parameters),
+        intelligence: agent.intelligence,
         isPublic: agent.isPublic,
         version: agent.version,
         // Safe metadata
@@ -616,6 +621,9 @@ const updateAgentHandler = async (req, res) => {
     // Preserve explicit null for avatar to allow resetting the avatar
     const { avatar: avatarField, _id, ...rest } = validatedData;
     const updateData = removeNullishValues(rest);
+    if (Object.prototype.hasOwnProperty.call(req.body ?? {}, 'intelligence')) {
+      updateData.intelligence = parseIntelligence(req.body.intelligence);
+    }
 
     if (updateData.model_parameters && typeof updateData.model_parameters === 'object') {
       updateData.model_parameters = removeNullishValues(

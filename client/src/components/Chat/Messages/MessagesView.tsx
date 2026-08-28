@@ -9,7 +9,7 @@ import { MessagesViewProvider } from '~/Providers';
 import { fontSizeAtom } from '~/store/fontSize';
 import MultiMessage from './MultiMessage';
 import MessageNav from './MessageNav';
-import { cn } from '~/utils';
+import { cn, isEmbedWidget } from '~/utils';
 import store from '~/store';
 
 function MessagesViewContent({
@@ -50,7 +50,13 @@ function MessagesViewContent({
               width: '100%',
             }}
           >
-            <div ref={contentRef} className="flex flex-col pb-9 pt-14 dark:bg-transparent">
+            <div
+              ref={contentRef}
+              className={cn(
+                'flex flex-col pb-9 dark:bg-transparent',
+                isEmbedWidget() ? 'pt-2' : 'pt-14',
+              )}
+            >
               {(_messagesTree && _messagesTree.length == 0) || _messagesTree === null ? (
                 <div
                   className={cn(

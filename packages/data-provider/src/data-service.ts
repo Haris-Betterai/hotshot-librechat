@@ -90,6 +90,30 @@ export function createSharedLink(
   });
 }
 
+export function listEmbedWidgets(agentId: string): Promise<t.TEmbedWidgetListResponse> {
+  return request.get(`${endpoints.embeds()}?agent_id=${encodeURIComponent(agentId)}`);
+}
+
+export function createEmbedWidgetLink(
+  payload: t.TCreateEmbedWidgetLinkRequest,
+): Promise<t.TCreateEmbedWidgetLinkResponse> {
+  return request.post(endpoints.embeds(), payload);
+}
+
+export function updateEmbedWidgetLink(
+  embedId: string,
+  payload: t.TUpdateEmbedWidgetLinkRequest,
+): Promise<t.TCreateEmbedWidgetLinkResponse> {
+  return request.patch(endpoints.embedWidget(embedId), payload);
+}
+
+export function uploadEmbedWidgetIcon(
+  embedId: string,
+  formData: FormData,
+): Promise<t.TCreateEmbedWidgetLinkResponse> {
+  return request.postMultiPart(endpoints.embedWidgetIcon(embedId), formData);
+}
+
 export function updateSharedLink(
   shareId: string,
   targetMessageId?: string,

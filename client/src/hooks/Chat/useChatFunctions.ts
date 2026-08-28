@@ -31,6 +31,7 @@ import {
   hasStreamStartFailed,
   createDualMessageContent,
   getRouteChatProjectId,
+  chatPath,
 } from '~/utils';
 import useFocusRegeneratedResponse from '~/hooks/Chat/useFocusRegeneratedResponse';
 import useSetFilesToDelete from '~/hooks/Files/useSetFilesToDelete';
@@ -402,7 +403,7 @@ export default function useChatFunctions({
       currentMessages = [];
       conversationId = null;
       const projectSearch = chatProjectId ? `?projectId=${encodeURIComponent(chatProjectId)}` : '';
-      navigate(`/c/new${projectSearch}`, { state: { focusChat: true } });
+      navigate(`${chatPath(Constants.NEW_CONVO)}${projectSearch}`, { state: { focusChat: true } });
     }
 
     const targetParentMessageId = isRegenerate ? messageId : latestMessage?.parentMessageId;

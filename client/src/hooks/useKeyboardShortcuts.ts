@@ -18,7 +18,7 @@ import {
 import { mainTextareaId, NotificationSeverity } from '~/common';
 import { useArchiveConvoMutation } from '~/data-provider';
 import { useHasAccess, useLocalize } from '~/hooks';
-import { clearMessagesCache } from '~/utils';
+import { clearMessagesCache, viewPath } from '~/utils';
 import useNewConvo from './useNewConvo';
 import store from '~/store';
 
@@ -428,7 +428,9 @@ export function useShortcutActions(): ShortcutAction[] {
   const queryClient = useQueryClient();
   const { newConversation } = useNewConvo();
   const { showToast } = useToastContext();
-  const routeMatch = useMatch('/c/:conversationId');
+  const publicMatch = useMatch('/c/:conversationId');
+  const staffMatch = useMatch('/staff/c/:conversationId');
+  const routeMatch = staffMatch ?? publicMatch;
   const routeConvoId = routeMatch?.params.conversationId ?? null;
   const conversation = useRecoilValue(store.conversationByIndex(0));
   const isSubmitting = useRecoilValue(store.isSubmittingFamily(0));
@@ -633,7 +635,7 @@ export function useShortcutActions(): ShortcutAction[] {
       {
         onSuccess: () => {
           newConversation();
-          navigate('/c/new', { replace: true });
+          navigate(viewPath('/c/new'), { replace: true });
         },
         onError: () => {
           showToast({

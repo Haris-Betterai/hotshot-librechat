@@ -2,13 +2,14 @@ import { Input } from '@librechat/client';
 import { Controller, useWatch, useFormContext } from 'react-hook-form';
 import { EModelEndpoint, getEndpointField } from 'librechat-data-provider';
 import type { AgentForm, IconComponentTypes } from '~/common';
-import AgentCategorySelector from './AgentCategorySelector';
 import { useLocalize, useAgentCapabilities } from '~/hooks';
+import AgentCategorySelector from './AgentCategorySelector';
 import { validateEmail, getIconKey, cn } from '~/utils';
 import { useAgentFileEntries } from './Tools/hooks';
 import { useAgentPanelContext } from '~/Providers';
 import ToolsSection from './Tools/ToolsSection';
 import { icons } from '~/hooks/Endpoint/Icons';
+import Levels from './intelligence/Levels';
 import Instructions from './Instructions';
 import FileContext from './FileContext';
 import AgentAvatar from './AgentAvatar';
@@ -148,6 +149,8 @@ export default function AgentConfig() {
           <AgentCategorySelector className="w-full rounded-lg" />
         </div>
       </div>
+
+      <Levels />
 
       {/* INSTRUCTIONS */}
       <Instructions />

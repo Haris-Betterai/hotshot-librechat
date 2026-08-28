@@ -179,6 +179,16 @@ export const refreshToken = (retry?: boolean) =>
 
 export const guestSession = () => `${BASE_URL}/api/auth/guest`;
 
+export const guestEmbedSession = (embedId: string) =>
+  `${BASE_URL}/api/auth/guest/embed/${encodeURIComponent(embedId)}`;
+
+const embedsRoot = `${BASE_URL}/api/embeds`;
+export const embeds = () => embedsRoot;
+export const embedWidget = (embedId: string) =>
+  `${embedsRoot}/${encodeURIComponent(embedId)}`;
+export const embedWidgetIcon = (embedId: string) =>
+  `${embedWidget(embedId)}/icon`;
+
 export const requestPasswordReset = () => `${BASE_URL}/api/auth/requestPasswordReset`;
 
 export const resetPassword = () => `${BASE_URL}/api/auth/resetPassword`;
