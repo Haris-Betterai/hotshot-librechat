@@ -53,10 +53,9 @@ router.post(
   loginController,
 );
 router.post('/refresh', refreshController);
-router.post('/guest', middleware.registerLimiter, middleware.checkBan, guestController);
+router.post('/guest', middleware.checkBan, guestController);
 router.post(
   '/guest/embed/:embedId',
-  middleware.registerLimiter,
   middleware.checkBan,
   guestEmbedController,
 );
