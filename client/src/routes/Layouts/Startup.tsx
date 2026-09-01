@@ -28,7 +28,7 @@ export default function StartupLayout({ isAuthenticated }: { isAuthenticated?: b
   const localize = useLocalize();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuthContext();
+  const { user } = useAuthContext();
   const isGuest = user?.provider === 'anonymous';
 
   useEffect(() => {
@@ -53,7 +53,6 @@ export default function StartupLayout({ isAuthenticated }: { isAuthenticated?: b
 
     if (staffWall && isGuest) {
       markStaffLoginIntent();
-      logout('/login?staff=1');
       return;
     }
 
@@ -74,7 +73,7 @@ export default function StartupLayout({ isAuthenticated }: { isAuthenticated?: b
     if (!hasPendingRedirect) {
       navigate(staffHomePath(), { replace: true });
     }
-  }, [isAuthenticated, isGuest, logout, navigate, data, location.search, location.pathname]);
+  }, [isAuthenticated, isGuest, navigate, data, location.search, location.pathname]);
 
   useEffect(() => {
     document.title = startupConfig?.appTitle || 'Hotshot AI';

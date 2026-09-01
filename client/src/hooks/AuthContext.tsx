@@ -106,9 +106,18 @@ const AuthContextProvider = ({
           guestInFlightRef.current = false;
         }
 
+        const isGuest = user?.provider === 'anonymous';
+        if (isGuest && wantsStaffLogin()) {
+          try {
+            sessionStorage.removeItem(SESSION_KEY);
+          } catch {
+            /* ignore */
+          }
+          return;
+        }
+
         const searchParams = new URLSearchParams(window.location.search);
         const postLoginRedirect = getPostLoginRedirect(searchParams);
-        const isGuest = user?.provider === 'anonymous';
         const safePostLoginRedirect =
           isGuest && isStaffRedirect(postLoginRedirect) ? null : postLoginRedirect;
         const safeRedirect = isGuest && isStaffRedirect(redirect) ? '/c/new' : redirect;
@@ -152,7 +161,13 @@ const AuthContextProvider = ({
         /* ignore */
       }
       setError(undefined);
-      setUserContext({ token, isAuthenticated: true, user, redirect: staffHomePath() });
+      isExternalRedirectRef.current = true;
+      setTokenHeader(token);
+      setUser(user);
+      setToken(token);
+      setIsAuthenticated(true);
+      setQueriesEnabled(true);
+      window.location.assign(staffHomePath());
     },
     onError: (error: TResError | unknown) => {
       const resError = error as TResError;
@@ -172,12 +187,9 @@ const AuthContextProvider = ({
   const completeGuestLogout = useCallback(() => {
     if (startupConfig?.publicGuestMode === false) {
       logoutInProgressRef.current = false;
-      setUserContext({
-        token: undefined,
-        isAuthenticated: false,
-        user: undefined,
-        redirect: '/login',
-      });
+      isExternalRedirectRef.current = true;
+      setTokenHeader(undefined);
+      window.location.replace('/login');
       return;
     }
 
@@ -188,13 +200,15 @@ const AuthContextProvider = ({
     }
     guestInFlightRef.current = true;
     createGuestSession(undefined, {
-      onSuccess: ({ user, token }) => {
+      onSuccess: ({ token }) => {
         if (generation !== authGenerationRef.current) {
           guestInFlightRef.current = false;
           return;
         }
         logoutInProgressRef.current = false;
-        setUserContext({ user, token, isAuthenticated: true, redirect: '/c/new' });
+        isExternalRedirectRef.current = true;
+        setTokenHeader(token);
+        window.location.replace('/c/new');
       },
       onError: () => {
         guestInFlightRef.current = false;
@@ -202,15 +216,12 @@ const AuthContextProvider = ({
           return;
         }
         logoutInProgressRef.current = false;
-        setUserContext({
-          token: undefined,
-          isAuthenticated: false,
-          user: undefined,
-          redirect: '/c/new',
-        });
+        isExternalRedirectRef.current = true;
+        setTokenHeader(undefined);
+        window.location.replace('/c/new');
       },
     });
-  }, [createGuestSession, setUserContext, startupConfig?.publicGuestMode]);
+  }, [createGuestSession, startupConfig?.publicGuestMode]);
 
   const isStaffLogoutRedirect = useCallback(
     () =>
@@ -231,13 +242,9 @@ const AuthContextProvider = ({
       return;
     }
     logoutInProgressRef.current = false;
-    setUserContext({
-      token: undefined,
-      isAuthenticated: false,
-      user: undefined,
-      redirect: '/login?staff=1',
-    });
-  }, [completeGuestLogout, isStaffLogoutRedirect, setUserContext]);
+    isExternalRedirectRef.current = true;
+    window.location.assign('/login?staff=1');
+  }, [completeGuestLogout, isStaffLogoutRedirect]);
 
   const { mutate: logoutMutate } = useLogoutUserMutation({
     onSuccess: (data) => {
@@ -438,6 +445,10 @@ const AuthContextProvider = ({
         }
         const { user, token = '' } = data ?? {};
         if (token) {
+          if (user?.provider === 'anonymous' && wantsStaffLogin()) {
+            setUserContext({ user, token, isAuthenticated: true });
+            return;
+          }
           const storedRedirect = sessionStorage.getItem(SESSION_KEY);
           sessionStorage.removeItem(SESSION_KEY);
           const baseUrl = apiBaseUrl();

@@ -13,7 +13,7 @@ import AddMultiConvo from './AddMultiConvo';
 import { useAuthContext, useHasAccess, useLocalize } from '~/hooks';
 import { useChatContext, useAgentsMapContext } from '~/Providers';
 import NewChat from '~/components/Nav/NewChat';
-import { cn, isEmbedWidget, isStaffPath, markStaffLoginIntent, publicHomePath, staffHomePath } from '~/utils';
+import { cn, SESSION_KEY, isEmbedWidget, isStaffPath, markStaffLoginIntent, publicHomePath, staffHomePath } from '~/utils';
 import store from '~/store';
 
 const defaultInterface = getConfigDefaults().interface;
@@ -56,9 +56,13 @@ function Header() {
 
   const openStaffLogin = useCallback(() => {
     markStaffLoginIntent();
-    navigate('/login?staff=1');
-    logout('/login?staff=1');
-  }, [logout, navigate]);
+    try {
+      sessionStorage.removeItem(SESSION_KEY);
+    } catch {
+      /* ignore */
+    }
+    window.location.assign('/login?staff=1');
+  }, []);
 
   const staffLoginButton =
     isPublicChrome && isGuest && startupConfig?.publicGuestMode === true ? (

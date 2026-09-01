@@ -258,8 +258,28 @@ describe('AuthContextProvider — logout onSuccess/onError handling', () => {
     );
   });
 
+  it('hard-redirects to guest chat after logout creates a guest session', () => {
+    const replaceSpy = jest.spyOn(window.location, 'replace').mockImplementation(() => {});
+    renderProvider();
+
+    act(() => {
+      mockCapturedLogoutOptions.onSuccess({ message: 'Logout successful' });
+    });
+
+    const [, guestOptions] = mockGuestMutate.mock.calls[0] as [
+      unknown,
+      { onSuccess: (data: { user: { provider: string }; token: string }) => void },
+    ];
+    act(() => {
+      guestOptions.onSuccess({ user: { provider: 'anonymous' }, token: 'guest-token' });
+    });
+
+    expect(replaceSpy).toHaveBeenCalledWith('/c/new');
+  });
+
   it('sends staff login to /login?staff=1 without starting a guest session', () => {
     jest.useFakeTimers();
+    const assignSpy = jest.spyOn(window.location, 'assign').mockImplementation(() => {});
     const { getByTestId } = renderProvider();
 
     act(() => {
@@ -269,12 +289,13 @@ describe('AuthContextProvider — logout onSuccess/onError handling', () => {
     });
 
     expect(mockGuestMutate).not.toHaveBeenCalled();
-    expect(mockNavigate).toHaveBeenCalledWith('/login?staff=1', { replace: true });
+    expect(assignSpy).toHaveBeenCalledWith('/login?staff=1');
     jest.useRealTimers();
   });
 
   it('does not reuse a staff-login redirect for a later normal logout', () => {
     jest.useFakeTimers();
+    jest.spyOn(window.location, 'assign').mockImplementation(() => {});
     const { getByTestId } = renderProvider();
 
     act(() => {
@@ -457,6 +478,33 @@ describe('AuthContextProvider — silentRefresh post-login redirect', () => {
 
     expect(mockNavigate).toHaveBeenCalledWith('/c/new', { replace: true });
     expect(mockNavigate).not.toHaveBeenCalledWith('https://evil.com/steal', expect.anything());
+    expect(sessionStorage.getItem(SESSION_KEY)).toBeNull();
+    jest.useRealTimers();
+  });
+
+  it('keeps a guest on /login?staff=1 instead of bouncing to /c/new', () => {
+    jest.useFakeTimers();
+    window.history.replaceState({}, '', '/login?staff=1');
+    sessionStorage.setItem(SESSION_KEY, '/c/new');
+
+    renderProviderLive();
+
+    const [, refreshOptions] = mockRefreshMutate.mock.calls[0] as [
+      unknown,
+      { onSuccess: (data: unknown) => void },
+    ];
+
+    act(() => {
+      refreshOptions.onSuccess({
+        user: { id: 'guest', provider: 'anonymous' },
+        token: 'guest-token',
+      });
+    });
+    act(() => {
+      jest.advanceTimersByTime(100);
+    });
+
+    expect(mockNavigate).not.toHaveBeenCalled();
     expect(sessionStorage.getItem(SESSION_KEY)).toBeNull();
     jest.useRealTimers();
   });

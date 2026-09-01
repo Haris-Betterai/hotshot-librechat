@@ -186,6 +186,11 @@ Then:
   ./run.sh restart"
   fi
   sed -i 's#<title>[^<]*</title>#<title>Hotshot AI</title>#' admin-branding/guest/index.html || true
+  # PWA service worker made Staff login / logout need a hard refresh.
+  sed -i 's#<script id="vite-plugin-pwa:register-sw"[^>]*></script>##' admin-branding/guest/index.html || true
+  if ! grep -q 'serviceWorker.getRegistrations' admin-branding/guest/index.html; then
+    sed -i 's#</head>#<script>if(navigator.serviceWorker){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(reg){reg.unregister();});});}</script></head>#' admin-branding/guest/index.html || true
+  fi
 }
 
 cmd_up() {

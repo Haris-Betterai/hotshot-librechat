@@ -72,7 +72,10 @@ describe('StartupLayout — redirect race condition', () => {
 
   afterEach(() => {
     window.history.replaceState({}, '', '/');
-    jest.restoreAllMocks();
+    jest.requireMock('~/hooks').useAuthContext.mockReturnValue({
+      user: { provider: 'local', email: 'staff@example.com' },
+      logout: jest.fn(),
+    });
   });
 
   it('navigates to /staff/c/new when authenticated with no pending redirect', async () => {
@@ -118,5 +121,23 @@ describe('StartupLayout — redirect race condition', () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     expect(router.state.location.pathname).toBe('/login');
+  });
+
+  it('keeps a guest on /login?staff=1 without calling logout', async () => {
+    const logout = jest.fn();
+    jest.requireMock('~/hooks').useAuthContext.mockReturnValue({
+      user: { provider: 'anonymous' },
+      logout,
+    });
+    window.history.replaceState({}, '', '/login?staff=1');
+
+    const router = createTestRouter('/login?staff=1', true);
+    render(<RouterProvider router={router} />);
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(router.state.location.pathname).toBe('/login');
+    expect(router.state.location.search).toBe('?staff=1');
+    expect(logout).not.toHaveBeenCalled();
   });
 });

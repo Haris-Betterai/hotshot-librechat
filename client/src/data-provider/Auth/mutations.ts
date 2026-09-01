@@ -20,10 +20,10 @@ export const useLogoutUserMutation = (
     mutationFn: () => dataService.logout(),
     ...(options || {}),
     onSuccess: (...args) => {
-      setQueriesEnabled(false);
       resetDefaultPreset();
       clearStates();
       queryClient.removeQueries();
+      setQueriesEnabled(true);
       options?.onSuccess?.(...args);
     },
   });
