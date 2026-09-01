@@ -56,8 +56,9 @@ function Header() {
 
   const openStaffLogin = useCallback(() => {
     markStaffLoginIntent();
+    navigate('/login?staff=1');
     logout('/login?staff=1');
-  }, [logout]);
+  }, [logout, navigate]);
 
   const staffLoginButton =
     isPublicChrome && isGuest && startupConfig?.publicGuestMode === true ? (

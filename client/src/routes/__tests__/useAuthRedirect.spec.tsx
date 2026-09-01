@@ -333,4 +333,28 @@ describe('useAuthRedirect', () => {
 
     expect(router.state.location.search).toBe('');
   });
+
+  it('keeps ?staff=1 on /login when public guest mode is on', async () => {
+    (useGetStartupConfig as jest.Mock).mockReturnValue({ data: { publicGuestMode: true } });
+    (useAuthContext as jest.Mock).mockReturnValue({
+      user: null,
+      isAuthenticated: false,
+    });
+
+    const router = createMemoryRouter(
+      [
+        {
+          path: '/login',
+          element: <TestComponent />,
+        },
+      ],
+      { initialEntries: ['/login?staff=1'] },
+    );
+    render(<RouterProvider router={router} />);
+
+    await new Promise((resolve) => setTimeout(resolve, 400));
+
+    expect(router.state.location.pathname).toBe('/login');
+    expect(router.state.location.search).toBe('?staff=1');
+  });
 });

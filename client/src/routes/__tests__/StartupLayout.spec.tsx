@@ -57,6 +57,10 @@ const createTestRouter = (initialEntry: string, isAuthenticated: boolean) =>
         path: '/staff/c/new',
         element: <NewConversation />,
       },
+      {
+        path: '/c/new',
+        element: <NewConversation />,
+      },
     ],
     { initialEntries: [initialEntry] },
   );

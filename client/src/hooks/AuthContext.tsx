@@ -11,8 +11,10 @@ import { debounce } from 'lodash';
 import { useRecoilState, useSetRecoilState } from 'recoil';
 import { useNavigate } from 'react-router-dom';
 import {
+  request,
   apiBaseUrl,
   SystemRoles,
+  getTokenHeader,
   setTokenHeader,
   isSystemRoleName,
   buildLoginRedirectUrl,
@@ -40,6 +42,18 @@ if (import.meta.hot) {
   import.meta.hot.data.__AuthContext = AuthContext;
 }
 
+function isStaffRedirect(target?: string | null): boolean {
+  if (!target) {
+    return false;
+  }
+
+  try {
+    return isStaffPath(new URL(target, window.location.origin).pathname);
+  } catch {
+    return false;
+  }
+}
+
 const AuthContextProvider = ({
   authConfig,
   children,
@@ -47,8 +61,11 @@ const AuthContextProvider = ({
   authConfig?: TAuthConfig;
   children: ReactNode;
 }) => {
-  const MAX_REFRESH_FAILURES = 2;
   const isExternalRedirectRef = useRef(false);
+  const logoutInProgressRef = useRef(false);
+  const authGenerationRef = useRef(0);
+  const refreshInFlightRef = useRef(false);
+  const guestInFlightRef = useRef(false);
   const [user, setUser] = useRecoilState(store.user);
   const logoutRedirectRef = useRef<string | undefined>(undefined);
   const [token, setToken] = useState<string | undefined>(undefined);
@@ -57,7 +74,6 @@ const AuthContextProvider = ({
   const setQueriesEnabled = useSetRecoilState<boolean>(store.queriesEnabled);
   const embedGuestInitAttemptedRef = useRef(false);
   const currentEmbedIdRef = useRef<string | null>(null);
-  const refreshFailureCountRef = useRef(0);
   const refreshHaltedRef = useRef(false);
 
   const userRoleName = user?.role ?? '';
@@ -85,18 +101,25 @@ const AuthContextProvider = ({
         setIsAuthenticated(isAuthenticated);
         if (isAuthenticated) {
           setQueriesEnabled(true);
+          refreshHaltedRef.current = false;
+          refreshInFlightRef.current = false;
+          guestInFlightRef.current = false;
         }
 
         const searchParams = new URLSearchParams(window.location.search);
         const postLoginRedirect = getPostLoginRedirect(searchParams);
+        const isGuest = user?.provider === 'anonymous';
+        const safePostLoginRedirect =
+          isGuest && isStaffRedirect(postLoginRedirect) ? null : postLoginRedirect;
+        const safeRedirect = isGuest && isStaffRedirect(redirect) ? '/c/new' : redirect;
 
         const logoutRedirect = logoutRedirectRef.current;
         logoutRedirectRef.current = undefined;
 
         const finalRedirect =
           logoutRedirect ??
-          postLoginRedirect ??
-          (redirect && isSafeRedirect(redirect) ? redirect : null);
+          safePostLoginRedirect ??
+          (safeRedirect && isSafeRedirect(safeRedirect) ? safeRedirect : null);
 
         if (finalRedirect == null) {
           return;
@@ -119,14 +142,15 @@ const AuthContextProvider = ({
         navigate(`/login/2fa?tempToken=${tempToken}`, { replace: true });
         return;
       }
+      authGenerationRef.current += 1;
+      logoutInProgressRef.current = false;
+      logoutRedirectRef.current = undefined;
       // Staff is authenticated now — clear the flag so a later logout returns to guest.
       try {
         clearStaffLoginIntent();
       } catch {
         /* ignore */
       }
-      refreshFailureCountRef.current = 0;
-      refreshHaltedRef.current = false;
       setError(undefined);
       setUserContext({ token, isAuthenticated: true, user, redirect: staffHomePath() });
     },
@@ -144,7 +168,78 @@ const AuthContextProvider = ({
       navigate(loginPath, { replace: true });
     },
   });
-  const logoutUser = useLogoutUserMutation({
+
+  const completeGuestLogout = useCallback(() => {
+    if (startupConfig?.publicGuestMode === false) {
+      logoutInProgressRef.current = false;
+      setUserContext({
+        token: undefined,
+        isAuthenticated: false,
+        user: undefined,
+        redirect: '/login',
+      });
+      return;
+    }
+
+    refreshHaltedRef.current = true;
+    const generation = authGenerationRef.current;
+    if (guestInFlightRef.current) {
+      return;
+    }
+    guestInFlightRef.current = true;
+    createGuestSession(undefined, {
+      onSuccess: ({ user, token }) => {
+        if (generation !== authGenerationRef.current) {
+          guestInFlightRef.current = false;
+          return;
+        }
+        logoutInProgressRef.current = false;
+        setUserContext({ user, token, isAuthenticated: true, redirect: '/c/new' });
+      },
+      onError: () => {
+        guestInFlightRef.current = false;
+        if (generation !== authGenerationRef.current) {
+          return;
+        }
+        logoutInProgressRef.current = false;
+        setUserContext({
+          token: undefined,
+          isAuthenticated: false,
+          user: undefined,
+          redirect: '/c/new',
+        });
+      },
+    });
+  }, [createGuestSession, setUserContext, startupConfig?.publicGuestMode]);
+
+  const isStaffLogoutRedirect = useCallback(
+    () =>
+      typeof logoutRedirectRef.current === 'string' &&
+      logoutRedirectRef.current.includes('staff=1'),
+    [],
+  );
+
+  const applyLoggedOutSession = useCallback(() => {
+    setTokenHeader(undefined);
+    if (!isStaffLogoutRedirect()) {
+      try {
+        clearStaffLoginIntent();
+      } catch {
+        /* ignore */
+      }
+      completeGuestLogout();
+      return;
+    }
+    logoutInProgressRef.current = false;
+    setUserContext({
+      token: undefined,
+      isAuthenticated: false,
+      user: undefined,
+      redirect: '/login?staff=1',
+    });
+  }, [completeGuestLogout, isStaffLogoutRedirect, setUserContext]);
+
+  const { mutate: logoutMutate } = useLogoutUserMutation({
     onSuccess: (data) => {
       if (data.redirect) {
         /** data.redirect is the IdP's end_session_endpoint URL — an absolute URL generated
@@ -156,44 +251,16 @@ const AuthContextProvider = ({
         window.location.replace(data.redirect);
         return;
       }
-      const staffLogout =
-        typeof logoutRedirectRef.current === 'string' &&
-        logoutRedirectRef.current.includes('staff=1');
-      if (!staffLogout) {
-        try {
-          clearStaffLoginIntent();
-        } catch {
-          /* ignore */
-        }
-      }
-      // Prefer guest home unless we know public guest mode is disabled.
-      const guestHome = startupConfig?.publicGuestMode === false ? '/login' : '/';
-      setUserContext({
-        token: undefined,
-        isAuthenticated: false,
-        user: undefined,
-        redirect: guestHome,
-      });
+      applyLoggedOutSession();
     },
     onError: (error) => {
+      logoutInProgressRef.current = false;
       doSetError((error as Error).message);
-      const staffLogout =
-        typeof logoutRedirectRef.current === 'string' &&
-        logoutRedirectRef.current.includes('staff=1');
-      if (!staffLogout) {
-        try {
-          clearStaffLoginIntent();
-        } catch {
-          /* ignore */
-        }
+      if (isStaffLogoutRedirect()) {
+        applyLoggedOutSession();
+        return;
       }
-      const guestHome = startupConfig?.publicGuestMode === false ? '/login' : '/';
-      setUserContext({
-        token: undefined,
-        isAuthenticated: false,
-        user: undefined,
-        redirect: guestHome,
-      });
+      refreshHaltedRef.current = false;
     },
   });
 
@@ -218,9 +285,13 @@ const AuthContextProvider = ({
     }
 
     embedGuestInitAttemptedRef.current = true;
+    const generation = authGenerationRef.current;
 
     createGuestEmbedSession(embedId, {
       onSuccess: ({ user, token, agent_id }) => {
+        if (generation !== authGenerationRef.current) {
+          return;
+        }
         markEmbedWidget();
         setUserContext({
           user,
@@ -230,6 +301,9 @@ const AuthContextProvider = ({
         });
       },
       onError: () => {
+        if (generation !== authGenerationRef.current) {
+          return;
+        }
         navigate('/login', { replace: true });
       },
     });
@@ -242,12 +316,23 @@ const AuthContextProvider = ({
 
   const logout = useCallback(
     (redirect?: string) => {
-      if (redirect) {
-        logoutRedirectRef.current = redirect;
+      if (logoutInProgressRef.current) {
+        return;
       }
-      logoutUser.mutate(undefined);
+
+      authGenerationRef.current += 1;
+      logoutInProgressRef.current = true;
+      logoutRedirectRef.current = redirect;
+      refreshHaltedRef.current = true;
+      request.invalidateAuthRecovery();
+      setUserContext.cancel();
+      if (!getTokenHeader()) {
+        applyLoggedOutSession();
+        return;
+      }
+      logoutMutate(undefined);
     },
-    [logoutUser],
+    [applyLoggedOutSession, logoutMutate, setUserContext],
   );
 
   const userQuery = useGetUserQuery({ enabled: !!(token ?? '') });
@@ -255,50 +340,6 @@ const AuthContextProvider = ({
   const login = (data: t.TLoginUser) => {
     loginUser.mutate(data);
   };
-
-  const fallbackToGuestMode = useCallback(() => {
-    refreshHaltedRef.current = true;
-    setTokenHeader(undefined);
-    setToken(undefined);
-    setIsAuthenticated(false);
-    setQueriesEnabled(false);
-    setUser(undefined);
-
-    if (getEmbedIdFromPath() != null) {
-      startEmbedGuestSession();
-      return;
-    }
-
-    const staffLoginRequested = wantsStaffLogin();
-    if (staffLoginRequested || isStaffPath()) {
-      navigate('/login?staff=1', { replace: true });
-      return;
-    }
-    if (startupConfig?.publicGuestMode === false) {
-      navigate('/login', { replace: true });
-      return;
-    }
-
-    createGuestSession(undefined, {
-      onSuccess: ({ user, token }) => {
-        refreshFailureCountRef.current = 0;
-        refreshHaltedRef.current = false;
-        setUserContext({ user, token, isAuthenticated: true, redirect: '/c/new' });
-      },
-      onError: () => {
-        navigate('/login', { replace: true });
-      },
-    });
-  }, [
-    createGuestSession,
-    getEmbedIdFromPath,
-    navigate,
-    setQueriesEnabled,
-    setUser,
-    setUserContext,
-    startEmbedGuestSession,
-    startupConfig?.publicGuestMode,
-  ]);
 
   const startGuestSession = useCallback(() => {
     // If we're on an admin-generated embed widget URL, initialize the
@@ -318,7 +359,7 @@ const AuthContextProvider = ({
     }
 
     const pathname = window.location.pathname;
-    const staffWall = wantsStaffLogin() || isStaffPath();
+    const staffWall = wantsStaffLogin();
     if (staffWall) {
       markStaffLoginIntent();
       navigate('/login?staff=1', { replace: true });
@@ -332,12 +373,8 @@ const AuthContextProvider = ({
       return;
     }
 
-    if (/^\/login\/?$/.test(pathname)) {
-      try {
-        clearStaffLoginIntent();
-      } catch {
-        /* ignore */
-      }
+    if (/^\/login(\/|$)/.test(pathname)) {
+      return;
     }
 
     // Only auto-guest when the server enables public guest mode.
@@ -346,11 +383,28 @@ const AuthContextProvider = ({
       return;
     }
 
+    const generation = authGenerationRef.current;
+    if (guestInFlightRef.current) {
+      return;
+    }
+    guestInFlightRef.current = true;
     createGuestSession(undefined, {
       onSuccess: ({ user, token }) => {
+        if (generation !== authGenerationRef.current) {
+          guestInFlightRef.current = false;
+          return;
+        }
         setUserContext({ user, token, isAuthenticated: true, redirect: '/c/new' });
       },
       onError: () => {
+        guestInFlightRef.current = false;
+        if (generation !== authGenerationRef.current) {
+          return;
+        }
+        if (startupConfig?.publicGuestMode === true) {
+          refreshHaltedRef.current = true;
+          return;
+        }
         navigate(buildLoginRedirectUrl());
       },
     });
@@ -368,18 +422,22 @@ const AuthContextProvider = ({
       console.log('Test mode. Skipping silent refresh.');
       return;
     }
-    if (isExternalRedirectRef.current) {
+    if (isExternalRedirectRef.current || logoutInProgressRef.current) {
       return;
     }
+    if (refreshHaltedRef.current || refreshInFlightRef.current || guestInFlightRef.current) {
+      return;
+    }
+    const generation = authGenerationRef.current;
+    refreshInFlightRef.current = true;
     refreshToken(undefined, {
       onSuccess: (data: t.TRefreshTokenResponse | undefined) => {
-        if (isExternalRedirectRef.current) {
+        refreshInFlightRef.current = false;
+        if (isExternalRedirectRef.current || generation !== authGenerationRef.current) {
           return;
         }
         const { user, token = '' } = data ?? {};
         if (token) {
-          refreshFailureCountRef.current = 0;
-          refreshHaltedRef.current = false;
           const storedRedirect = sessionStorage.getItem(SESSION_KEY);
           sessionStorage.removeItem(SESSION_KEY);
           const baseUrl = apiBaseUrl();
@@ -399,26 +457,19 @@ const AuthContextProvider = ({
         if (authConfig?.test === true) {
           return;
         }
-        refreshFailureCountRef.current += 1;
-        if (refreshFailureCountRef.current >= MAX_REFRESH_FAILURES) {
-          fallbackToGuestMode();
-          return;
-        }
+        refreshHaltedRef.current = true;
         startGuestSession();
       },
       onError: (error) => {
-        if (isExternalRedirectRef.current) {
+        refreshInFlightRef.current = false;
+        if (isExternalRedirectRef.current || generation !== authGenerationRef.current) {
           return;
         }
         console.log('refreshToken mutation error:', error);
         if (authConfig?.test === true) {
           return;
         }
-        refreshFailureCountRef.current += 1;
-        if (refreshFailureCountRef.current >= MAX_REFRESH_FAILURES) {
-          fallbackToGuestMode();
-          return;
-        }
+        refreshHaltedRef.current = true;
         startGuestSession();
       },
     });
@@ -427,7 +478,6 @@ const AuthContextProvider = ({
     refreshToken,
     setUserContext,
     startGuestSession,
-    fallbackToGuestMode,
   ]);
 
   useEffect(() => {
@@ -462,6 +512,10 @@ const AuthContextProvider = ({
 
   useEffect(() => {
     const handleTokenUpdate = (event: CustomEvent<string>) => {
+      if (logoutInProgressRef.current) {
+        setTokenHeader(undefined);
+        return;
+      }
       console.log('tokenUpdated event received event');
       setUserContext({
         token: event.detail,

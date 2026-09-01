@@ -2,7 +2,7 @@
  * @jest-environment @happy-dom/jest-environment
  */
 import React from 'react';
-import { render, act } from '@testing-library/react';
+import { render, act, fireEvent } from '@testing-library/react';
 import { RecoilRoot } from 'recoil';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
@@ -23,6 +23,7 @@ const mockApiBaseUrl = jest.fn(() => '');
 jest.mock('librechat-data-provider', () => ({
   ...jest.requireActual('librechat-data-provider'),
   setTokenHeader: jest.fn(),
+  getTokenHeader: jest.fn(() => undefined),
   apiBaseUrl: () => mockApiBaseUrl(),
 }));
 
@@ -37,6 +38,7 @@ let mockCapturedLogoutOptions: {
 };
 
 const mockRefreshMutate = jest.fn();
+const mockGuestMutate = jest.fn();
 
 jest.mock('~/data-provider', () => ({
   useLoginUserMutation: jest.fn(
@@ -57,7 +59,10 @@ jest.mock('~/data-provider', () => ({
       return { mutate: jest.fn() };
     },
   ),
+  useGuestSessionMutation: jest.fn(() => ({ mutate: mockGuestMutate })),
+  useGuestEmbedSessionMutation: jest.fn(() => ({ mutate: jest.fn() })),
   useRefreshTokenMutation: jest.fn(() => ({ mutate: mockRefreshMutate })),
+  useGetStartupConfig: jest.fn(() => ({ data: { publicGuestMode: true } })),
   useGetUserQuery: jest.fn(() => ({
     data: undefined,
     isError: false,
@@ -72,11 +77,15 @@ const authConfig: TAuthConfig = { loginRedirect: '/login', test: true };
 function TestConsumer() {
   const ctx = useAuthContext();
   return (
-    <div
-      data-testid="consumer"
-      data-authenticated={ctx.isAuthenticated}
-      data-roles={JSON.stringify(ctx.roles ?? {})}
-    />
+    <>
+      <div
+        data-testid="consumer"
+        data-authenticated={ctx.isAuthenticated}
+        data-roles={JSON.stringify(ctx.roles ?? {})}
+      />
+      <button data-testid="staff-login-logout" onClick={() => ctx.logout('/login?staff=1')} />
+      <button data-testid="normal-logout" onClick={() => ctx.logout()} />
+    </>
   );
 }
 
@@ -193,9 +202,11 @@ describe('AuthContextProvider — login onError redirect handling', () => {
 
 describe('AuthContextProvider — logout onSuccess/onError handling', () => {
   const mockSetTokenHeader = jest.requireMock('librechat-data-provider').setTokenHeader;
+  const mockGetTokenHeader = jest.requireMock('librechat-data-provider').getTokenHeader;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockGetTokenHeader.mockReturnValue('Bearer test-token');
     window.history.replaceState({}, '', '/c/some-chat');
   });
 
@@ -231,6 +242,58 @@ describe('AuthContextProvider — logout onSuccess/onError handling', () => {
     expect(replaceSpy).not.toHaveBeenCalled();
   });
 
+  it('starts a guest session after a normal logout', () => {
+    renderProvider();
+
+    act(() => {
+      mockCapturedLogoutOptions.onSuccess({ message: 'Logout successful' });
+    });
+
+    expect(mockGuestMutate).toHaveBeenCalledWith(
+      undefined,
+      expect.objectContaining({
+        onSuccess: expect.any(Function),
+        onError: expect.any(Function),
+      }),
+    );
+  });
+
+  it('sends staff login to /login?staff=1 without starting a guest session', () => {
+    jest.useFakeTimers();
+    const { getByTestId } = renderProvider();
+
+    act(() => {
+      fireEvent.click(getByTestId('staff-login-logout'));
+      mockCapturedLogoutOptions.onSuccess({ message: 'Logout successful' });
+      jest.advanceTimersByTime(100);
+    });
+
+    expect(mockGuestMutate).not.toHaveBeenCalled();
+    expect(mockNavigate).toHaveBeenCalledWith('/login?staff=1', { replace: true });
+    jest.useRealTimers();
+  });
+
+  it('does not reuse a staff-login redirect for a later normal logout', () => {
+    jest.useFakeTimers();
+    const { getByTestId } = renderProvider();
+
+    act(() => {
+      fireEvent.click(getByTestId('staff-login-logout'));
+      mockCapturedLogoutOptions.onSuccess({ message: 'Logout successful' });
+      jest.advanceTimersByTime(100);
+      mockCapturedLoginOptions.onSuccess({
+        user: { id: 'staff-user', role: 'ADMIN' },
+        token: 'staff-token',
+      });
+      jest.advanceTimersByTime(100);
+      fireEvent.click(getByTestId('normal-logout'));
+      mockCapturedLogoutOptions.onSuccess({ message: 'Logout successful' });
+    });
+
+    expect(mockGuestMutate).toHaveBeenCalled();
+    jest.useRealTimers();
+  });
+
   it('does not trigger silentRefresh after OIDC redirect', () => {
     const replaceSpy = jest.spyOn(window.location, 'replace').mockImplementation(() => {});
 
@@ -246,6 +309,43 @@ describe('AuthContextProvider — logout onSuccess/onError handling', () => {
 
     expect(replaceSpy).toHaveBeenCalled();
     expect(mockRefreshMutate).not.toHaveBeenCalled();
+  });
+
+  it('does not clear the bearer token before the logout request', () => {
+    const { getByTestId } = renderProvider();
+    mockSetTokenHeader.mockClear();
+
+    act(() => {
+      fireEvent.click(getByTestId('normal-logout'));
+    });
+
+    expect(mockSetTokenHeader).not.toHaveBeenCalled();
+  });
+
+  it('keeps the session when a real logout request fails', () => {
+    jest.useFakeTimers();
+    const { getByTestId } = renderProviderLive();
+
+    const [, refreshOptions] = mockRefreshMutate.mock.calls[0] as [
+      unknown,
+      { onSuccess: (data: unknown) => void },
+    ];
+    act(() => {
+      refreshOptions.onSuccess({ user: { id: '1', role: 'ADMIN' }, token: 'tok' });
+      jest.advanceTimersByTime(100);
+    });
+    expect(getByTestId('consumer').getAttribute('data-authenticated')).toBe('true');
+
+    mockRefreshMutate.mockClear();
+    act(() => {
+      fireEvent.click(getByTestId('normal-logout'));
+      mockCapturedLogoutOptions.onError(new Error('No auth token'));
+    });
+
+    expect(mockRefreshMutate).not.toHaveBeenCalled();
+    expect(getByTestId('consumer').getAttribute('data-authenticated')).toBe('true');
+    expect(mockGuestMutate).not.toHaveBeenCalled();
+    jest.useRealTimers();
   });
 });
 
@@ -402,6 +502,71 @@ describe('AuthContextProvider — silentRefresh subdirectory deployment', () => 
     jest.useRealTimers();
   });
 
+  it('starts a guest session from /staff instead of reopening staff login', () => {
+    window.history.replaceState({}, '', '/staff/c/new');
+    renderProviderLive();
+
+    const [, refreshOptions] = mockRefreshMutate.mock.calls[0] as [
+      unknown,
+      { onError: (error: Error) => void },
+    ];
+
+    act(() => {
+      refreshOptions.onError(new Error('no token'));
+    });
+
+    expect(mockGuestMutate).toHaveBeenCalled();
+    expect(mockNavigate).not.toHaveBeenCalledWith('/login?staff=1', { replace: true });
+  });
+
+  it('creates a guest session once when refresh fails', () => {
+    window.history.replaceState({}, '', '/c/new');
+    renderProviderLive();
+
+    expect(mockRefreshMutate).toHaveBeenCalledTimes(1);
+    const [, refreshOptions] = mockRefreshMutate.mock.calls[0] as [
+      unknown,
+      { onError: (error: Error) => void },
+    ];
+    mockRefreshMutate.mockClear();
+
+    act(() => {
+      refreshOptions.onError(new Error('Request failed with status code 401'));
+    });
+
+    expect(mockGuestMutate).toHaveBeenCalledTimes(1);
+    expect(mockRefreshMutate).not.toHaveBeenCalled();
+  });
+
+  it('does not send guests to login when guest session creation fails', () => {
+    window.history.replaceState({}, '', '/c/new');
+    renderProviderLive();
+
+    const [, refreshOptions] = mockRefreshMutate.mock.calls[0] as [
+      unknown,
+      { onError: (error: Error) => void },
+    ];
+
+    act(() => {
+      refreshOptions.onError(new Error('Request failed with status code 401'));
+    });
+
+    const [, guestOptions] = mockGuestMutate.mock.calls[0] as [
+      unknown,
+      { onError: () => void },
+    ];
+
+    act(() => {
+      guestOptions.onError();
+    });
+
+    expect(mockNavigate).not.toHaveBeenCalledWith('/login', { replace: true });
+    expect(mockNavigate).not.toHaveBeenCalledWith(
+      expect.stringMatching(/^\/login/),
+      expect.anything(),
+    );
+  });
+
   it('falls back to root when window.location.pathname equals the base path', () => {
     jest.useFakeTimers();
     window.history.replaceState({}, '', '/chat');
@@ -428,6 +593,7 @@ describe('AuthContextProvider — silentRefresh subdirectory deployment', () => 
 describe('AuthContextProvider — logout error handling', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.requireMock('librechat-data-provider').getTokenHeader.mockReturnValue('Bearer test-token');
     window.history.replaceState({}, '', '/c/some-chat');
   });
 
@@ -435,10 +601,19 @@ describe('AuthContextProvider — logout error handling', () => {
     window.history.replaceState({}, '', '/');
   });
 
-  it('clears auth state on logout error without external redirect', () => {
+  it('does not log the user out locally when logout fails without a staff redirect', () => {
     jest.useFakeTimers();
     const replaceSpy = jest.spyOn(window.location, 'replace').mockImplementation(() => {});
-    const { getByTestId } = renderProvider();
+    const { getByTestId } = renderProviderLive();
+
+    const [, refreshOptions] = mockRefreshMutate.mock.calls[0] as [
+      unknown,
+      { onSuccess: (data: unknown) => void },
+    ];
+    act(() => {
+      refreshOptions.onSuccess({ user: { id: '1', role: 'ADMIN' }, token: 'tok' });
+      jest.advanceTimersByTime(100);
+    });
 
     act(() => {
       mockCapturedLogoutOptions.onError(new Error('Logout failed'));
@@ -448,7 +623,7 @@ describe('AuthContextProvider — logout error handling', () => {
     });
 
     expect(replaceSpy).not.toHaveBeenCalled();
-    expect(getByTestId('consumer').getAttribute('data-authenticated')).toBe('false');
+    expect(getByTestId('consumer').getAttribute('data-authenticated')).toBe('true');
     jest.useRealTimers();
   });
 });

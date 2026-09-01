@@ -72,6 +72,7 @@ type RetryableAxiosRequestConfig = AxiosRequestConfig & { _retry?: boolean };
 type AuthRecoveryState = {
   lastRedirectStartedAt: number;
   refreshPromise: Promise<string | null> | null;
+  generation: number;
 };
 
 type AuthRecoveryWindow = Window & {
@@ -146,8 +147,18 @@ const getAuthRecoveryState = (): AuthRecoveryState => {
   browserWindow.__librechatAuthRecovery ??= {
     lastRedirectStartedAt: 0,
     refreshPromise: null,
+    generation: 0,
   };
+  if (!Number.isFinite(browserWindow.__librechatAuthRecovery.generation)) {
+    browserWindow.__librechatAuthRecovery.generation = 0;
+  }
   return browserWindow.__librechatAuthRecovery;
+};
+
+const invalidateAuthRecovery = () => {
+  const state = getAuthRecoveryState();
+  state.generation += 1;
+  state.refreshPromise = null;
 };
 
 const getAuthRedirectStartedAt = () => {
@@ -211,8 +222,12 @@ const startAuthRecovery = (retryRefresh?: boolean) => {
   }
 
   dispatchAuthRecoveryEvent('started');
+  const generation = state.generation;
   state.refreshPromise = refreshToken(retryRefresh)
     .then((response) => {
+      if (generation !== state.generation) {
+        return null;
+      }
       const token = response?.token ?? '';
       if (!token) {
         return null;
@@ -221,6 +236,9 @@ const startAuthRecovery = (retryRefresh?: boolean) => {
       return token;
     })
     .finally(() => {
+      if (generation !== state.generation) {
+        return;
+      }
       state.refreshPromise = null;
       dispatchAuthRecoveryEvent('finished');
     });
@@ -393,4 +411,5 @@ export default {
   guestSession,
   guestEmbedSession,
   dispatchTokenUpdatedEvent,
+  invalidateAuthRecovery,
 };

@@ -26,6 +26,10 @@ export default function useAuthRedirect() {
       return;
     }
 
+    if (/^\/login(\/|$)/.test(location.pathname)) {
+      return;
+    }
+
     const timeout = setTimeout(() => {
       if (isAuthenticated) {
         return;

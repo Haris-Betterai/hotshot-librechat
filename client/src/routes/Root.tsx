@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useMediaQuery, Spinner } from '@librechat/client';
 import {
   PromptGroupsProvider,
@@ -24,7 +24,7 @@ import { UnifiedSidebar } from '~/components/UnifiedSidebar';
 import { TermsAndConditionsModal } from '~/components/ui';
 import { useHealthCheck } from '~/data-provider';
 import { Banner } from '~/components/Banners';
-import { isEmbedWidget, isStaffPath, markStaffLoginIntent } from '~/utils';
+import { isEmbedWidget, isStaffPath, publicHomePath } from '~/utils';
 import store from '~/store';
 
 /** Isolates keyboard shortcut listeners so they only mount after auth. */
@@ -46,6 +46,7 @@ export default function Root() {
   const isSmallScreen = useMediaQuery('(max-width: 768px)');
 
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuthContext();
   const isGuest = user?.provider === 'anonymous';
   const isEmbed = isEmbedWidget();
@@ -55,10 +56,9 @@ export default function Root() {
 
   useEffect(() => {
     if (isStaffView && isGuest) {
-      markStaffLoginIntent();
-      logout('/login?staff=1');
+      navigate(publicHomePath(), { replace: true });
     }
-  }, [isStaffView, isGuest, logout]);
+  }, [isStaffView, isGuest, navigate]);
 
   const assistantsMap = useAssistantsMap({ isAuthenticated });
   const agentsMap = useAgentsMap({ isAuthenticated });

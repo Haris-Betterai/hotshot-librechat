@@ -9,6 +9,7 @@ const {
   createGuestUser,
   findOpenIDUser,
   getOpenIdIssuer,
+  shouldUseSecureCookie,
   buildOpenIDRefreshParams,
 } = require('@librechat/api');
 const {
@@ -32,6 +33,19 @@ const { getAppConfig } = require('~/server/services/Config');
 const { getOpenIdConfig, getOpenIdEmail } = require('~/strategies');
 
 const AUTH_REFRESH_USER_PROJECTION = '-password -__v -totpSecret -backupCodes -federatedTokens';
+const FAILED_REFRESH_COOKIE_OPTIONS = {
+  httpOnly: true,
+  sameSite: 'strict',
+};
+
+const clearFailedRefreshCookies = (res) => {
+  const options = {
+    ...FAILED_REFRESH_COOKIE_OPTIONS,
+    secure: shouldUseSecureCookie(),
+  };
+  res.clearCookie('refreshToken', options);
+  res.clearCookie('token_provider', options);
+};
 const OPENID_REUSE_EXPIRY_BUFFER_SECONDS = 30;
 /**
  * Max age (ms) LibreChat reuses a cached OpenID session token before forcing an IdP refresh.
@@ -245,6 +259,7 @@ const refreshController = async (req, res) => {
         logger.warn(
           `[refreshController] Redirecting to /login: error=${error ?? 'null'}, user=${user ? 'exists' : 'null'}`,
         );
+        clearFailedRefreshCookies(res);
         return res.status(401).redirect('/login');
       }
 
@@ -271,6 +286,7 @@ const refreshController = async (req, res) => {
       return res.status(200).send({ token, user: sanitizeUserForAuthResponse(user) });
     } catch (error) {
       logger.error('[refreshController] OpenID token refresh error', error);
+      clearFailedRefreshCookies(res);
       return res.status(403).send('Invalid OpenID refresh token');
     }
   }
@@ -285,6 +301,7 @@ const refreshController = async (req, res) => {
     const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
     const user = await getUserById(payload.id, AUTH_REFRESH_USER_PROJECTION);
     if (!user) {
+      clearFailedRefreshCookies(res);
       return res.status(401).redirect('/login');
     }
 
@@ -309,15 +326,18 @@ const refreshController = async (req, res) => {
 
       res.status(200).send({ token, user: sanitizeUserForAuthResponse(user) });
     } else if (req?.query?.retry) {
-      // Retrying from a refresh token request that failed (401)
+      clearFailedRefreshCookies(res);
       res.status(403).send('No session found');
     } else if (payload.exp < Date.now() / 1000) {
+      clearFailedRefreshCookies(res);
       res.status(403).redirect('/login');
     } else {
+      clearFailedRefreshCookies(res);
       res.status(401).send('Refresh token expired or not found for this user');
     }
   } catch (err) {
     logger.error(`[refreshController] Invalid refresh token:`, err);
+    clearFailedRefreshCookies(res);
     res.status(403).send('Invalid refresh token');
   }
 };

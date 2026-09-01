@@ -31,6 +31,7 @@ jest.mock('@librechat/api', () => ({
   createGuestUser: jest.fn(),
   findOpenIDUser: jest.fn(),
   getOpenIdIssuer: jest.fn(() => 'https://issuer.example.com'),
+  shouldUseSecureCookie: jest.fn(() => false),
   buildOpenIDRefreshParams: jest.fn(() => {
     const params = {};
     if (process.env.OPENID_SCOPE) {
@@ -329,6 +330,7 @@ describe('refreshController – OpenID path', () => {
       status: jest.fn().mockReturnThis(),
       send: jest.fn().mockReturnThis(),
       redirect: jest.fn(),
+      clearCookie: jest.fn().mockReturnThis(),
     };
   });
 
@@ -770,6 +772,8 @@ describe('refreshController – OpenID path', () => {
 
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.redirect).toHaveBeenCalledWith('/login');
+    expect(res.clearCookie).toHaveBeenCalledWith('refreshToken', expect.any(Object));
+    expect(res.clearCookie).toHaveBeenCalledWith('token_provider', expect.any(Object));
   });
 
   it('should return 401 and redirect when findOpenIDUser returns an error', async () => {
@@ -779,6 +783,7 @@ describe('refreshController – OpenID path', () => {
 
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.redirect).toHaveBeenCalledWith('/login');
+    expect(res.clearCookie).toHaveBeenCalledWith('refreshToken', expect.any(Object));
   });
 
   it('should preserve invalid OpenID refresh token behavior', async () => {
@@ -788,6 +793,7 @@ describe('refreshController – OpenID path', () => {
 
     expect(res.status).toHaveBeenCalledWith(403);
     expect(res.send).toHaveBeenCalledWith('Invalid OpenID refresh token');
+    expect(res.clearCookie).toHaveBeenCalledWith('refreshToken', expect.any(Object));
   });
 
   it('should skip OpenID path when token_provider is not openid', async () => {
@@ -840,6 +846,7 @@ describe('refreshController – LibreChat path', () => {
       status: jest.fn().mockReturnThis(),
       send: jest.fn().mockReturnThis(),
       redirect: jest.fn(),
+      clearCookie: jest.fn().mockReturnThis(),
     };
   });
 
@@ -914,5 +921,29 @@ describe('refreshController – LibreChat path', () => {
         email: 'local@example.com',
       },
     });
+  });
+
+  it('clears refresh cookies when the session is missing', async () => {
+    findSession.mockResolvedValue(null);
+    getUserById.mockResolvedValue({
+      toObject: () => ({ _id: 'local-user-id', email: 'local@example.com' }),
+    });
+
+    await refreshController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.send).toHaveBeenCalledWith('Refresh token expired or not found for this user');
+    expect(res.clearCookie).toHaveBeenCalledWith('refreshToken', expect.any(Object));
+    expect(res.clearCookie).toHaveBeenCalledWith('token_provider', expect.any(Object));
+  });
+
+  it('clears refresh cookies when the refresh JWT is invalid', async () => {
+    req.headers.cookie = 'refreshToken=not-a-jwt';
+
+    await refreshController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.send).toHaveBeenCalledWith('Invalid refresh token');
+    expect(res.clearCookie).toHaveBeenCalledWith('refreshToken', expect.any(Object));
   });
 });
