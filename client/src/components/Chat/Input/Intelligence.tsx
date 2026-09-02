@@ -7,16 +7,27 @@ import { cn, isEmbedWidget } from '~/utils';
 
 type Level = { label: string; model: string };
 
-function configuredLevels(agent?: Agent | null): { heading: string; levels: Level[] } | null {
+const DEFAULT_LEVELS: Level[] = [
+  { label: 'Fast', model: '' },
+  { label: 'Smart', model: '' },
+  { label: 'Smarter', model: '' },
+  { label: 'Deep', model: '' },
+];
+
+function configuredLevels(agent?: Agent | null): { heading: string; levels: Level[] } {
   const levels = (agent?.intelligence?.levels ?? []).filter(
     (level): level is Level => Boolean(level?.label && level?.model),
   );
-  if (levels.length === 0) {
-    return null;
+  if (levels.length > 0) {
+    return {
+      heading: agent?.intelligence?.heading?.trim() || 'Intelligence',
+      levels,
+    };
   }
+  const model = agent?.model || '';
   return {
-    heading: agent?.intelligence?.heading?.trim() || 'Intelligence',
-    levels,
+    heading: 'Intelligence',
+    levels: DEFAULT_LEVELS.map((level) => ({ ...level, model })),
   };
 }
 
@@ -41,7 +52,7 @@ export default function Intelligence() {
     );
   }, [config, conversation, setConversation]);
 
-  if (!config) {
+  if (!conversation) {
     return null;
   }
 
