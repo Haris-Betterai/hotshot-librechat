@@ -571,7 +571,7 @@ const ChatForm = memo(function ChatForm({
                   }
                 />
                 <div className="mx-auto flex" />
-                <TokenUsage index={index} conversation={conversation} isSubmitting={isSubmitting} />
+                {/* <TokenUsage index={index} conversation={conversation} isSubmitting={isSubmitting} /> */}
                 {SpeechToText && (
                   <AudioRecorder
                     methods={methods}

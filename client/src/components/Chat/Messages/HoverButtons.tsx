@@ -1,11 +1,9 @@
 import React, { useState, useMemo, memo } from 'react';
 import { useRecoilState } from 'recoil';
-import { EditIcon, Clipboard, CheckMark, ContinueIcon, RegenerateIcon } from '@librechat/client';
+import { EditIcon, Clipboard, CheckMark, RegenerateIcon } from '@librechat/client';
 import type { TConversation, TMessage, TFeedback } from 'librechat-data-provider';
 import { useGenerationsByLatest, useLocalize } from '~/hooks';
-import { Fork } from '~/components/Conversations';
 import MessageAudio from './MessageAudio';
-import Feedback from './Feedback';
 import { cn } from '~/utils';
 import store from '~/store';
 
@@ -153,8 +151,6 @@ const HoverButtons = ({
   const {
     hideEditButton,
     regenerateEnabled,
-    continueSupported,
-    forkingSupported,
     isEditableEndpoint,
   } = generationCapabilities;
 
@@ -228,8 +224,8 @@ const HoverButtons = ({
         dataTestId={!isCreatedByUser ? 'copy-response-button' : undefined}
       />
 
-      {/* Edit Button */}
-      {isEditableEndpoint && (
+      {/* Edit Button — user messages only */}
+      {isCreatedByUser && isEditableEndpoint && (
         <HoverButton
           id={`edit-${message.messageId}`}
           onClick={onEdit}
@@ -243,43 +239,11 @@ const HoverButtons = ({
         />
       )}
 
-      {/* Fork Button */}
-      <Fork
-        messageId={message.messageId}
-        conversationId={conversation.conversationId}
-        forkingSupported={forkingSupported}
-        latestMessageId={latestMessageId}
-        isLast={isLast}
-      />
+      {/* Feedback Buttons — removed: like/dislike hidden for agent responses */}
 
-      {/* Feedback Buttons */}
-      {!isCreatedByUser && handleFeedback != null && (
-        <Feedback handleFeedback={handleFeedback} feedback={message.feedback} isLast={isLast} />
-      )}
+      {/* Regenerate Button — removed */}
 
-      {/* Regenerate Button */}
-      {regenerateEnabled && (
-        <HoverButton
-          onClick={regenerate}
-          title={localize('com_ui_regenerate')}
-          icon={<RegenerateIcon size="19" />}
-          isLast={isLast}
-          dataTestId={isLast ? 'regenerate-generation-button' : undefined}
-          className="active"
-        />
-      )}
-
-      {/* Continue Button */}
-      {continueSupported && (
-        <HoverButton
-          onClick={(e) => e && handleContinue(e)}
-          title={localize('com_ui_continue')}
-          icon={<ContinueIcon className="w-19 h-19 -rotate-180" />}
-          isLast={isLast}
-          dataTestId={isLast ? 'continue-generation-button' : undefined}
-          className="active"
-        />
-      )}
+      {/* Continue Button — removed */}
     </div>
   );
 };
