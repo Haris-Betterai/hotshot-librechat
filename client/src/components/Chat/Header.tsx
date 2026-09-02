@@ -1,4 +1,5 @@
-import { memo, useMemo, useCallback } from 'react';
+import { memo, useMemo, useCallback, useState } from 'react';
+import { Maximize, Minimize } from 'lucide-react';
 import { useRecoilValue } from 'recoil';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useMediaQuery, Button } from '@librechat/client';
@@ -53,6 +54,20 @@ function Header() {
   });
 
   const isSmallScreen = useMediaQuery('(max-width: 768px)');
+
+  const [embedExpanded, setEmbedExpanded] = useState(false);
+
+  const toggleEmbedExpand = useCallback(() => {
+    setEmbedExpanded((prev) => {
+      const next = !prev;
+      try {
+        window.parent.postMessage({ type: 'hotshot-embed-resize', expanded: next }, '*');
+      } catch {
+        /* ignore cross-frame errors */
+      }
+      return next;
+    });
+  }, []);
 
   const openStaffLogin = useCallback(() => {
     markStaffLoginIntent();
@@ -136,6 +151,19 @@ function Header() {
           className="inline-block h-2 w-2 shrink-0 rounded-full bg-green-500"
           aria-hidden="true"
         />
+        <button
+          type="button"
+          aria-label={embedExpanded ? 'Minimize chat' : 'Maximize chat'}
+          title={embedExpanded ? 'Minimize chat' : 'Maximize chat'}
+          onClick={toggleEmbedExpand}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-text-secondary hover:bg-surface-tertiary hover:text-text-primary"
+        >
+          {embedExpanded ? (
+            <Minimize className="h-4 w-4" aria-hidden="true" />
+          ) : (
+            <Maximize className="h-4 w-4" aria-hidden="true" />
+          )}
+        </button>
       </div>
     );
   }

@@ -24,13 +24,16 @@
   style.textContent =
     '#hotshot-embed-widget{position:fixed;right:20px;bottom:20px;z-index:2147483000;font-family:system-ui,-apple-system,Segoe UI,sans-serif;}' +
     '#hotshot-embed-widget *{box-sizing:border-box;}' +
-    '#hotshot-embed-widget .hotshot-embed-panel{width:min(380px,calc(100vw - 24px));height:min(560px,calc(100vh - 108px));border:0;border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 12px 40px rgba(15,23,42,.22);margin-bottom:12px;}' +
+    '#hotshot-embed-widget .hotshot-embed-panel{width:min(380px,calc(100vw - 24px));height:min(560px,calc(100vh - 108px));border:0;border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 12px 40px rgba(15,23,42,.22);margin-bottom:12px;transition:width .25s ease,height .25s ease,border-radius .25s ease;}' +
     '#hotshot-embed-widget .hotshot-embed-panel[hidden]{display:none;}' +
     '#hotshot-embed-widget iframe{width:100%;height:100%;border:0;background:#fff;}' +
     '#hotshot-embed-widget .hotshot-embed-launcher{display:flex;align-items:center;justify-content:center;width:56px;height:56px;margin-left:auto;border:0;border-radius:999px;background:#2563eb;color:#fff;cursor:pointer;box-shadow:0 8px 24px rgba(37,99,235,.45);overflow:hidden;background-size:cover;background-position:center;}' +
     '#hotshot-embed-widget .hotshot-embed-launcher:focus-visible{outline:2px solid #1d4ed8;outline-offset:3px;}' +
     '#hotshot-embed-widget .hotshot-embed-launcher svg{width:26px;height:26px;fill:currentColor;}' +
-    '#hotshot-embed-widget .hotshot-embed-launcher img{width:100%;height:100%;object-fit:cover;display:block;}';
+    '#hotshot-embed-widget .hotshot-embed-launcher img{width:100%;height:100%;object-fit:cover;display:block;}' +
+    /* Expanded state: ~3/4 of the viewport, near-fullscreen on small screens. */
+    '#hotshot-embed-widget.expanded .hotshot-embed-panel{width:min(75vw,1240px);height:min(75vh,960px);} ' +
+    '@media (max-width:768px){#hotshot-embed-widget.expanded .hotshot-embed-panel{width:calc(100vw - 16px);height:calc(100vh - 16px);}}';
   document.head.appendChild(style);
 
   var root = document.createElement('div');
@@ -86,4 +89,19 @@
   root.appendChild(panel);
   root.appendChild(launcher);
   document.body.appendChild(root);
+
+  // Allow the embedded chat (inside the iframe) to expand/collapse this widget.
+  window.addEventListener('message', function (event) {
+    try {
+      if (event.origin !== origin) {
+        return;
+      }
+      var data = event.data || {};
+      if (data && data.type === 'hotshot-embed-resize') {
+        root.classList.toggle('expanded', !!data.expanded);
+      }
+    } catch (err) {
+      /* ignore malformed messages */
+    }
+  });
 })();
