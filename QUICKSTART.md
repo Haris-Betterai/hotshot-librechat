@@ -10,13 +10,20 @@ Install these first:
 
 1. **Docker** — `docker info` should work without errors
 2. **Git** — `git --version`
-3. **SSH access to the server** — test with: `ssh betterai-server`
 
 If Docker says "permission denied":
 ```bash
 sudo usermod -aG docker "$USER"
 # then log out and log back in
 ```
+
+**Already have the repo cloned and .env file?** Skip Steps 1–2. Just run:
+
+```bash
+./setup.sh
+```
+
+`setup.sh` verifies your `.env`, creates the data directories, builds the image (first time only), and starts the app — everything below, in one command. Then open **http://localhost:6041**.
 
 ---
 
@@ -29,11 +36,12 @@ cd hotshot-librechat
 
 ---
 
-## Step 2 — Copy .env from the server
+## Step 2 — Get the .env file
 
-```bash
-scp betterai-server:/root/better-ai-projects/hotshot-librechat/.env ./.env
-```
+You need the `.env` file from the server. Get it however works for you:
+- Ask someone to send it
+- Copy from a shared drive
+- If you have SSH access: `scp user@server:/path/to/hotshot-librechat/.env ./.env`
 
 Then open `.env` and make sure these lines are set:
 
@@ -47,6 +55,8 @@ PUBLIC_GUEST_MODE=true
 ---
 
 ## Step 3 — Create data directories
+
+**Tip:** Steps 3–5 are exactly what `./setup.sh` does for you in one command. Only follow them if you prefer doing it manually.
 
 ```bash
 mkdir -p logs uploads images skill
@@ -79,6 +89,7 @@ Open **http://localhost:6041** in your browser.
 
 | What you want | Command |
 |---|---|
+| One-command first-time setup | `./setup.sh` |
 | Start the app | `./run.sh` |
 | Rebuild after code changes | `./run.sh build` |
 | Restart without rebuilding | `./run.sh restart` |
@@ -87,12 +98,12 @@ Open **http://localhost:6041** in your browser.
 
 ---
 
-## Deploy changes to the server
+## Deploy changes to the server (requires SSH access)
 
 After you push your code:
 
 ```bash
-ssh betterai-server
+ssh user@server
 cd /root/better-ai-projects/hotshot-librechat
 ./deploy.sh
 ```
