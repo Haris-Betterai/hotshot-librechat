@@ -196,6 +196,11 @@ describe('documentParserMimeTypes', () => {
 
   it.each([
     'application/pdf',
+  ])('matches natively parseable type: %s', (mimeType) => {
+    expect(check(mimeType)).toBe(true);
+  });
+
+  it.each([
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     'application/vnd.ms-excel',
@@ -204,16 +209,11 @@ describe('documentParserMimeTypes', () => {
     'application/x-ms-excel',
     'application/vnd.oasis.opendocument.spreadsheet',
     'application/vnd.oasis.opendocument.text',
-  ])('matches natively parseable type: %s', (mimeType) => {
-    expect(check(mimeType)).toBe(true);
-  });
-
-  it.each([
     'application/vnd.oasis.opendocument.presentation',
     'application/vnd.oasis.opendocument.graphics',
     'text/plain',
     'image/png',
-  ])('does not match OCR-only or unsupported type: %s', (mimeType) => {
+  ])('does not match Office, OCR-only, or unsupported type: %s', (mimeType) => {
     expect(check(mimeType)).toBe(false);
   });
 });

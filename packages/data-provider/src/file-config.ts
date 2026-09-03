@@ -193,6 +193,19 @@ export const textMimeTypes =
 export const applicationMimeTypes =
   /^(application\/(epub\+zip|csv|json|msword|pdf|x-tar|x-sh|x-zip-compressed|typescript|sql|yaml|x-parquet|vnd\.apache\.parquet|vnd\.coffeescript|vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|presentationml\.presentation|spreadsheetml\.sheet)|vnd\.oasis\.opendocument\.(text|spreadsheet|presentation|graphics)|xml|zip))$/;
 
+/** MIME types allowed for the agents endpoint: text, PDF, images, audio, video, and generic
+ * text/application formats — but NOT office document (docx/xlsx/odt/pptx) formats. */
+export const agentMimeTypes = /^(text\/[\w.-]+|application\/(epub\+zip|csv|json|msword|pdf|x-tar|x-sh|x-zip-compressed|typescript|sql|yaml|x-parquet|vnd\.apache\.parquet|vnd\.coffeescript|xml|zip)|image\/[\w.-]+|audio\/[\w.-]+|video\/[\w.-]+)$/;
+
+export const agentsSupportedMimeTypes = [
+  /^text\/[\w.-]+$/,
+  agentMimeTypes,
+  /^image\/(jpeg|gif|png|webp|heic|heif|svg|svg\+xml)$/,
+  /^audio\/[\w.-]+$/,
+  /^video\/[\w.-]+$/,
+  /^message\/rfc822$/,
+];
+
 export const imageMimeTypes = /^image\/(jpeg|gif|png|webp|heic|heif)$/;
 
 export const audioMimeTypes =
@@ -210,14 +223,8 @@ export const defaultOCRMimeTypes = [
   /^application\/vnd\.oasis\.opendocument\.(text|spreadsheet|presentation|graphics)$/,
 ];
 
-/** MIME types handled by the built-in document parser (pdf, docx, excel variants, ods/odt) */
-export const documentParserMimeTypes = [
-  excelMimeTypes,
-  /^application\/pdf$/,
-  /^application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document$/,
-  /^application\/vnd\.oasis\.opendocument\.spreadsheet$/,
-  /^application\/vnd\.oasis\.opendocument\.text$/,
-];
+/** MIME types handled by the built-in document parser (pdf only) */
+export const documentParserMimeTypes = [/^application\/pdf$/];
 
 export const defaultTextMimeTypes = [/^[\w.-]+\/[\w.-]+$/];
 
@@ -423,11 +430,19 @@ const assistantsFileConfig = {
   disabled: false,
 };
 
+const agentsFileConfig = {
+  fileLimit: 10,
+  fileSizeLimit: defaultSizeLimit,
+  totalSizeLimit: defaultSizeLimit,
+  supportedMimeTypes: agentsSupportedMimeTypes,
+  disabled: false,
+};
+
 export const fileConfig = {
   endpoints: {
     [EModelEndpoint.assistants]: assistantsFileConfig,
     [EModelEndpoint.azureAssistants]: assistantsFileConfig,
-    [EModelEndpoint.agents]: assistantsFileConfig,
+    [EModelEndpoint.agents]: agentsFileConfig,
     [EModelEndpoint.anthropic]: {
       fileLimit: 10,
       fileSizeLimit: defaultSizeLimit,
