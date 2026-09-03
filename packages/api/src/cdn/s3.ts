@@ -1,19 +1,10 @@
-import { S3Client } from '@aws-sdk/client-s3';
 import { logger } from '@librechat/data-schemas';
 import { isEnabled } from '~/utils/common';
 
+type S3Client = import('@aws-sdk/client-s3').S3Client;
+
 let s3: S3Client | null = null;
 
-/**
- * Initializes and returns an instance of the AWS S3 client.
- *
- * If AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are provided, they will be used.
- * Otherwise, the AWS SDK's default credentials chain (including IRSA) is used.
- *
- * If AWS_ENDPOINT_URL is provided, it will be used as the endpoint.
- *
- * @returns An instance of S3Client if the region is provided; otherwise, null.
- */
 export const initializeS3 = (): S3Client | null => {
   if (s3) {
     return s3;
@@ -32,7 +23,9 @@ export const initializeS3 = (): S3Client | null => {
     );
   }
 
-  // Read the custom endpoint if provided.
+  // @ts-expect-error - lazily required to avoid loading the AWS SDK at boot
+  const { S3Client } = require('@aws-sdk/client-s3');
+
   const endpoint = process.env.AWS_ENDPOINT_URL;
   const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
   const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
@@ -51,7 +44,6 @@ export const initializeS3 = (): S3Client | null => {
     });
     logger.info('[initializeS3] S3 initialized with provided credentials.');
   } else {
-    // When using IRSA, credentials are automatically provided via the IAM Role attached to the ServiceAccount.
     s3 = new S3Client(config);
     logger.info('[initializeS3] S3 initialized using default credentials (IRSA).');
   }

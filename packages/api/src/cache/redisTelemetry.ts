@@ -1,6 +1,5 @@
 import { AsyncLocalStorage } from 'async_hooks';
 import { CacheKeys } from 'librechat-data-provider';
-import type { Span } from '@opentelemetry/api';
 import {
   isMetricsConfigured,
   recordRedisOperation,
@@ -78,7 +77,7 @@ export interface RedisRequestTelemetry {
   errors: number;
   maxCallMs: number;
   operations: Set<string>;
-  span: Span;
+  span: { setAttributes: (attributes: Record<string, unknown>) => void };
   useCases: Map<string, RedisUseCaseSummary>;
 }
 

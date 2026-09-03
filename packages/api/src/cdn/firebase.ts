@@ -1,5 +1,3 @@
-import { initializeApp } from 'firebase/app';
-import { getStorage } from 'firebase/storage';
 import { logger } from '@librechat/data-schemas';
 import type { FirebaseStorage } from 'firebase/storage';
 import type { FirebaseApp } from 'firebase/app';
@@ -31,6 +29,7 @@ export const initializeFirebase = (): FirebaseApp | null => {
     return null;
   }
 
+  const { initializeApp } = require('firebase/app'); // eslint-disable-line @typescript-eslint/no-require-imports
   firebaseApp = initializeApp(firebaseConfig);
   logger.info('Firebase CDN initialized');
   return firebaseApp;
@@ -38,5 +37,9 @@ export const initializeFirebase = (): FirebaseApp | null => {
 
 export const getFirebaseStorage = (): FirebaseStorage | null => {
   const app = initializeFirebase();
-  return app ? getStorage(app) : null;
+  if (!app) {
+    return null;
+  }
+  const { getStorage } = require('firebase/storage'); // eslint-disable-line @typescript-eslint/no-require-imports
+  return getStorage(app);
 };
