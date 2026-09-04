@@ -13,6 +13,7 @@ import { useLocalize, useExpandCollapse, scheduleMessageContentLayoutReconcile }
 import { isBashProgrammaticToolCall } from './routing';
 import { ASK_USER_QUESTION } from '~/utils/approval';
 import { cn, getToolDisplayLabel } from '~/utils';
+import { parseToolName } from '~/utils/toolLabels';
 import { StackedToolIcons } from './ToolOutput';
 import { useMCPIconMap } from '~/hooks/MCP';
 import { AttachmentGroup } from './Parts';
@@ -164,6 +165,14 @@ export default function ToolCallGroup({
     }
     return `${labels.slice(0, 3).join(', ')}, +${labels.length - 3}`;
   }, [toolNames, localize]);
+
+  /** For an all-MCP group the summary collapses to the bare server id
+   *  ("hotshot-secret-mcp"), which tells a customer nothing. Mixed and native
+   *  groups keep it, where the tool names are meaningful. */
+  const allMcpTools = useMemo(
+    () => toolNames.length > 0 && toolNames.every((name) => parseToolName(name).mcpServer !== ''),
+    [toolNames],
+  );
 
   const autoExpand = useRecoilValue(store.autoExpandTools);
   const autoCollapse = !autoExpand && count >= 2 && allCompleted;
@@ -318,7 +327,7 @@ export default function ToolCallGroup({
         {/** Hide the tool-name summary for pure-category groups (subagents /
          *   questions) — every entry deduplicates to the same token, which
          *   adds noise without info. Mixed groups keep the summary. */}
-        {toolNameSummary && !allSubagents && !allAskQuestions && (
+        {toolNameSummary && !allSubagents && !allAskQuestions && !allMcpTools && (
           <span className="text-xs font-normal text-text-secondary">— {toolNameSummary}</span>
         )}
         <ChevronDown

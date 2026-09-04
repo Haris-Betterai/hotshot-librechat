@@ -1,4 +1,4 @@
-import { resolveIntelligenceParameters } from './intelligence';
+import { resolveIntelligenceParameters, responsesApiOverride } from './intelligence';
 
 const agent = {
   provider: 'openAI',
@@ -34,5 +34,31 @@ describe('resolveIntelligenceParameters', () => {
     };
     expect(resolveIntelligenceParameters(custom, 'Custom')).toEqual({ model: 'custom' });
     expect(resolveIntelligenceParameters(custom, 'smarter:high')).toBeUndefined();
+  });
+});
+
+describe('responsesApiOverride', () => {
+  const tools = ['search_products_by_name_mcp_hotshot-secret-mcp'];
+
+  it.each(['gpt-5.6', 'gpt-5.6-luna', 'gpt-5.6-terra', 'gpt-5.6-sol'])(
+    'forces the Responses API for %s when the agent carries tools',
+    (model) => {
+      expect(responsesApiOverride({ model, tools })).toEqual({ useResponsesApi: true });
+    },
+  );
+
+  it('leaves a tool-less run on Chat Completions', () => {
+    expect(responsesApiOverride({ model: 'gpt-5.6-luna', tools: [] })).toBeUndefined();
+    expect(responsesApiOverride({ model: 'gpt-5.6-luna', tools: undefined })).toBeUndefined();
+  });
+
+  it('does not touch models outside the GPT-5.6 family', () => {
+    expect(responsesApiOverride({ model: 'gpt-5.4-mini', tools })).toBeUndefined();
+    expect(responsesApiOverride({ model: 'gpt-4o', tools })).toBeUndefined();
+  });
+
+  it('handles a missing model', () => {
+    expect(responsesApiOverride({ model: undefined, tools })).toBeUndefined();
+    expect(responsesApiOverride({ model: null, tools })).toBeUndefined();
   });
 });

@@ -192,23 +192,23 @@ export default function ToolCall({
     });
   }, [onExpand]);
 
-  /** ToolCallGroup is the only caller that supplies `onExpand`, so its
-   *  presence marks a row rendered inside a group. Grouped rows drop the
-   *  "in <server>" suffix — the group header already names the server. */
-  const isGrouped = onExpand != null;
-
+  /** The MCP server name means nothing to a customer ("in hotshot-secret-mcp"),
+   *  and a group header already names it once, so it is left off tool rows.
+   *  Action calls keep their domain, which does identify a real destination. */
   const subtitle = useMemo(() => {
-    if (isGrouped) {
+    if (isNamedMcpTool) {
       return undefined;
     }
     if (isMCPToolCall && mcpServerName) {
+      /** OAuth rows still name the server — the customer is being asked to
+       *  sign in to it, so it identifies a real destination. */
       return localize('com_ui_via_server', { 0: mcpServerName });
     }
     if (domain && domain.length !== Constants.ENCODED_DOMAIN_LENGTH) {
       return localize('com_ui_via_server', { 0: domain });
     }
     return undefined;
-  }, [isGrouped, isMCPToolCall, mcpServerName, domain, localize]);
+  }, [isNamedMcpTool, isMCPToolCall, mcpServerName, domain, localize]);
 
   const inProgressText = useMemo(() => {
     if (mcpDisplayName) {

@@ -78,3 +78,34 @@ export function resolveIntelligenceParameters(
     ? { model: option.model, reasoning_effort: option.reasoning_effort }
     : { model: option.model };
 }
+
+/** GPT-5.6 models reason by default, and OpenAI rejects function tools with
+ *  reasoning on `/v1/chat/completions` ("400 Function tools with
+ *  reasoning_effort are not supported ... use /v1/responses"). */
+const RESPONSES_API_MODEL_PATTERN = /\bgpt-5\.6\b/;
+
+/**
+ * Force the Responses API for a tool-carrying agent on a GPT-5.6 model.
+ *
+ * `getOpenAILLMConfig` already switches to the Responses API for these models,
+ * but only when a reasoning effort was explicitly requested — tools are bound
+ * after config time, so it cannot see them. An agent whose level maps to a
+ * GPT-5.6 model with no effort set (the "fast" tier) therefore stays on Chat
+ * Completions and every tool-using reply fails. Setting the flag here wins
+ * over that inference, which only applies when the value is absent.
+ */
+export function responsesApiOverride({
+  model,
+  tools,
+}: {
+  model?: string | null;
+  tools?: unknown[] | null;
+}): { useResponsesApi: true } | undefined {
+  if (typeof model !== 'string' || !RESPONSES_API_MODEL_PATTERN.test(model)) {
+    return;
+  }
+  if (!tools?.length) {
+    return;
+  }
+  return { useResponsesApi: true };
+}

@@ -1523,15 +1523,8 @@ export const compactAgentsBaseSchema = tConversationSchema.pick({
   additional_instructions: true,
   /** Carries the selected intelligence level to the server, which maps it back
    *  to a concrete model via the agent's `intelligence.levels`. Without it the
-   *  level selector cannot change which model answers.
-   *
-   *  DISABLED: the configured levels resolve to gpt-5.6 models, and this
-   *  agent's tool calling goes through /v1/chat/completions, which rejects
-   *  `reasoning_effort` together with function tools ("400 Function tools with
-   *  reasoning_effort are not supported"). Re-enable once the request is
-   *  routed via /v1/responses or the effort is suppressed for tool-using runs.
-   *  Until then the selector stays cosmetic rather than breaking every reply. */
-  // modelLabel: true,
+   *  level selector cannot change which model answers. */
+  modelLabel: true,
 });
 
 export const compactAgentsSchema = compactAgentsBaseSchema

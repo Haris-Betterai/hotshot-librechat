@@ -29,7 +29,7 @@ import type {
   EndpointTokenConfig,
   InitializeResultBase,
 } from '~/types';
-import { resolveIntelligenceParameters } from './intelligence';
+import { resolveIntelligenceParameters, responsesApiOverride } from './intelligence';
 import type { LCAvailableTools, RequestScopedMCPConnectionStore } from '../mcp/types';
 import type { ResolvedManualSkill, ResolvedAlwaysApplySkill } from './skills';
 import type { TFilterFilesByAgentAccess } from './resources';
@@ -651,6 +651,7 @@ export async function initializeAgent(
       agent.model_parameters ?? { model: agent.model },
       isInitialAgent === true ? endpointOption?.model_parameters : {},
       intelligenceParameters,
+      responsesApiOverride({ model: agent.model, tools: agent.tools }),
     ),
   );
 
