@@ -634,6 +634,10 @@ export type TEmbedWidgetListResponse = {
   widgets: TEmbedWidget[];
 };
 
+/** Public config the chat page mounted inside the embed iframe needs to pick
+ *  its agent — a subset of {@link TEmbedWidget}, no allowedOrigins/embedUrl. */
+export type TEmbedWidgetConfig = Pick<TEmbedWidget, 'agentId' | 'iconUrl'>;
+
 export type TUpdateEmbedWidgetLinkRequest = {
   allowedOrigins: string[];
 };

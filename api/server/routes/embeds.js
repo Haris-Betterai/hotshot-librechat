@@ -84,6 +84,32 @@ const findEmbed = async (embedId) => {
   );
 };
 
+/**
+ * Public config for the chat page mounted inside the embed iframe.
+ *
+ * Only exposes what `EmbedRoute` needs to pick the right agent — `agentId` —
+ * plus the icon, harmless to expose and already public via `/launcher`.
+ * Origin allowlisting is enforced upstream by the `/embed/:embedId` document
+ * route's `Content-Security-Policy: frame-ancestors`, so this doesn't repeat
+ * that check (same trust boundary as `/launcher` and `/icon` below).
+ */
+const serveEmbedConfig = async (req, res) => {
+  const { embedId } = req.params;
+  if (!isSafeEmbedId(embedId)) {
+    return res.status(400).json({ message: 'Invalid embedId' });
+  }
+
+  const embed = await runAsSystem(() => findEmbed(embedId));
+  if (!embed) {
+    return res.status(404).json({ message: 'Embed not found' });
+  }
+
+  return res.json({
+    agentId: embed.agentId,
+    iconUrl: publicIconUrl(embedId, embed.iconExt) ?? null,
+  });
+};
+
 const serveLauncher = async (req, res) => {
   const { embedId } = req.params;
   if (!isSafeEmbedId(embedId)) {
@@ -281,6 +307,7 @@ const uploadEmbedIconController = async (req, res) => {
 
 router.get('/:embedId/launcher', serveLauncher);
 router.get('/:embedId/icon', serveIcon);
+router.get('/:embedId', serveEmbedConfig);
 
 router.use(requireJwtAuth);
 router.use(checkAdmin);

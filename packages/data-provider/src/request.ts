@@ -87,6 +87,9 @@ const guestSession = (): Promise<t.TRefreshTokenResponse> => _post(endpoints.gue
 const guestEmbedSession = (embedId: string): Promise<t.TGuestEmbedSessionResponse> =>
   _post(endpoints.guestEmbedSession(embedId));
 
+const embedWidgetConfig = (embedId: string): Promise<t.TEmbedWidgetConfig> =>
+  _get(endpoints.embedWidget(embedId));
+
 const SHARE_PAGE_PATH_REGEX = /^\/share\/[^/]+\/?$/;
 const SHARED_MESSAGES_PATH_REGEX = /^\/api\/share\/[^/]+$/;
 const SHARE_FORK_PATH_REGEX = /^\/api\/share\/[^/]+\/fork$/;
@@ -410,6 +413,7 @@ export default {
   refreshToken,
   guestSession,
   guestEmbedSession,
+  embedWidgetConfig,
   dispatchTokenUpdatedEvent,
   invalidateAuthRecovery,
 };

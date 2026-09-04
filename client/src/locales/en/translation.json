@@ -1445,6 +1445,7 @@
   "com_ui_staff_workspace": "Staff",
   "com_ui_customer_view": "Customer view",
   "com_ui_embed_widget": "Embed widget",
+  "com_ui_embed_unavailable": "Chat unavailable. Please reload the page.",
   "com_ui_embed_widget_generated": "Embed widget saved.",
   "com_ui_embed_widget_generate_error": "Unable to update embed widget",
   "com_ui_embed_allowed_origin": "Allowed origin (exact, e.g. https://example.com)",

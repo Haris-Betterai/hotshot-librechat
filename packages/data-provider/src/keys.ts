@@ -91,6 +91,7 @@ export enum QueryKeys {
 // Dynamic query keys that require parameters
 export const DynamicQueryKeys = {
   agentFiles: (agentId: string) => ['agentFiles', agentId] as const,
+  embedWidgetConfig: (embedId: string) => ['embedWidgetConfig', embedId] as const,
 } as const;
 
 export enum MutationKeys {

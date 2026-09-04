@@ -1,6 +1,6 @@
 import { useRecoilValue } from 'recoil';
 import { useQuery } from '@tanstack/react-query';
-import { QueryKeys, dataService } from 'librechat-data-provider';
+import { QueryKeys, DynamicQueryKeys, dataService, request } from 'librechat-data-provider';
 import type { QueryObserverResult, UseQueryOptions } from '@tanstack/react-query';
 import type t from 'librechat-data-provider';
 import store from '~/store';
@@ -17,6 +17,29 @@ export const useGetUserQuery = (
     ...config,
     enabled: (config?.enabled ?? true) === true && queriesEnabled,
   });
+};
+
+/**
+ * Public config for the chat page mounted inside the embed iframe — no
+ * `queriesEnabled` gate, since (unlike the rest of the app's queries) this
+ * one must run before the guest/auth flow has had a chance to complete.
+ */
+export const useGetEmbedWidgetConfigQuery = (
+  embedId: string | undefined,
+  config?: UseQueryOptions<t.TEmbedWidgetConfig>,
+): QueryObserverResult<t.TEmbedWidgetConfig> => {
+  return useQuery<t.TEmbedWidgetConfig>(
+    DynamicQueryKeys.embedWidgetConfig(embedId ?? ''),
+    () => request.embedWidgetConfig(embedId as string),
+    {
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      refetchOnMount: false,
+      retry: false,
+      ...config,
+      enabled: (config?.enabled ?? true) === true && !!embedId,
+    },
+  );
 };
 
 export interface UseGraphTokenQueryOptions {
