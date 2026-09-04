@@ -64,7 +64,7 @@ export function resolveIntelligenceModel(
 export function resolveIntelligenceParameters(
   agent: Pick<Agent, 'intelligence' | 'provider'>,
   modelLabel: string | null | undefined,
-): Pick<IntelligenceOption, 'model' | 'reasoning_effort'> | undefined {
+): Pick<IntelligenceOption, 'model' | 'reasoning_effort' | 'reasoning_summary'> | undefined {
   if (!modelLabel) {
     return;
   }
@@ -74,8 +74,13 @@ export function resolveIntelligenceParameters(
   if (!option) {
     return;
   }
+  /** A level that reasons at all should also surface a summary of that
+   *  reasoning — otherwise a customer watching "Deepest" think for several
+   *  seconds sees nothing but a static dot the whole time. 'auto' lets
+   *  OpenAI decide the summary's length; it's the only value guaranteed
+   *  supported across reasoning models (unlike 'concise'/'detailed'). */
   return option.reasoning_effort
-    ? { model: option.model, reasoning_effort: option.reasoning_effort }
+    ? { model: option.model, reasoning_effort: option.reasoning_effort, reasoning_summary: 'auto' }
     : { model: option.model };
 }
 

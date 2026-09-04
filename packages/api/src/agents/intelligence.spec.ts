@@ -16,11 +16,30 @@ describe('resolveIntelligenceParameters', () => {
   it.each([
     { label: 'fast', expected: { model: 'gpt-5.6-luna' } },
     { label: 'smart', expected: { model: 'gpt-5.6-terra' } },
-    { label: 'smarter', expected: { model: 'gpt-5.6', reasoning_effort: 'low' } },
-    { label: 'smarter:medium', expected: { model: 'gpt-5.6', reasoning_effort: 'medium' } },
-    { label: 'smarter:high', expected: { model: 'gpt-5.6', reasoning_effort: 'high' } },
+    {
+      label: 'smarter',
+      expected: { model: 'gpt-5.6', reasoning_effort: 'low', reasoning_summary: 'auto' },
+    },
+    {
+      label: 'smarter:medium',
+      expected: { model: 'gpt-5.6', reasoning_effort: 'medium', reasoning_summary: 'auto' },
+    },
+    {
+      label: 'smarter:high',
+      expected: { model: 'gpt-5.6', reasoning_effort: 'high', reasoning_summary: 'auto' },
+    },
   ])('resolves the server-approved setting for $label', ({ label, expected }) => {
     expect(resolveIntelligenceParameters(agent, label)).toEqual(expected);
+  });
+
+  it('requests a reasoning summary whenever a level reasons, not just for non-reasoning tiers', () => {
+    const result = resolveIntelligenceParameters(agent, 'smarter:high');
+    expect(result?.reasoning_summary).toBe('auto');
+  });
+
+  it('omits reasoning_summary for a tier with no reasoning_effort', () => {
+    const result = resolveIntelligenceParameters(agent, 'fast');
+    expect(result).not.toHaveProperty('reasoning_summary');
   });
 
   it.each([null, undefined, '', 'smarter:ultra', 'arbitrary-model'])('rejects %s', (label) => {

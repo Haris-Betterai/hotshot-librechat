@@ -4,6 +4,11 @@ export type IntelligenceOption = {
   label: string;
   model: string;
   reasoning_effort?: 'low' | 'medium' | 'high';
+  /** Requests a human-readable summary of the model's reasoning from the
+   *  Responses API — OpenAI never exposes the raw reasoning tokens, only
+   *  this optional summary. Derived alongside `reasoning_effort` rather than
+   *  stored per level; see `resolveIntelligenceParameters`. */
+  reasoning_summary?: 'auto' | 'concise' | 'detailed';
   preset?: 'fast' | 'balanced' | 'deep' | 'deeper' | 'deepest';
 };
 
