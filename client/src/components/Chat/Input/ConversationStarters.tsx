@@ -72,7 +72,7 @@ const ConversationStarters = () => {
   }
 
   return (
-    <div className="mb-8 mt-2 flex w-full flex-wrap items-stretch justify-center gap-2 px-4">
+    <div className="mb-6 mt-2 grid w-full grid-cols-2 gap-2 px-4 sm:grid-cols-4">
       {conversation_starters
         .slice(0, Constants.MAX_CONVO_STARTERS)
         .map((text: string, index: number) => (
@@ -80,9 +80,9 @@ const ConversationStarters = () => {
             key={index}
             onClick={() => sendConversationStarter(text)}
             style={{ animationDelay: `${index * 75}ms`, animationFillMode: 'backwards' }}
-            className="flex max-w-[16rem] cursor-pointer items-center justify-center rounded-2xl border border-border-medium bg-surface-secondary px-4 py-2.5 text-center text-sm text-text-secondary shadow-sm transition-colors duration-200 fade-in hover:border-border-heavy hover:bg-surface-tertiary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-primary"
+            className="flex h-full cursor-pointer items-start rounded-2xl border border-border-medium bg-surface-secondary px-3.5 py-3 text-left text-sm leading-snug text-text-secondary shadow-sm transition-all duration-200 fade-in hover:-translate-y-0.5 hover:border-border-heavy hover:bg-surface-tertiary hover:text-text-primary hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-primary motion-reduce:transition-none motion-reduce:hover:translate-y-0"
           >
-            <span className="line-clamp-2 text-balance break-words">{text}</span>
+            <span className="line-clamp-3 text-balance break-words">{text}</span>
           </button>
         ))}
     </div>

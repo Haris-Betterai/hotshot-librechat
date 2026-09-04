@@ -75,11 +75,12 @@ export default function Landing({ centerFormOnLanding }: { centerFormOnLanding: 
     [conversation?.spec, startupConfig],
   );
 
-  const brandedSpecLabel = modelSpec?.showOnLanding ? modelSpec.label : '';
-  const brandedSpecDescription = (modelSpec?.showOnLanding && modelSpec.description) || '';
-  const name = entity?.name ?? brandedSpecLabel;
+  const brandedSpecLabel = modelSpec?.showOnLanding === true ? modelSpec.label : '';
+  const brandedSpecDescription =
+    (modelSpec?.showOnLanding === true && modelSpec.description) || '';
+  const name = brandedSpecLabel || entity?.name || '';
   const description =
-    (entity?.description || brandedSpecDescription || conversation?.greeting) ?? '';
+    (brandedSpecDescription || entity?.description || conversation?.greeting) ?? '';
   const descriptionIsHTML = description.trim().startsWith('<');
 
   const sanitizeDescription = useMemo(

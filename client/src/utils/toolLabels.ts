@@ -24,6 +24,51 @@ export const TOOL_FRIENDLY_NAME_KEYS: Record<string, TranslationKeys> = {
   ask_user_question: 'com_ui_tool_name_ask_user_question',
 };
 
+/** Leading verbs stripped from an MCP tool id — the surrounding lifecycle
+ *  copy ("Looking up …" / "Checked …") already supplies the verb, so keeping
+ *  them reads as a doubled verb ("Looking up get all fluid capacities"). */
+const MCP_TOOL_VERB_PREFIXES = [
+  'get_all_',
+  'get_',
+  'list_all_',
+  'list_',
+  'fetch_',
+  'search_',
+  'recommend_',
+  'lookup_',
+];
+
+/** Trailing qualifiers that add nothing once the name is a noun phrase. */
+const MCP_TOOL_NAME_SUFFIXES = ['_by_name', '_by_url', '_details', '_mcp'];
+
+/**
+ * Turn a server-defined MCP tool id into a readable noun phrase for display.
+ * Verb prefixes and trailing qualifiers are dropped so the phrase slots into
+ * lifecycle copy that already carries the verb:
+ *
+ *   - `get_all_fluid_capacities` → `fluid capacities`
+ *   - `search_products_by_name`  → `products`
+ *   - `list_product_categories`  → `product categories`
+ *
+ * Falls back to the space-separated id when stripping would leave it empty.
+ */
+export function humanizeMcpToolName(toolName: string): string {
+  if (!toolName) {
+    return '';
+  }
+
+  const prefix = MCP_TOOL_VERB_PREFIXES.find((p) => toolName.startsWith(p));
+  let name = prefix ? toolName.slice(prefix.length) : toolName;
+
+  const suffix = MCP_TOOL_NAME_SUFFIXES.find((s) => name.endsWith(s) && name !== s);
+  if (suffix) {
+    name = name.slice(0, -suffix.length);
+  }
+
+  const phrase = name.replace(/_/g, ' ').trim();
+  return phrase || toolName.replace(/_/g, ' ').trim();
+}
+
 export interface ParsedToolName {
   /** Original tool id (unchanged). */
   raw: string;

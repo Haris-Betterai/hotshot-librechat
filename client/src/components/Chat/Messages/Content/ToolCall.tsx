@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useRecoilValue } from 'recoil';
 import { Button } from '@librechat/client';
-import { TriangleAlert } from 'lucide-react';
+import { TriangleAlert, Check } from 'lucide-react';
 import {
   Constants,
   dataService,
@@ -11,6 +11,7 @@ import {
 import type { TAttachment } from 'librechat-data-provider';
 import { useLocalize, useProgress, useExpandCollapse } from '~/hooks';
 import { ToolIcon, getToolIconType, isError } from './ToolOutput';
+import { humanizeMcpToolName } from '~/utils/toolLabels';
 import { useMCPIconMap } from '~/hooks/MCP';
 import { AttachmentGroup } from './Parts';
 import ToolCallInfo from './ToolCallInfo';
@@ -64,9 +65,15 @@ export default function ToolCall({
     }
   }, [auth]);
 
-  const { function_name, domain, isMCPToolCall, mcpServerName } = useMemo(() => {
+  const { function_name, domain, isMCPToolCall, mcpServerName, isNamedMcpTool } = useMemo(() => {
     if (typeof name !== 'string') {
-      return { function_name: '', domain: null, isMCPToolCall: false, mcpServerName: '' };
+      return {
+        function_name: '',
+        domain: null,
+        isMCPToolCall: false,
+        mcpServerName: '',
+        isNamedMcpTool: false,
+      };
     }
     if (name.includes(Constants.mcp_delimiter)) {
       const parts = name.split(Constants.mcp_delimiter);
@@ -78,6 +85,7 @@ export default function ToolCall({
         domain: server && (server.replaceAll(actionDomainSeparator, '.') || null),
         isMCPToolCall: true,
         mcpServerName: server || '',
+        isNamedMcpTool: func !== 'oauth',
       };
     }
 
@@ -90,6 +98,7 @@ export default function ToolCall({
           domain: null,
           isMCPToolCall: true,
           mcpServerName: mcpMatch[1],
+          isNamedMcpTool: false,
         };
       }
     }
@@ -102,8 +111,16 @@ export default function ToolCall({
       domain: _domain && (_domain.replaceAll(actionDomainSeparator, '.') || null),
       isMCPToolCall: false,
       mcpServerName: '',
+      isNamedMcpTool: false,
     };
   }, [name, parsedAuthUrl]);
+
+  /** MCP tool ids are server-defined snake_case (`get_all_fluid_capacities`);
+   *  show a readable noun phrase instead of the raw id. */
+  const mcpDisplayName = useMemo(
+    () => (isNamedMcpTool ? humanizeMcpToolName(function_name) : ''),
+    [isNamedMcpTool, function_name],
+  );
 
   const toolIconType = useMemo(() => getToolIconType(name), [name]);
   const mcpIconMap = useMCPIconMap();
@@ -175,7 +192,15 @@ export default function ToolCall({
     });
   }, [onExpand]);
 
+  /** ToolCallGroup is the only caller that supplies `onExpand`, so its
+   *  presence marks a row rendered inside a group. Grouped rows drop the
+   *  "in <server>" suffix — the group header already names the server. */
+  const isGrouped = onExpand != null;
+
   const subtitle = useMemo(() => {
+    if (isGrouped) {
+      return undefined;
+    }
     if (isMCPToolCall && mcpServerName) {
       return localize('com_ui_via_server', { 0: mcpServerName });
     }
@@ -183,13 +208,26 @@ export default function ToolCall({
       return localize('com_ui_via_server', { 0: domain });
     }
     return undefined;
-  }, [isMCPToolCall, mcpServerName, domain, localize]);
+  }, [isGrouped, isMCPToolCall, mcpServerName, domain, localize]);
+
+  const inProgressText = useMemo(() => {
+    if (mcpDisplayName) {
+      return localize('com_ui_tool_looking_up', { 0: mcpDisplayName });
+    }
+    if (function_name) {
+      return localize('com_assistants_running_var', { 0: function_name });
+    }
+    return localize('com_assistants_running_action');
+  }, [mcpDisplayName, function_name, localize]);
 
   const getFinishedText = () => {
     if (cancelled) {
       return localize('com_ui_cancelled');
     }
     if (isMCPToolCall === true) {
+      if (mcpDisplayName) {
+        return localize('com_ui_tool_checked', { 0: mcpDisplayName });
+      }
       return localize('com_assistants_completed_function', { 0: function_name });
     }
     if (domain != null && domain && domain.length !== Constants.ENCODED_DOMAIN_LENGTH) {
@@ -207,9 +245,7 @@ export default function ToolCall({
       <span className="sr-only" aria-live="polite" aria-atomic="true">
         {(() => {
           if (progress < 1 && !showCancelled) {
-            return function_name
-              ? localize('com_assistants_running_var', { 0: function_name })
-              : localize('com_assistants_running_action');
+            return inProgressText;
           }
           return getFinishedText();
         })()}
@@ -218,11 +254,7 @@ export default function ToolCall({
         <ProgressText
           progress={progress}
           onClick={handleToggleInfo}
-          inProgressText={
-            function_name
-              ? localize('com_assistants_running_var', { 0: function_name })
-              : localize('com_assistants_running_action')
-          }
+          inProgressText={inProgressText}
           authText={
             !showCancelled && authDomain.length > 0 ? localize('com_ui_requires_auth') : undefined
           }
@@ -230,11 +262,15 @@ export default function ToolCall({
           subtitle={subtitle}
           errorSuffix={errorState && !cancelled ? localize('com_ui_tool_failed') : undefined}
           icon={
-            <ToolIcon
-              type={toolIconType}
-              iconUrl={mcpIconUrl}
-              isAnimating={progress < 1 && !showCancelled && !errorState}
-            />
+            progress >= 1 && !showCancelled && !errorState ? (
+              <Check className="size-4 shrink-0 text-text-secondary" aria-hidden="true" />
+            ) : (
+              <ToolIcon
+                type={toolIconType}
+                iconUrl={mcpIconUrl}
+                isAnimating={progress < 1 && !showCancelled && !errorState}
+              />
+            )
           }
           hasInput={hasInfo}
           isExpanded={showInfo}
@@ -244,7 +280,7 @@ export default function ToolCall({
       <div style={expandStyle}>
         <div className="overflow-hidden" ref={expandRef}>
           {hasInfo && (
-            <div className="my-2 overflow-hidden rounded-lg border border-border-light bg-surface-secondary">
+            <div className="my-1.5 overflow-hidden rounded-lg bg-surface-tertiary/60">
               <ToolCallInfo input={args ?? ''} output={output} attachments={attachments} />
             </div>
           )}

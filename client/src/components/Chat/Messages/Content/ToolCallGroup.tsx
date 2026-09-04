@@ -245,6 +245,9 @@ export default function ToolCallGroup({
         ? localize('com_ui_asked_n_questions', { 0: String(count) })
         : localize('com_ui_asking_n_questions', { 0: String(count) });
     }
+    if (!allCompleted && isSubmitting) {
+      return localize('com_ui_using_n_tools', { 0: String(count) });
+    }
     return localize('com_ui_used_n_tools', { 0: String(count) });
   };
   const groupLabel = resolveGroupLabel();
@@ -264,10 +267,13 @@ export default function ToolCallGroup({
   }, [hasActiveToolCall, userOverride]);
 
   return (
-    <div className="mb-2 mt-1" ref={rootRef}>
+    <div
+      className="mb-3 mt-1 overflow-hidden rounded-xl border border-border-light bg-surface-secondary/50"
+      ref={rootRef}
+    >
       <button
         type="button"
-        className="inline-flex w-full items-center gap-2 py-1 text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-heavy"
+        className="inline-flex w-full items-center gap-2 px-3 py-2 text-text-secondary transition-colors duration-150 hover:bg-surface-tertiary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-heavy"
         onClick={handleToggle}
         aria-expanded={isExpanded}
         aria-label={groupLabel}
@@ -304,7 +310,7 @@ export default function ToolCallGroup({
         )}
         <ChevronDown
           className={cn(
-            'size-4 shrink-0 text-text-secondary transition-transform duration-200 ease-out',
+            'ml-auto size-4 shrink-0 text-text-secondary transition-transform duration-200 ease-out',
             isExpanded && 'rotate-180',
           )}
           aria-hidden="true"
@@ -313,10 +319,12 @@ export default function ToolCallGroup({
       <div style={expandStyle} onTransitionEnd={handleTransitionEnd} aria-hidden={!isExpanded}>
         {shouldRenderBody && (
           <div className="overflow-hidden" ref={expandRef}>
-            <div className="py-0.5 pl-4">
-              {parts.map(({ part, idx }) =>
-                renderPart(part, idx, isLast && idx === lastContentIdx, handleToolExpand),
-              )}
+            <div className="border-t border-border-light px-3 pb-2 pt-1.5">
+              <div className="ml-2 border-l border-border-medium pl-3.5">
+                {parts.map(({ part, idx }) =>
+                  renderPart(part, idx, isLast && idx === lastContentIdx, handleToolExpand),
+                )}
+              </div>
             </div>
           </div>
         )}

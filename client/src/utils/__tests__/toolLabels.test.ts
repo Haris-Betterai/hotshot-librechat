@@ -1,5 +1,10 @@
 import { Constants } from 'librechat-data-provider';
-import { parseToolName, getToolDisplayLabel, TOOL_FRIENDLY_NAME_KEYS } from '../toolLabels';
+import {
+  parseToolName,
+  getToolDisplayLabel,
+  humanizeMcpToolName,
+  TOOL_FRIENDLY_NAME_KEYS,
+} from '../toolLabels';
 
 describe('parseToolName', () => {
   it('splits an MCP tool id into server + tool name', () => {
@@ -76,5 +81,32 @@ describe('getToolDisplayLabel', () => {
 
   it('returns the raw name for an unknown native tool', () => {
     expect(getToolDisplayLabel('custom_tool', identityLocalize)).toBe('custom_tool');
+  });
+});
+
+describe('humanizeMcpToolName', () => {
+  it('strips a leading verb prefix and underscores', () => {
+    expect(humanizeMcpToolName('get_all_fluid_capacities')).toBe('fluid capacities');
+    expect(humanizeMcpToolName('list_product_categories')).toBe('product categories');
+    expect(humanizeMcpToolName('get_data_freshness')).toBe('data freshness');
+  });
+
+  it('strips trailing qualifiers', () => {
+    expect(humanizeMcpToolName('search_products_by_name')).toBe('products');
+    expect(humanizeMcpToolName('get_product_by_url')).toBe('product');
+    expect(humanizeMcpToolName('get_symptom_details')).toBe('symptom');
+  });
+
+  it('keeps names that carry no verb prefix', () => {
+    expect(humanizeMcpToolName('vehicle_types')).toBe('vehicle types');
+  });
+
+  it('falls back to the spaced id rather than an empty string', () => {
+    expect(humanizeMcpToolName('get_all_')).toBe('get all');
+    expect(humanizeMcpToolName('_details')).toBe('details');
+  });
+
+  it('returns an empty string for an empty id', () => {
+    expect(humanizeMcpToolName('')).toBe('');
   });
 });

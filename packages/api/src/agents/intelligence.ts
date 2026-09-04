@@ -1,3 +1,6 @@
+import { getIntelligenceOptions } from 'librechat-data-provider';
+import type { Agent, IntelligenceOption } from 'librechat-data-provider';
+
 export type AgentIntelligenceLevel = {
   label: string;
   model: string;
@@ -19,8 +22,7 @@ export function parseIntelligence(input: unknown): AgentIntelligence | null {
   }
 
   const raw = input as Record<string, unknown>;
-  const heading =
-    typeof raw.heading === 'string' ? raw.heading.trim().slice(0, MAX_HEADING) : '';
+  const heading = typeof raw.heading === 'string' ? raw.heading.trim().slice(0, MAX_HEADING) : '';
   const rawLevels = Array.isArray(raw.levels) ? raw.levels : [];
 
   const levels: AgentIntelligenceLevel[] = [];
@@ -57,4 +59,22 @@ export function resolveIntelligenceModel(
 
   const match = intelligence.levels.find((level) => level.label === modelLabel);
   return match?.model ?? null;
+}
+
+export function resolveIntelligenceParameters(
+  agent: Pick<Agent, 'intelligence' | 'provider'>,
+  modelLabel: string | null | undefined,
+): Pick<IntelligenceOption, 'model' | 'reasoning_effort'> | undefined {
+  if (!modelLabel) {
+    return;
+  }
+  const option = getIntelligenceOptions(agent.intelligence, agent.provider).find(
+    (level) => level.label === modelLabel,
+  );
+  if (!option) {
+    return;
+  }
+  return option.reasoning_effort
+    ? { model: option.model, reasoning_effort: option.reasoning_effort }
+    : { model: option.model };
 }

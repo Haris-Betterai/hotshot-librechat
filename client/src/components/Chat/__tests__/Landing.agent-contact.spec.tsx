@@ -6,6 +6,7 @@ import Landing from '../Landing';
 let mockConversation: Record<string, unknown> | null = null;
 let mockAgentsMap: Record<string, any> | undefined;
 let mockAssistantMap: Record<string, any> | undefined;
+let mockModelSpec: Record<string, unknown> | undefined;
 
 jest.mock('@react-spring/web', () => ({
   easings: {
@@ -62,8 +63,9 @@ jest.mock('~/utils', () => ({
   CONFIG_HTML_MEDIA_TAGS: [],
   cn: (...classes: string[]) => classes.filter(Boolean).join(' '),
   createConfigHtmlSanitizer: () => (html: string) => html,
+  isEmbedWidget: () => false,
   getIconEndpoint: ({ endpoint }: { endpoint: string }) => endpoint,
-  getModelSpec: () => undefined,
+  getModelSpec: () => mockModelSpec,
   getEntity: ({
     endpoint,
     agentsMap,
@@ -94,6 +96,7 @@ describe('Landing agent contact', () => {
     mockConversation = null;
     mockAgentsMap = undefined;
     mockAssistantMap = undefined;
+    mockModelSpec = undefined;
   });
 
   it('shows contact for the selected agent from agentsMap', () => {
@@ -152,5 +155,55 @@ describe('Landing agent contact', () => {
 
     expect(screen.getByText('Assistant')).toBeInTheDocument();
     expect(screen.queryByText('Contact:')).not.toBeInTheDocument();
+  });
+});
+
+describe('Landing branded model spec', () => {
+  beforeEach(() => {
+    mockConversation = {
+      endpoint: 'agents',
+      agent_id: 'agent-1',
+      spec: 'branded-spec',
+    };
+    mockAgentsMap = {
+      'agent-1': {
+        id: 'agent-1',
+        name: 'Agent Name',
+        description: 'Agent description',
+      },
+    };
+    mockAssistantMap = undefined;
+    mockModelSpec = undefined;
+  });
+
+  it('prefers the spec label and description when showOnLanding is true', () => {
+    mockModelSpec = {
+      name: 'branded-spec',
+      label: 'Branded Label',
+      description: 'Branded description',
+      showOnLanding: true,
+    };
+
+    render(<Landing centerFormOnLanding={false} />);
+
+    expect(screen.getByText('Branded Label')).toBeInTheDocument();
+    expect(screen.getByText('Branded description')).toBeInTheDocument();
+    expect(screen.queryByText('Agent Name')).not.toBeInTheDocument();
+    expect(screen.queryByText('Agent description')).not.toBeInTheDocument();
+  });
+
+  it('keeps the agent label and description when showOnLanding is not set', () => {
+    mockModelSpec = {
+      name: 'branded-spec',
+      label: 'Branded Label',
+      description: 'Branded description',
+    };
+
+    render(<Landing centerFormOnLanding={false} />);
+
+    expect(screen.getByText('Agent Name')).toBeInTheDocument();
+    expect(screen.getByText('Agent description')).toBeInTheDocument();
+    expect(screen.queryByText('Branded Label')).not.toBeInTheDocument();
+    expect(screen.queryByText('Branded description')).not.toBeInTheDocument();
   });
 });

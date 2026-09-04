@@ -539,7 +539,6 @@ const ChatForm = memo(function ChatForm({
                   </div>
                 </div>
               )}
-              <Intelligence />
               <div
                 className={cn(
                   '@container items-between flex gap-2 pb-2',
@@ -572,6 +571,7 @@ const ChatForm = memo(function ChatForm({
                 />
                 <div className="mx-auto flex" />
                 {/* <TokenUsage index={index} conversation={conversation} isSubmitting={isSubmitting} /> */}
+                <Intelligence />
                 {SpeechToText && (
                   <AudioRecorder
                     methods={methods}

@@ -10,6 +10,9 @@ jest.mock('~/hooks', () => ({
     if (key === 'com_ui_used_n_tools') {
       return `Used ${values?.[0]} tools`;
     }
+    if (key === 'com_ui_using_n_tools') {
+      return `Checking ${values?.[0]} sources`;
+    }
     return key;
   },
   useExpandCollapse: (isExpanded: boolean) => ({
@@ -275,7 +278,7 @@ describe('ContentParts integration: MCP image hoist and grouping', () => {
       </RecoilRoot>,
     );
 
-    const toggle = screen.getByRole('button', { name: 'Used 2 tools' });
+    const toggle = screen.getByRole('button', { name: 'Checking 2 sources' });
     expect(toggle).toHaveAttribute('aria-expanded', 'true');
 
     fireEvent.click(screen.getAllByTestId('progress-text')[0]);

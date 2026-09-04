@@ -98,7 +98,17 @@ More detail: **[VIEWS.md](./VIEWS.md)** · **[WORKFLOW.md](./WORKFLOW.md)**
 - Widget iframe allows **microphone** so the existing chat mic can transcribe into the input (HTTPS or localhost).
 - Mic keeps listening through pauses (tap again to stop).
 - Agent avatars load in the embed without relying on third-party cookies.
-- **Intelligence slider**: staff configure up to 4 labeled models on the agent; guests click the label in chat (full page and widget) to open a slider.
+- **Intelligence slider**: staff configure up to 4 labeled models on the agent; guests click the compact current-level label beside the microphone (full page and widget) to open a slider.
+
+The original OpenAI Hotshot profile (`fast` → `gpt-5.6-luna`, `smart` →
+`gpt-5.6-terra`, `smarter` → `gpt-5.6`) now expands into five slider stops:
+**Fast, Balanced, Deep, Deeper, Deepest**. The last three use Sol with low,
+medium, and high `reasoning_effort`. Frontend and backend share this expansion
+in `packages/data-provider/src/intelligence.ts`; it does not rewrite the agent
+document in the shared database. The original three selection labels remain
+valid, with `smarter:medium` and `smarter:high` added for the new stops. Other
+providers and custom profiles are unchanged. Build and deploy both the frontend
+and API packages together when publishing this change.
 
 **Snippet (after regenerate):**
 

@@ -129,8 +129,14 @@ export default function ToolCallInfo({
       }) ?? [];
 
   return (
-    <div className="w-full px-3 py-3.5">
-      {output && <OutputRenderer text={output} />}
+    <div className="w-full px-3 py-3">
+      {output && (
+        /** Tool payloads can be very large (full scraped records); cap the
+         *  height so one result cannot push the answer off-screen. */
+        <div className="max-h-64 overflow-auto overscroll-contain rounded-md bg-surface-primary p-2.5">
+          <OutputRenderer text={output} />
+        </div>
+      )}
       {output && hasParams && <div className="my-2 border-t border-border-light" />}
       {hasParams && (
         <>

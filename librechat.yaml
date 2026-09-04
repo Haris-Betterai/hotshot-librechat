@@ -94,7 +94,9 @@ cache: true
 
 # Custom interface configuration
 interface:
-  customWelcome: 'Welcome to Hotshot Secret Customer Support'
+  customWelcome: 'What can I help you with today?'
+  # Footer copy is not read from here — it comes from CUSTOM_FOOTER in .env
+  # (api/server/routes/config.js). Keep the two in sync when changing it.
   # Enable/disable file search as a chatarea selection (default: true)
   # Note: This setting does not disable the Agents File Search Capability.
   # To disable the Agents Capability, see the Agents Endpoint configuration instead.
@@ -656,11 +658,19 @@ modelSpecs:
   list:
     - name: "hotshot-secret-ai"
       label: "Hotshot Secret AI"
-      description: "Hotshot Secret AI Agent to help customers with hotshot products and vehicle diagnosis"
+      description: "Find the right product, sort out a problem with your vehicle, or check what fits before you buy."
       default: true
+      showOnLanding: true
+      iconURL: "/assets/hotshot-secret-ai.webp"
+      conversation_starters:
+        - "Which product fits my vehicle?"
+        - "My engine is running rough"
+        - "Compare your diesel treatments"
+        - "How much do I need?"
       preset:
         endpoint: "agents"
         agent_id: "agent_nKWTo2vBXJZCNFl57pA6K"
+        iconURL: "/assets/hotshot-secret-ai.webp"
         # endpoint: "DeepSeek"
         # model: "deepseek-v4-flash"
         # endpoint: "agents"
