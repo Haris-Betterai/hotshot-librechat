@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import copy from 'copy-to-clipboard';
 import CopyButton from '~/components/Messages/Content/CopyButton';
+import JsonView from './JsonView';
 import { useLocalize } from '~/hooks';
 import { cn } from '~/utils';
 
@@ -63,6 +64,26 @@ function extractText(raw: string): ExtractedText {
           if (isError(joined)) {
             return { text: cleanError(joined), rawError: joined, error: true, isJson: false };
           }
+          /** MCP tools commonly wrap a JSON document inside a text content
+           *  block. Unwrap it so structured output renders as structured
+           *  output rather than a wall of escaped text. */
+          const innerTrimmed = joined.trim();
+          if (innerTrimmed.startsWith('{') || innerTrimmed.startsWith('[')) {
+            try {
+              const innerParsed: unknown = JSON.parse(innerTrimmed);
+              if (typeof innerParsed === 'object' && innerParsed !== null) {
+                return {
+                  text: JSON.stringify(innerParsed, null, 2),
+                  rawError: '',
+                  error: false,
+                  isJson: true,
+                };
+              }
+            } catch {
+              /** Cut-off payloads cannot parse; JsonView repairs them. */
+              return { text: innerTrimmed, rawError: '', error: false, isJson: true };
+            }
+          }
           return { text: joined, rawError: '', error: false, isJson: false };
         }
       }
@@ -75,7 +96,8 @@ function extractText(raw: string): ExtractedText {
         isJson: true,
       };
     } catch {
-      // Not JSON
+      /** Cut-off payloads cannot parse; JsonView repairs them. */
+      return { text: trimmed, rawError: '', error: false, isJson: true };
     }
   }
 
@@ -115,11 +137,9 @@ export default function OutputRenderer({ text }: OutputRendererProps) {
   return (
     <div className="relative">
       {isJson ? (
-        <pre className="max-h-[300px] overflow-auto rounded text-xs">
-          <code className="hljs language-json !whitespace-pre-wrap !break-words">
-            {visibleText}
-          </code>
-        </pre>
+        <div className="max-h-[300px] overflow-auto pr-6">
+          <JsonView json={displayText} />
+        </div>
       ) : (
         <pre
           className={cn(
@@ -140,7 +160,7 @@ export default function OutputRenderer({ text }: OutputRendererProps) {
           label={localize('com_ui_copy')}
         />
       </div>
-      {needsTruncation && (
+      {needsTruncation && !isJson && (
         <button
           type="button"
           className="mt-1 text-xs text-text-secondary underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-heavy"

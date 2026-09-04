@@ -7,6 +7,9 @@ import ContentParts from '../ContentParts';
 
 jest.mock('~/hooks', () => ({
   useLocalize: () => (key: string, values?: Record<string | number, string>) => {
+    if (key === 'com_ui_tools') {
+      return 'Tools';
+    }
     if (key === 'com_ui_used_n_tools') {
       return `Used ${values?.[0]} tools`;
     }
@@ -250,7 +253,7 @@ describe('ContentParts integration: MCP image hoist and grouping', () => {
       </RecoilRoot>,
     );
 
-    const toggle = screen.getByRole('button', { name: 'Used 2 tools' });
+    const toggle = screen.getByRole('button', { name: 'Tools' });
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
 
     fireEvent.click(toggle);
@@ -262,7 +265,7 @@ describe('ContentParts integration: MCP image hoist and grouping', () => {
       </RecoilRoot>,
     );
 
-    expect(screen.getByRole('button', { name: 'Used 2 tools' })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: 'Tools' })).toHaveAttribute(
       'aria-expanded',
       'true',
     );
@@ -294,7 +297,7 @@ describe('ContentParts integration: MCP image hoist and grouping', () => {
       </RecoilRoot>,
     );
 
-    expect(screen.getByRole('button', { name: 'Used 2 tools' })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: 'Tools' })).toHaveAttribute(
       'aria-expanded',
       'true',
     );
@@ -309,7 +312,7 @@ describe('ContentParts integration: MCP image hoist and grouping', () => {
       </RecoilRoot>,
     );
 
-    const toggle = screen.getByRole('button', { name: 'Used 2 tools' });
+    const toggle = screen.getByRole('button', { name: 'Tools' });
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
 
     fireEvent.click(toggle);
@@ -321,7 +324,7 @@ describe('ContentParts integration: MCP image hoist and grouping', () => {
       </RecoilRoot>,
     );
 
-    expect(screen.getByRole('button', { name: 'Used 2 tools' })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: 'Tools' })).toHaveAttribute(
       'aria-expanded',
       'false',
     );
@@ -336,7 +339,7 @@ describe('ContentParts integration: MCP image hoist and grouping', () => {
       </RecoilRoot>,
     );
 
-    const toggle = screen.getByRole('button', { name: 'Used 2 tools' });
+    const toggle = screen.getByRole('button', { name: 'Tools' });
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
 
     fireEvent.click(toggle);
@@ -348,7 +351,7 @@ describe('ContentParts integration: MCP image hoist and grouping', () => {
       </RecoilRoot>,
     );
 
-    expect(screen.getByRole('button', { name: 'Used 2 tools' })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: 'Tools' })).toHaveAttribute(
       'aria-expanded',
       'true',
     );

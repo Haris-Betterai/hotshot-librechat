@@ -248,9 +248,12 @@ export default function ToolCallGroup({
     if (!allCompleted && isSubmitting) {
       return localize('com_ui_using_n_tools', { 0: String(count) });
     }
-    return localize('com_ui_used_n_tools', { 0: String(count) });
+    return localize('com_ui_tools');
   };
   const groupLabel = resolveGroupLabel();
+  /** Full card while open or working; a quiet chip once the run is settled
+   *  and collapsed, so finished tool work recedes behind the answer. */
+  const showCardChrome = isExpanded || (isSubmitting && !allCompleted);
   /** Single category glyph for homogeneous groups (else StackedToolIcons). */
   const CategoryIcon = allSubagents ? Users : MessageCircleQuestion;
 
@@ -268,12 +271,22 @@ export default function ToolCallGroup({
 
   return (
     <div
-      className="mb-3 mt-1 overflow-hidden rounded-xl border border-border-light bg-surface-secondary/50"
+      className={cn(
+        'mt-1 overflow-hidden rounded-xl transition-colors duration-150',
+        showCardChrome
+          ? 'mb-3 border border-border-light bg-surface-secondary/50'
+          : 'mb-2 w-fit border border-transparent',
+      )}
       ref={rootRef}
     >
       <button
         type="button"
-        className="inline-flex w-full items-center gap-2 px-3 py-2 text-text-secondary transition-colors duration-150 hover:bg-surface-tertiary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-heavy"
+        className={cn(
+          'inline-flex items-center gap-2 text-text-secondary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-heavy',
+          showCardChrome
+            ? 'w-full px-3 py-2 hover:bg-surface-tertiary/60'
+            : 'rounded-lg px-2 py-1 text-xs opacity-70 hover:bg-surface-tertiary/60 hover:opacity-100',
+        )}
         onClick={handleToggle}
         aria-expanded={isExpanded}
         aria-label={groupLabel}

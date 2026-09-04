@@ -8,6 +8,9 @@ import ToolCallGroup from '../ToolCallGroup';
 
 jest.mock('~/hooks', () => ({
   useLocalize: () => (key: string, values?: Record<string | number, string>) => {
+    if (key === 'com_ui_tools') {
+      return 'Tools';
+    }
     if (key === 'com_ui_used_n_tools') {
       return `Used ${values?.[0]} tools`;
     }
@@ -183,7 +186,7 @@ describe('ToolCallGroup image hoisting', () => {
       renderPart,
     });
 
-    expect(screen.getByRole('button', { name: 'Used 59 tools' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Tools' })).toBeInTheDocument();
     expect(renderPart).not.toHaveBeenCalled();
     expect(screen.queryByTestId('inner-0')).not.toBeInTheDocument();
   });
@@ -191,7 +194,7 @@ describe('ToolCallGroup image hoisting', () => {
   it('mounts tool bodies when a collapsed group is expanded', () => {
     renderGroup(baseProps);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Used 2 tools' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Tools' }));
 
     expect(screen.getByTestId('inner-0')).toBeInTheDocument();
     expect(screen.getByTestId('inner-1')).toBeInTheDocument();
@@ -200,7 +203,7 @@ describe('ToolCallGroup image hoisting', () => {
   it('unmounts tool bodies after a collapsed group finishes transitioning', () => {
     renderGroup(baseProps);
 
-    const button = screen.getByRole('button', { name: 'Used 2 tools' });
+    const button = screen.getByRole('button', { name: 'Tools' });
     const collapsible = button.nextElementSibling as HTMLElement;
     fireEvent.click(button);
     fireEvent.click(button);
@@ -214,10 +217,10 @@ describe('ToolCallGroup image hoisting', () => {
   it('reconciles layout after the group collapses from an expanded state', async () => {
     renderGroup(baseProps);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Used 2 tools' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Tools' }));
     expect(mockScheduleMessageContentLayoutReconcile).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Used 2 tools' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Tools' }));
 
     await waitFor(() => {
       expect(mockScheduleMessageContentLayoutReconcile).toHaveBeenCalledTimes(1);
@@ -297,7 +300,7 @@ describe('ToolCallGroup image hoisting', () => {
     expect(screen.getByRole('button', { name: 'Asking 2 questions' })).toBeInTheDocument();
   });
 
-  it('keeps the generic "Used N tools" label for a mixed group containing a question', () => {
+  it('keeps the generic "Tools" label for a mixed group containing a question', () => {
     renderGroup({
       ...baseProps,
       parts: [
@@ -306,7 +309,7 @@ describe('ToolCallGroup image hoisting', () => {
       ],
     });
 
-    expect(screen.getByRole('button', { name: 'Used 2 tools' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Tools' })).toBeInTheDocument();
     expect(screen.getByTestId('stacked-icons')).toBeInTheDocument();
   });
 });
