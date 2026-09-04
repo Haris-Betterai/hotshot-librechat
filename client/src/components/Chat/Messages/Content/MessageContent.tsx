@@ -5,6 +5,7 @@ import type { TMessage } from 'librechat-data-provider';
 import type { TMessageContentProps, TDisplayProps } from '~/common';
 import Error from '~/components/Messages/Content/Error';
 import { useMessageContext } from '~/Providers';
+import useSmoothedStreamText from '~/hooks/Messages/useSmoothedStreamText';
 import MarkdownLite from './MarkdownLite';
 import EditMessage from './EditMessage';
 import Thinking from './Parts/Thinking';
@@ -100,15 +101,22 @@ const DisplayMessage = ({ text, isCreatedByUser, message, showCursor }: TDisplay
     [showCursor, isSubmitting],
   );
 
+  /** Paces the reveal of the assistant's own growing text so a burst of
+   *  several sentences arriving in one network chunk doesn't pop in as a
+   *  single flash — scoped to the same condition that already drives the
+   *  `.result-streaming` fade-in below, so historical and non-streaming
+   *  messages render at full speed with no pacing overhead. */
+  const revealedText = useSmoothedStreamText(text, !isCreatedByUser && showCursorState);
+
   const content = useMemo(() => {
     if (!isCreatedByUser) {
-      return <Markdown content={text} isLatestMessage={isLatestMessage} />;
+      return <Markdown content={revealedText} isLatestMessage={isLatestMessage} />;
     }
     if (enableUserMsgMarkdown) {
       return <MarkdownLite content={text} />;
     }
     return <>{text}</>;
-  }, [isCreatedByUser, enableUserMsgMarkdown, text, isLatestMessage]);
+  }, [isCreatedByUser, enableUserMsgMarkdown, text, revealedText, isLatestMessage]);
 
   return (
     <Container message={message}>

@@ -1114,6 +1114,7 @@ class AgentClient extends BaseClient {
    *   thoughtSignatures?: Record<string, string>,
    *   contextUsage?: import('librechat-data-provider').TContextUsageEvent,
    *   usage?: import('librechat-data-provider').TResponseUsage,
+   *   respondingModel?: string,
    * } | undefined}
    */
   buildResponseMetadata() {
@@ -1121,11 +1122,20 @@ class AgentClient extends BaseClient {
      *   thoughtSignatures?: Record<string, string>,
      *   contextUsage?: import('librechat-data-provider').TContextUsageEvent,
      *   usage?: import('librechat-data-provider').TResponseUsage,
+     *   respondingModel?: string,
      * }} */
     const metadata = {};
     const signatures = this.collectedThoughtSignatures;
     if (signatures && Object.keys(signatures).length > 0) {
       metadata.thoughtSignatures = signatures;
+    }
+    /** The literal LLM that answered this turn (e.g. "gpt-5.6-luna"), distinct
+     *  from `message.model`, which for the agents endpoint holds the agent id.
+     *  An agent's model can vary turn to turn (intelligence levels, per-run
+     *  overrides), so this is captured per response rather than read off the
+     *  agent config. */
+    if (typeof this.model === 'string' && this.model.length > 0) {
+      metadata.respondingModel = this.model;
     }
     const usageEvents = this.usageEmitSink ?? [];
     /** Persist the breakdown only when the latest snapshot's OWN run completed —

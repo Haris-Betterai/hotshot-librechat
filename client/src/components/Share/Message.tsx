@@ -3,6 +3,7 @@ import type { TMessageProps } from '~/common';
 import MinimalHoverButtons from '~/components/Chat/Messages/MinimalHoverButtons';
 import MessageContent from '~/components/Chat/Messages/Content/MessageContent';
 import MessageTimestamp from '~/components/Chat/Messages/ui/MessageTimestamp';
+import MessageModelBadge from '~/components/Chat/Messages/ui/MessageModelBadge';
 import SearchContent from '~/components/Chat/Messages/Content/SearchContent';
 import SiblingSwitch from '~/components/Chat/Messages/SiblingSwitch';
 import SubRow from '~/components/Chat/Messages/SubRow';
@@ -69,6 +70,7 @@ export default function Message(props: TMessageProps) {
               <div className={cn('select-none font-semibold', fontSize)}>
                 {messageLabel}
                 <MessageTimestamp value={message.createdAt ?? message.clientTimestamp} />
+                <MessageModelBadge message={message} />
               </div>
               <div className="flex-col gap-1 md:gap-3">
                 <div className="flex min-h-[20px] max-w-full flex-grow flex-col gap-0">

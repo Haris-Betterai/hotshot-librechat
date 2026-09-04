@@ -4,6 +4,7 @@ import { useRecoilValue } from 'recoil';
 import type { TMessageProps, TMessageIcon } from '~/common';
 import MinimalHoverButtons from '~/components/Chat/Messages/MinimalHoverButtons';
 import MessageTimestamp from '~/components/Chat/Messages/ui/MessageTimestamp';
+import MessageModelBadge from '~/components/Chat/Messages/ui/MessageModelBadge';
 import Icon from '~/components/Chat/Messages/MessageIcon';
 import { useAuthContext, useLocalize } from '~/hooks';
 import SearchContent from './Content/SearchContent';
@@ -30,6 +31,7 @@ const MessageBody = ({ message, messageLabel, fontSize }) => (
     <div className={cn('select-none font-semibold', fontSize)}>
       {messageLabel}
       <MessageTimestamp value={message.createdAt ?? message.clientTimestamp} />
+      {message.isCreatedByUser !== true && <MessageModelBadge message={message} />}
     </div>
     <SearchContent message={message} />
     <SubRow classes="text-xs">
