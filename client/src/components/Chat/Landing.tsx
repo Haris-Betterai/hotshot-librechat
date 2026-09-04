@@ -247,7 +247,9 @@ export default function Landing({ centerFormOnLanding }: { centerFormOnLanding: 
               {description}
             </div>
           ))}
-        {selectedAgent && (
+        {/** The agent's support contact is staff-facing detail; a customer
+         *   landing on the chat does not need an admin name under the title. */}
+        {selectedAgent && !brandedSpecLabel && (
           <AgentContact
             agent={selectedAgent}
             className="animate-fadeIn mt-2 max-w-md justify-center text-center text-sm"

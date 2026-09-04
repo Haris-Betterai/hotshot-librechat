@@ -1521,6 +1521,10 @@ export const compactAgentsBaseSchema = tConversationSchema.pick({
   agent_id: true,
   instructions: true,
   additional_instructions: true,
+  /** Carries the selected intelligence level to the server, which maps it back
+   *  to a concrete model via the agent's `intelligence.levels`. Without it the
+   *  level selector cannot change which model answers. */
+  modelLabel: true,
 });
 
 export const compactAgentsSchema = compactAgentsBaseSchema

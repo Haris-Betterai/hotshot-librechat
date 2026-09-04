@@ -629,8 +629,15 @@ export async function initializeAgent(
     );
   }
 
+  /** The agents endpoint builder spreads every unrecognised conversation field
+   *  into `model_parameters`, so the selected intelligence level arrives there
+   *  rather than at the top level. Check both so the level is honoured however
+   *  the option object was assembled. */
+  const selectedModelLabel =
+    endpointOption?.modelLabel ??
+    (endpointOption?.model_parameters as { modelLabel?: string } | undefined)?.modelLabel;
   const intelligenceParameters = isInitialAgent
-    ? resolveIntelligenceParameters(agent, endpointOption?.modelLabel)
+    ? resolveIntelligenceParameters(agent, selectedModelLabel)
     : undefined;
   if (intelligenceParameters) {
     agent.model = intelligenceParameters.model;

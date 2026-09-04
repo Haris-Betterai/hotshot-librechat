@@ -11,6 +11,7 @@ import {
   processValidSettings,
   getDefaultModelSpec,
   getModelSpecPreset,
+  getWidgetModelSpec,
   isNotFoundError,
   isTemporaryConversation,
   logger,
@@ -167,7 +168,8 @@ export default function ChatRoute() {
 
     const getNewConvoPreset = () => {
       const result = getDefaultModelSpec(startupConfig, endpointsQuery.data);
-      const spec = result?.default ?? result?.last ?? result?.softDefault;
+      const resolved = result?.default ?? result?.last ?? result?.softDefault;
+      const spec = getWidgetModelSpec(resolved, startupConfig) ?? resolved;
       const specPreset = spec ? getModelSpecPreset(spec) : undefined;
 
       const queryParams: Record<string, string> = {};

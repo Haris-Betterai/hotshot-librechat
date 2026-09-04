@@ -12,6 +12,7 @@ import {
 import type * as t from 'librechat-data-provider';
 import type { LocalizeFunction, IconsRecord } from '~/common';
 import { getTimestampedValue } from './timestamps';
+import { isEmbedWidget } from './embed';
 
 /**
  * Clears model for non-ephemeral agent conversations.
@@ -407,6 +408,30 @@ export function getDefaultModelSpec(
     return { default: list[0] };
   }
   return;
+}
+
+/** Suffix marking a model spec as the embedded-widget variant of another spec. */
+export const WIDGET_SPEC_SUFFIX = '-widget';
+
+/**
+ * Resolve the embedded-widget variant of a spec, when running inside the embed
+ * iframe and a `<spec>-widget` entry exists. Lets an admin ship different
+ * formatting instructions for the narrow widget without duplicating the agent.
+ * Returns undefined outside the widget, or when no variant is configured.
+ */
+export function getWidgetModelSpec(
+  spec: t.TModelSpec | undefined,
+  startupConfig?: t.TStartupConfig,
+): t.TModelSpec | undefined {
+  if (!spec || !isEmbedWidget()) {
+    return undefined;
+  }
+  if (spec.name.endsWith(WIDGET_SPEC_SUFFIX)) {
+    return spec;
+  }
+  return startupConfig?.modelSpecs?.list?.find(
+    (entry) => entry.name === `${spec.name}${WIDGET_SPEC_SUFFIX}`,
+  );
 }
 
 export function getModelSpecPreset(modelSpec?: t.TModelSpec) {

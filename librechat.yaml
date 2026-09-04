@@ -676,6 +676,35 @@ modelSpecs:
         # endpoint: "agents"
         # agent_id: "agent_0MfryHPf-3lu93P9Kr5dH"
 
+    # Widget variant of the spec above. Same agent and tools; only the
+    # formatting instructions differ, because the embedded widget is a narrow
+    # column on someone else's page. The client picks the `<spec>-widget`
+    # variant automatically when it is running inside the embed iframe, so this
+    # entry is hidden from the model menu and is never the default.
+    - name: "hotshot-secret-ai-widget"
+      label: "Hotshot Secret AI"
+      description: "Find the right product, sort out a problem with your vehicle, or check what fits before you buy."
+      showOnLanding: true
+      showInMenu: false
+      iconURL: "/assets/hotshot-secret-ai.webp"
+      conversation_starters:
+        - "Which product fits my vehicle?"
+        - "My engine is running rough"
+        - "Compare your diesel treatments"
+        - "How much do I need?"
+      preset:
+        endpoint: "agents"
+        agent_id: "agent_nKWTo2vBXJZCNFl57pA6K"
+        iconURL: "/assets/hotshot-secret-ai.webp"
+        promptPrefix: |
+          You are answering inside a narrow embedded chat widget on a web page,
+          not a full-screen chat. Format for that space:
+          - Keep replies under about 70 words unless the customer asks for detail.
+          - Lead with the answer, then at most three short bullets.
+          - No tables and no headings.
+          - At most one link per reply.
+          - Ask one follow-up question at a time.
+
 # fileConfig:
 #   endpoints:
 #     assistants:

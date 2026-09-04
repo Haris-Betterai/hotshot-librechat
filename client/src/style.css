@@ -3035,3 +3035,93 @@ html.embed-widget #root {
   max-height: 100%;
   overflow: hidden;
 }
+
+/* ==========================================================================
+   Hot Shot's Secret brand
+   Palette sampled from hotshotsecret.com: near-black #141414, signature lime
+   #8dc63f, amber CTA #ff9900. Applied as accents and low-alpha gradients so
+   the embedded chat reads as part of the brand without competing with the
+   host page.
+   ========================================================================== */
+
+:root {
+  --hs-green: #8dc63f;
+  --hs-green-soft: #a0da51;
+  --hs-green-deep: #6ca62c;
+  --hs-amber: #ff9900;
+  --hs-ink: #141414;
+}
+
+:root,
+.dark {
+  /* Send button + focus ring pick up the brand lime. */
+  --surface-submit: var(--hs-green-deep);
+  --surface-submit-hover: var(--hs-green);
+  --ring-primary: var(--hs-green);
+}
+
+/* Soft brand wash behind the chat column. Two very low-alpha radials — lime
+   from the top-left, amber from the top-right — so the surface has depth
+   without reading as a coloured panel. */
+.hs-brand-wash::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(60rem 32rem at 12% -12%, rgb(141 198 63 / 7%), transparent 60%),
+    radial-gradient(48rem 28rem at 88% -8%, rgb(255 153 0 / 5%), transparent 62%);
+}
+
+.dark .hs-brand-wash::before {
+  background:
+    radial-gradient(60rem 32rem at 12% -12%, rgb(141 198 63 / 11%), transparent 60%),
+    radial-gradient(48rem 28rem at 88% -8%, rgb(255 153 0 / 7%), transparent 62%);
+}
+
+/* Keep chat content above the wash. */
+.hs-brand-wash > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Brand gradient for text. Only usable on a single text node: the landing
+   title is rendered by SplitText as one span per character, and those child
+   boxes have no background of their own, so `background-clip: text` on the
+   parent clips them all away. */
+.hs-brand-title {
+  background-image: linear-gradient(96deg, var(--hs-green) 0%, var(--hs-green-soft) 42%, var(--hs-amber) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+/* ==========================================================================
+   Streaming text fade-in
+   Scoped to `.result-streaming` so only a live response animates — reopening a
+   saved conversation renders instantly. A paragraph that is still growing
+   keeps its DOM node, so its animation runs once on insert rather than
+   restarting on every token.
+   ========================================================================== */
+
+@keyframes hsStreamFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.message-content.result-streaming :is(p, li, h1, h2, h3, h4, h5, h6, blockquote, pre, table, img) {
+  animation: hsStreamFadeIn 340ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .message-content.result-streaming :is(p, li, h1, h2, h3, h4, h5, h6, blockquote, pre, table, img) {
+    animation: none;
+  }
+}
