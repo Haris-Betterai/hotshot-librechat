@@ -1,7 +1,8 @@
-# Handoff — Hotshot Secret AI session (2026-09-04)
+# Handoff — Hotshot Secret AI session (2026-09-04 → 2026-09-05)
 
-Live site: **https://hotshotai.thebetterai.com** — verified on commit `8f6e2281d`, confirmed
-by sending a real message and reading the rendered DOM, not just trusting the deploy script.
+Live site: **https://hotshotai.thebetterai.com** — verified on commit `e691dd546`, confirmed
+against the server's own git HEAD, a `curl` 200, and a real Deepest-tier tool-calling question
+in the browser, not just the deploy script's own report.
 
 For the deploy mechanics themselves (branches, `deploy.sh`, tunnel setup), see
 **[CHANGES.md](./CHANGES.md)**, **[WORKFLOW.md](./WORKFLOW.md)**, **[LOCAL_DEV.md](./LOCAL_DEV.md)**.
@@ -46,6 +47,49 @@ tool call — cosmetic in prod since redirects are fast, but pure waste), a widg
 spec (`hotshot-secret-ai-widget`) with shorter formatting instructions for the embed iframe, and
 a brand color wash (lime/amber radial gradients sampled from hotshotsecret.com, `hs-brand-wash`
 in `style.css`).
+
+5. **`65c1a0de8`** — Make the embed widget actually load a chat
+   - The embed iframe (`client/public/embed.js` → `/embed/:embedId`) rendered a permanent
+     spinner. `EmbedRoute.tsx` was a stub that never fetched anything.
+   - Most of the supporting infrastructure already existed but only worked for a first-time
+     visitor, because it depended on a guest-session auth race: `AuthContext`'s
+     `startEmbedGuestSession` had to win before the route tried to read the agent config, and
+     any returning visitor with stale/partial cookies from prior testing broke that race.
+   - Fix redesigns the entry point to not depend on auth timing at all: a new unauthenticated
+     `GET /embeds/:embedId` config endpoint (`serveEmbedConfig` in `api/server/routes/embeds.js`,
+     registered *before* the `requireJwtAuth`/`checkAdmin` wall — same trust boundary as the
+     already-public `/launcher` and `/icon` routes) returns just `{ agentId, iconUrl }`.
+     `EmbedRoute` fetches that via `useGetEmbedWidgetConfigQuery` (no `queriesEnabled` gate, since
+     it must run before auth resolves) and redirects to `/c/new?agent_id=...&embed=1` the moment
+     it has an agent id — independent of whatever the guest session is doing. Origin allowlisting
+     is still enforced upstream via the existing CSP `frame-ancestors` check in
+     `api/server/index.js`; this route doesn't re-check it.
+   - Added `com_ui_embed_unavailable` copy for an invalid/expired embed id instead of spinning
+     forever. 5 tests in `EmbedRoute.test.tsx`.
+   - **Verification note:** testing "does this work for a fresh visitor" in-browser kept getting
+     confounded by same-origin cookies left over from earlier manual testing (`document.cookie`
+     can't touch httpOnly cookies; there's no real `/logout` page; the logout API needs an auth
+     header a plain fetch doesn't have). Solved by not needing the distinction at all — verified
+     the fix with a server-side `curl` (no cookies possible) plus a genuinely fresh browser tab.
+
+6. **`e691dd546`** — Surface the model's reasoning while a Deeper/Deepest reply is generating
+   - The "Thinking" / "Thoughts" UI (`Reasoning.tsx`, wired into `Part.tsx` for
+     `ContentTypes.THINK`) was already fully built and already rendered correctly — it just never
+     received any content, because nothing in the request asked OpenAI for a reasoning summary.
+     Before this, a customer on Deeper/Deepest just watched a static "..." for however many
+     seconds the model reasoned, with no visibility into why.
+   - Fix: `resolveIntelligenceParameters()` (`packages/api/src/agents/intelligence.ts`) now
+     returns `reasoning_summary: 'auto'` alongside `reasoning_effort` for any tier that reasons at
+     all (Deep/Deeper/Deepest), and omits it entirely for tiers that don't (Fast/Smart) — `'auto'`
+     because it's the only summary length guaranteed supported across reasoning models, unlike
+     `'concise'`/`'detailed'`. Everything downstream (`packages/api/src/endpoints/openai/llm.ts`,
+     the `THINK` content-part rendering) already supported this end-to-end; it was purely a
+     missing request parameter, not a missing feature.
+   - `packages/data-provider/src/intelligence.ts`'s `IntelligenceOption` type widened to carry the
+     new field. Tests updated/added in `intelligence.spec.ts`.
+   - **Verified live** at Deepest tier with a real tool-calling question ("fluid capacities for a
+     2021 Ford F-250 6.7 Powerstroke") — genuine reasoning content appeared both before and after
+     the tool call, followed by one clean final answer with no duplication.
 
 ---
 
@@ -156,8 +200,14 @@ still-valuable improvement to ship same-day as a production incident.
 - **Web search tool access** — asked for, not built. Confirmed LibreChat's built-in `webSearch`
   config supports Serper/SearXNG/Tavily as providers — not literally "OpenAI's web search tool."
   If the ask is the OpenAI Responses API's own `web_search` tool (model decides when to search,
-  no separate provider key), that's a smaller, different integration. Needs a decision on which
-  before building either.
+  no separate provider key), that's a smaller, different integration. Asked the user which was
+  meant; no answer yet as of end of session — **do not build either without that answer.**
+- **Per-character fade-in on streaming text** — explicitly not shipped. `useSmoothedStreamText`
+  (see below) paces the *reveal rate* but is not a visual fade; user asked for it again this
+  session ("bit smoother, bit calmer") and was told directly this is still just pacing, not a
+  fade. A true glyph-level fade needs an AST-level transform on the streamed markdown (to isolate
+  just-revealed characters into their own animated span without breaking mid-token bold/links/code
+  blocks) — not attempted.
 - **`CUSTOM_FOOTER` lives in `.env`, not `librechat.yaml`** — despite `interface.customFooter`
   existing in the schema, the actual footer route reads `process.env.CUSTOM_FOOTER`
   (`api/server/routes/config.js`). Set on both local and production `.env` this session; anyone
