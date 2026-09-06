@@ -110,10 +110,19 @@ const Reasoning = memo(({ reasoning, isLast }: ReasoningProps) => {
   const latestHeading = useMemo(() => extractLatestHeading(reasoningText), [reasoningText]);
 
   const label = useMemo(() => {
-    if (effectiveIsSubmitting && isLast) {
-      return latestHeading ?? localize('com_ui_thinking');
+    /** A heading, once it streams in, is more informative than the generic
+     *  label and stays as the label even after this block finishes — so a
+     *  finished reply still reads as "Searching for product
+     *  recommendations" rather than every collapsed block saying the same
+     *  bare "Thoughts". Only fall back to the generic word when no heading
+     *  ever arrived (e.g. a short block, or non-OpenAI reasoning text that
+     *  doesn't use this bold-heading convention). */
+    if (latestHeading) {
+      return latestHeading;
     }
-    return localize('com_ui_thoughts');
+    return effectiveIsSubmitting && isLast
+      ? localize('com_ui_thinking')
+      : localize('com_ui_thoughts');
   }, [effectiveIsSubmitting, isLast, latestHeading, localize]);
 
   const animatedLabel = (

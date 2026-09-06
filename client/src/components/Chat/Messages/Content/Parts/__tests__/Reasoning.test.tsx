@@ -82,15 +82,22 @@ describe('Reasoning', () => {
     expect(screen.queryByText('com_ui_thinking')).not.toBeInTheDocument();
   });
 
-  it('falls back to "thoughts" once generation is no longer live', () => {
+  it('keeps the heading as the label once generation is no longer live', () => {
     mockMessageContext = { isSubmitting: false, isLatestMessage: true };
     render(<Reasoning reasoning={'**Planning engine maintenance**\n\nDone.'} isLast={true} />);
-    expect(screen.getByText('com_ui_thoughts')).toBeInTheDocument();
+    expect(screen.getByText('Planning engine maintenance')).toBeInTheDocument();
+    expect(screen.queryByText('com_ui_thoughts')).not.toBeInTheDocument();
   });
 
-  it('shows "thoughts" for an earlier reasoning block that is no longer the last one', () => {
+  it('keeps the heading for an earlier reasoning block that is no longer the last one', () => {
     mockMessageContext = { isSubmitting: true, isLatestMessage: true };
     render(<Reasoning reasoning={'**Planning engine maintenance**\n\nDone.'} isLast={false} />);
+    expect(screen.getByText('Planning engine maintenance')).toBeInTheDocument();
+  });
+
+  it('falls back to "thoughts" for a finished block that never got a heading', () => {
+    mockMessageContext = { isSubmitting: false, isLatestMessage: true };
+    render(<Reasoning reasoning="Just plain reasoning text, no bold heading." isLast={true} />);
     expect(screen.getByText('com_ui_thoughts')).toBeInTheDocument();
   });
 });
