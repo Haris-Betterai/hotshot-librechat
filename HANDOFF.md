@@ -121,6 +121,61 @@
 - Docker emitted existing direct-eval, large-chunk, PWA glob, and dependency-audit warnings; none
   were introduced by a new package because this work added no dependencies.
 
+## Deployed to production — 2026-09-06
+
+Live at **https://hotshotai.thebetterai.com** on commit **`058ad1abc`**.
+
+### The first deploy attempt silently did nothing — and why
+
+`deploy.sh` reported nothing wrong, but production stayed on `9b278eb9d`. Caught by comparing
+bundle **content**, not the hash: the live `index.9cokyoAC.js` had **0** references to
+`agent-builder` and **0** to `AgentPanelSwitch`, where the intended build has 1 and 2. Route
+registration always lands in the router (index) chunk, so its absence could not be a code-splitting
+artifact.
+
+Cause, confirmed over SSH: the server's working tree had **one dirty file —
+`admin-branding/guest/index.html`** — so `git pull` refused. That file is tracked *and* regenerated
+by `deploy.sh` on every deploy, so it dirties itself each time and blocks the next pull. Fix:
+
+```
+git checkout -- admin-branding/guest/index.html && ./deploy.sh
+```
+
+**Worth fixing properly.** This will recur on every deploy. Either stop tracking the file
+(gitignore it, since `deploy.sh` regenerates it anyway) or have `deploy.sh` check it out before
+pulling. Left alone for now because it changes deploy behaviour for the whole team.
+
+Note the hash alone proved nothing in either direction: the server builds on its own architecture,
+so a differing hash is normal. Only content comparison was decisive.
+
+### Verification after the successful deploy
+
+Every check made against the server's own state or the live site, never the deploy script's output:
+
+| Check | Result |
+|---|---|
+| Server `git rev-parse HEAD` | **`058ad1abc`** on `main` |
+| `LibreChat` container | running, restarted 20:17:00Z |
+| `/` and `/api/config` | **200**, appTitle "Hotshot AI", guest mode on |
+| Live bundle | `index.9cokyoAC.js` -> **`index.Ci5eLSxg.js`** |
+| `agent-builder` refs in bundle | 0 -> **1** |
+| `AgentPanelSwitch` refs | 0 -> **2** |
+| Route tree | sibling of `search`/`prompts`/`skills`, with `/staff/prompts/new` present and **0** matches for the customer-tree `embed/:embedId` shape |
+| `GET /staff/agent-builder` | **200** |
+| Live bundle vs the build verified locally | **byte-identical** |
+| Backend startup log | `Server listening`, `[MCPServersRegistry] Creating new instance`, **no errors** — `startLearningScheduler()` did not break boot |
+
+The byte-identical result is the strongest available statement: the exact artifact tested locally is
+what production now serves.
+
+### Already live before this deploy
+
+Both prompt edits are database records on the shared Mongo, so they reached customers as soon as
+they were saved and never depended on the deploy: prompt **5,869 characters**, **version 16**,
+https-only image rule and product-lookup rule both present.
+
+---
+
 ## Runtime verification pass — 2026-09-06 (rebuild + live testing)
 
 The user asked to run the rebuild and keep going until everything was done. Checklist items 1-8 are
@@ -552,8 +607,9 @@ deploy.
 10. ~~Decide on the two recommended prompt edits~~ — **applied and verified live** on the user's
     instruction. Prompt is now 5,869 chars, version 16. The failing `get_product_by_url` call is
     gone (3 tool calls -> 2, 0 failed) and product images still render correctly.
-11. **Review the diff, commit, push, and deploy using `WORKFLOW.md`.** This is the only open item.
-    Nothing has been committed or
+11. ~~Review the diff, commit, push, and deploy using `WORKFLOW.md`.~~ — **done.** Three commits
+    pushed and deployed; production verified on `058ad1abc`. See the deploy section above. Superseded
+    note: nothing had been committed or
     deployed. After deployment verify the server's own git HEAD, `/api/config`, the full-page staff
     route, the automatic-review APIs, and real Fast and Deepest tool calls. Do not treat
     deploy-script output alone as proof.
