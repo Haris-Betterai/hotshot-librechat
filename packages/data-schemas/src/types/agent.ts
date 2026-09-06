@@ -54,6 +54,7 @@ export interface IAgent extends Omit<Document, 'model'> {
   subagents?: AgentSubagentsConfig;
   /** Memory partition: 'agent' isolates memories per (user, agent); default shared pool */
   memory_scope?: MemoryScope;
+  learning?: import('librechat-data-provider').AgentLearning;
   intelligence?: {
     heading?: string;
     levels?: Array<{ label: string; model: string }>;

@@ -226,7 +226,7 @@ export const isAvatarUploadOnlyDirty = (
   return result.sawDirty && result.onlyAvatarDirty;
 };
 
-export default function AgentPanel() {
+export default function AgentPanel({ fullPage = false }: { fullPage?: boolean }) {
   const localize = useLocalize();
   const { user } = useAuthContext();
   const { showToast } = useToastContext();
@@ -503,10 +503,12 @@ export default function AgentPanel() {
     <FormProvider {...methods}>
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="scrollbar-gutter-stable flex flex-1 flex-col px-3 pb-3 pt-2"
+        className={`scrollbar-gutter-stable flex flex-1 flex-col ${
+          fullPage ? 'h-full overflow-y-auto px-5 pb-0 pt-5 md:px-8' : 'px-3 pb-3 pt-2'
+        }`}
         aria-label="Agent configuration form"
       >
-        <div className="flex-1">
+        <div className={`flex-1 ${fullPage ? 'mx-auto w-full max-w-7xl' : ''}`}>
           <div className="flex w-full flex-wrap gap-2">
             <div className="w-full">
               <AgentSelect
@@ -561,7 +563,7 @@ export default function AgentPanel() {
             <ModelPanel models={models} providers={providers} setActivePanel={setActivePanel} />
           )}
           {canEditAgent && !agentQuery.isInitialLoading && activePanel === Panel.builder && (
-            <AgentConfig />
+            <AgentConfig fullPage={fullPage} />
           )}
           {canEditAgent && !agentQuery.isInitialLoading && activePanel === Panel.advanced && (
             <AdvancedPanel />
@@ -569,6 +571,7 @@ export default function AgentPanel() {
         </div>
         {canEditAgent && !agentQuery.isInitialLoading && (
           <AgentFooter
+            fullPage={fullPage}
             createMutation={create}
             updateMutation={update}
             isAvatarUploading={isAvatarUploadInFlight || uploadAvatarMutation.isLoading}

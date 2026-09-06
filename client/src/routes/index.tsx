@@ -53,6 +53,11 @@ const loadProjectWorkspace = () =>
     Component: m.ProjectWorkspace,
   }));
 
+const loadAgentBuilderPage = () =>
+  import('~/components/Agents/AgentBuilderPage').then((m) => ({
+    Component: m.default,
+  }));
+
 const baseEl = document.querySelector('base');
 const baseHref = baseEl?.getAttribute('href') || '/';
 
@@ -205,6 +210,10 @@ export const router = createBrowserRouter(
             {
               path: 'c/:conversationId?',
               element: <ChatRoute />,
+            },
+            {
+              path: 'agent-builder',
+              lazy: loadAgentBuilderPage,
             },
             {
               path: 'search',

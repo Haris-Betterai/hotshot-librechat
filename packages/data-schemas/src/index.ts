@@ -5,6 +5,8 @@ export * from './crypto';
 export * from './schema';
 export * from './utils';
 export { createModels } from './models';
+export { createLearningModel } from './models/learning';
+export type { LearningState } from './models/learning';
 export {
   createMethods,
   RoleConflictError,

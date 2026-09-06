@@ -6,27 +6,39 @@ import VersionPanel from './Version/VersionPanel';
 import AgentPanel from './AgentPanel';
 import store from '~/store';
 
-export default function AgentPanelSwitch() {
+export default function AgentPanelSwitch({
+  fullPage = false,
+  initialAgentId,
+}: {
+  fullPage?: boolean;
+  initialAgentId?: string;
+}) {
   return (
     <AgentPanelProvider>
-      <AgentPanelSwitchWithContext />
+      <AgentPanelSwitchWithContext fullPage={fullPage} initialAgentId={initialAgentId} />
     </AgentPanelProvider>
   );
 }
 
-function AgentPanelSwitchWithContext() {
+function AgentPanelSwitchWithContext({
+  fullPage,
+  initialAgentId,
+}: {
+  fullPage: boolean;
+  initialAgentId?: string;
+}) {
   const { activePanel, setCurrentAgentId } = useAgentPanelContext();
   const agentId = useRecoilValue(store.conversationAgentIdByIndex(0));
 
   useEffect(() => {
-    const agent_id = agentId ?? '';
+    const agent_id = initialAgentId ?? agentId ?? '';
     if (!isEphemeralAgent(agent_id)) {
       setCurrentAgentId(agent_id);
     }
-  }, [setCurrentAgentId, agentId]);
+  }, [setCurrentAgentId, agentId, initialAgentId]);
 
   if (activePanel === Panel.version) {
     return <VersionPanel />;
   }
-  return <AgentPanel />;
+  return <AgentPanel fullPage={fullPage} />;
 }

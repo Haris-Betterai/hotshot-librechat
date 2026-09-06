@@ -1,17 +1,17 @@
-import { getIntelligenceOptions } from 'librechat-data-provider';
+import {
+  getIntelligenceOptions,
+  isIntelligenceEffort,
+  MAX_INTELLIGENCE_LEVELS,
+} from 'librechat-data-provider';
 import type { Agent, IntelligenceOption } from 'librechat-data-provider';
 
-export type AgentIntelligenceLevel = {
-  label: string;
-  model: string;
-};
+export type AgentIntelligenceLevel = import('librechat-data-provider').IntelligenceLevel;
 
 export type AgentIntelligence = {
   heading: string;
   levels: AgentIntelligenceLevel[];
 };
 
-const MAX_LEVELS = 4;
 const MAX_LABEL = 40;
 const MAX_HEADING = 80;
 const MAX_MODEL = 120;
@@ -26,7 +26,7 @@ export function parseIntelligence(input: unknown): AgentIntelligence | null {
   const rawLevels = Array.isArray(raw.levels) ? raw.levels : [];
 
   const levels: AgentIntelligenceLevel[] = [];
-  for (const item of rawLevels.slice(0, MAX_LEVELS)) {
+  for (const item of rawLevels.slice(0, MAX_INTELLIGENCE_LEVELS)) {
     if (item == null || typeof item !== 'object' || Array.isArray(item)) {
       continue;
     }
@@ -36,7 +36,13 @@ export function parseIntelligence(input: unknown): AgentIntelligence | null {
     if (!label || !model) {
       continue;
     }
-    levels.push({ label, model });
+    if (levels.some((level) => level.label === label)) {
+      continue;
+    }
+    const reasoning_effort = isIntelligenceEffort(row.reasoning_effort)
+      ? row.reasoning_effort
+      : undefined;
+    levels.push({ label, model, ...(reasoning_effort ? { reasoning_effort } : {}) });
   }
 
   if (levels.length === 0) {
@@ -73,6 +79,9 @@ export function resolveIntelligenceParameters(
   );
   if (!option) {
     return;
+  }
+  if (option.reasoning_effort === 'none') {
+    return { model: option.model, reasoning_effort: 'none' };
   }
   /** A level that reasons at all should also surface a summary of that
    *  reasoning — otherwise a customer watching "Deepest" think for several

@@ -1,9 +1,19 @@
 import type { Agent } from './types/assistants';
 
-export type IntelligenceOption = {
+export const intelligenceEfforts = ['none', 'low', 'medium', 'high', 'xhigh', 'max'] as const;
+export type IntelligenceEffort = (typeof intelligenceEfforts)[number];
+export const MAX_INTELLIGENCE_LEVELS = 5;
+export function isIntelligenceEffort(value: unknown): value is IntelligenceEffort {
+  return intelligenceEfforts.some((effort) => effort === value);
+}
+
+export type IntelligenceLevel = {
   label: string;
   model: string;
-  reasoning_effort?: 'low' | 'medium' | 'high';
+  reasoning_effort?: IntelligenceEffort;
+};
+
+export type IntelligenceOption = IntelligenceLevel & {
   /** Requests a human-readable summary of the model's reasoning from the
    *  Responses API — OpenAI never exposes the raw reasoning tokens, only
    *  this optional summary. Derived alongside `reasoning_effort` rather than
@@ -22,6 +32,7 @@ export function getIntelligenceOptions(
   if (
     provider !== 'openAI' ||
     levels.length !== 3 ||
+    levels.some((level) => level.reasoning_effort !== undefined) ||
     fast.label.toLowerCase() !== 'fast' ||
     smart.label.toLowerCase() !== 'smart' ||
     smarter.label.toLowerCase() !== 'smarter' ||

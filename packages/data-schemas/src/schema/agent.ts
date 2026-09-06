@@ -134,6 +134,17 @@ const agentSchema: Schema<IAgent> = new Schema<IAgent>(
       enum: ['user', 'agent'],
       default: undefined,
     },
+    learning: {
+      type: new Schema(
+        {
+          enabled: { type: Boolean, default: false },
+          rules: { type: [String], enum: ['introductions', 'questions', 'brevity'], default: [] },
+          changes: { type: [Schema.Types.Mixed], default: [] },
+        },
+        { _id: false },
+      ),
+      default: undefined,
+    },
     intelligence: {
       type: Schema.Types.Mixed,
       default: undefined,

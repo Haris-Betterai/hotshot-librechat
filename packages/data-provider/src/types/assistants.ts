@@ -312,10 +312,11 @@ export type Agent = {
   subagents?: AgentSubagentsConfig;
   /** Memory partition: `agent` isolates memories per (user, agent); default shared pool */
   memory_scope?: MemoryScope;
-  /** Guest/embed intelligence slider: up to 4 labeled OpenAI models. */
+  learning?: import('../learning').AgentLearning;
+  /** Guest/embed intelligence slider with per-level reasoning effort. */
   intelligence?: {
     heading?: string;
-    levels?: Array<{ label: string; model: string }>;
+    levels?: import('../intelligence').IntelligenceLevel[];
   };
 };
 

@@ -11,13 +11,14 @@ import ToolsSection from './Tools/ToolsSection';
 import { icons } from '~/hooks/Endpoint/Icons';
 import Levels from './intelligence/Levels';
 import Instructions from './Instructions';
+import Reviews from './learning/Reviews';
 import FileContext from './FileContext';
 import AgentAvatar from './AgentAvatar';
 import { Panel } from '~/common';
 
 const fieldClass = 'h-9';
 
-export default function AgentConfig() {
+export default function AgentConfig({ fullPage = false }: { fullPage?: boolean }) {
   const localize = useLocalize();
   const methods = useFormContext<AgentForm>();
   const { setActivePanel, endpointsConfig, agentsConfig } = useAgentPanelContext();
@@ -52,7 +53,7 @@ export default function AgentConfig() {
   }
 
   return (
-    <div className="h-auto pt-1">
+    <div className={cn('h-auto pt-1', fullPage && 'pb-4')}>
       {/* IDENTITY — flat header, always visible, avatar inline */}
       <div className="mb-3 mt-1 flex items-center gap-3">
         <div className="flex-shrink-0">
@@ -104,141 +105,160 @@ export default function AgentConfig() {
         </div>
       </div>
 
-      {/* MODEL + CATEGORY — balanced 2-column grid */}
-      <div className="mb-3 grid grid-cols-2 gap-2">
-        <div className="flex min-w-0 flex-col">
-          <label
-            className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-text-secondary"
-            htmlFor="provider"
-          >
-            {localize('com_ui_model')} <span className="text-red-500">*</span>
-          </label>
-          <button
-            type="button"
-            onClick={() => setActivePanel(Panel.model)}
-            title={model || undefined}
-            className={cn(
-              'relative flex h-9 w-full min-w-0 items-center overflow-hidden rounded-lg border border-border-light bg-surface-secondary text-sm font-medium text-text-primary transition-colors hover:bg-surface-tertiary focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-primary',
-              model != null && model ? 'px-1' : 'px-3',
-            )}
-          >
-            <div className="flex w-full min-w-0 items-center gap-2">
-              {Icon && (
-                <div className="shadow-stroke relative flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-white text-black dark:bg-white">
-                  <Icon
-                    className="h-2/3 w-2/3"
-                    endpoint={providerValue as string}
-                    endpointType={endpointType}
-                    iconURL={endpointIconURL}
-                  />
-                </div>
-              )}
-              <span className="truncate">
-                {model != null && model ? model : localize('com_ui_select_model')}
-              </span>
+      <div
+        className={cn(
+          fullPage && 'grid items-start gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]',
+        )}
+      >
+        <div className={cn(fullPage && 'lg:col-start-2')}>
+          <Levels />
+
+          <details className="mb-3 rounded-lg border border-border-light p-3">
+            <summary className="cursor-pointer text-sm text-text-secondary">
+              {localize('com_ui_intelligence_fallback_settings')}
+            </summary>
+            <p className="my-2 text-xs text-text-secondary">
+              {localize('com_ui_intelligence_fallback_hint')}
+            </p>
+            <div className="mb-3 grid grid-cols-2 gap-2">
+              <div className="flex min-w-0 flex-col">
+                <label
+                  className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-text-secondary"
+                  htmlFor="provider"
+                >
+                  {localize('com_ui_intelligence_fallback_model')}{' '}
+                  <span className="text-red-500">*</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setActivePanel(Panel.model)}
+                  title={model || undefined}
+                  className={cn(
+                    'relative flex h-9 w-full min-w-0 items-center overflow-hidden rounded-lg border border-border-light bg-surface-secondary text-sm font-medium text-text-primary transition-colors hover:bg-surface-tertiary focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-primary',
+                    model != null && model ? 'px-1' : 'px-3',
+                  )}
+                >
+                  <div className="flex w-full min-w-0 items-center gap-2">
+                    {Icon && (
+                      <div className="shadow-stroke relative flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-white text-black dark:bg-white">
+                        <Icon
+                          className="h-2/3 w-2/3"
+                          endpoint={providerValue as string}
+                          endpointType={endpointType}
+                          iconURL={endpointIconURL}
+                        />
+                      </div>
+                    )}
+                    <span className="truncate">
+                      {model != null && model ? model : localize('com_ui_select_model')}
+                    </span>
+                  </div>
+                </button>
+              </div>
+              <div className="flex flex-col">
+                <label
+                  className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-text-secondary"
+                  htmlFor="category-selector"
+                >
+                  {localize('com_ui_category')} <span className="text-red-500">*</span>
+                </label>
+                <AgentCategorySelector className="w-full rounded-lg" />
+              </div>
             </div>
-          </button>
-        </div>
-        <div className="flex flex-col">
-          <label
-            className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-text-secondary"
-            htmlFor="category-selector"
-          >
-            {localize('com_ui_category')} <span className="text-red-500">*</span>
-          </label>
-          <AgentCategorySelector className="w-full rounded-lg" />
-        </div>
-      </div>
+          </details>
 
-      <Levels />
-
-      {/* INSTRUCTIONS */}
-      <Instructions />
-
-      {/* TOOLS — unified built-ins / tools / actions / mcp / skills */}
-      <ToolsSection agentId={agent_id} />
-
-      {/* FILE CONTEXT — standalone section, separate from the tool library */}
-      {contextEnabled && (
-        <div className="mb-3">
-          <FileContext agent_id={agent_id} files={contextFiles} />
-        </div>
-      )}
-
-      {/* SUPPORT CONTACT */}
-      <div className="mb-3 flex flex-col">
-        <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-text-secondary">
-          {localize('com_ui_support_contact')}
-        </label>
-        <div className="space-y-2">
-          <Controller
-            name="support_contact.name"
-            control={control}
-            rules={{
-              minLength: {
-                value: 3,
-                message: localize('com_ui_support_contact_name_min_length', { minLength: 3 }),
-              },
-            }}
-            render={({ field, fieldState: { error } }) => (
-              <div className="flex flex-col">
-                <Input
-                  {...field}
-                  value={field.value ?? ''}
-                  className={cn(fieldClass, error && 'border-2 border-red-500')}
-                  id="support-contact-name"
-                  type="text"
-                  placeholder={localize('com_ui_support_contact_name_placeholder')}
-                  aria-label={localize('com_ui_support_contact_name')}
-                  aria-invalid={error ? 'true' : 'false'}
-                  aria-describedby={error ? 'support-contact-name-error' : undefined}
-                />
-                {error && (
-                  <span
-                    id="support-contact-name-error"
-                    className="mt-1 text-xs text-red-500"
-                    role="alert"
-                    aria-live="polite"
-                  >
-                    {error.message}
-                  </span>
+          {/* SUPPORT CONTACT */}
+          <div className="mb-3 flex flex-col">
+            <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-text-secondary">
+              {localize('com_ui_support_contact')}
+            </label>
+            <div className="space-y-2">
+              <Controller
+                name="support_contact.name"
+                control={control}
+                rules={{
+                  minLength: {
+                    value: 3,
+                    message: localize('com_ui_support_contact_name_min_length', { minLength: 3 }),
+                  },
+                }}
+                render={({ field, fieldState: { error } }) => (
+                  <div className="flex flex-col">
+                    <Input
+                      {...field}
+                      value={field.value ?? ''}
+                      className={cn(fieldClass, error && 'border-2 border-red-500')}
+                      id="support-contact-name"
+                      type="text"
+                      placeholder={localize('com_ui_support_contact_name_placeholder')}
+                      aria-label={localize('com_ui_support_contact_name')}
+                      aria-invalid={error ? 'true' : 'false'}
+                      aria-describedby={error ? 'support-contact-name-error' : undefined}
+                    />
+                    {error && (
+                      <span
+                        id="support-contact-name-error"
+                        className="mt-1 text-xs text-red-500"
+                        role="alert"
+                        aria-live="polite"
+                      >
+                        {error.message}
+                      </span>
+                    )}
+                  </div>
                 )}
-              </div>
-            )}
-          />
-          <Controller
-            name="support_contact.email"
-            control={control}
-            rules={{
-              validate: (value) =>
-                validateEmail(value ?? '', localize('com_ui_support_contact_email_invalid')),
-            }}
-            render={({ field, fieldState: { error } }) => (
-              <div className="flex flex-col">
-                <Input
-                  {...field}
-                  value={field.value ?? ''}
-                  className={cn(fieldClass, error && 'border-2 border-red-500')}
-                  id="support-contact-email"
-                  type="email"
-                  placeholder={localize('com_ui_support_contact_email_placeholder')}
-                  aria-label={localize('com_ui_support_contact_email')}
-                  aria-invalid={error ? 'true' : 'false'}
-                  aria-describedby={error ? 'support-contact-email-error' : undefined}
-                />
-                {error && (
-                  <span
-                    id="support-contact-email-error"
-                    className="mt-1 text-xs text-red-500"
-                    role="alert"
-                    aria-live="polite"
-                  >
-                    {error.message}
-                  </span>
+              />
+              <Controller
+                name="support_contact.email"
+                control={control}
+                rules={{
+                  validate: (value) =>
+                    validateEmail(value ?? '', localize('com_ui_support_contact_email_invalid')),
+                }}
+                render={({ field, fieldState: { error } }) => (
+                  <div className="flex flex-col">
+                    <Input
+                      {...field}
+                      value={field.value ?? ''}
+                      className={cn(fieldClass, error && 'border-2 border-red-500')}
+                      id="support-contact-email"
+                      type="email"
+                      placeholder={localize('com_ui_support_contact_email_placeholder')}
+                      aria-label={localize('com_ui_support_contact_email')}
+                      aria-invalid={error ? 'true' : 'false'}
+                      aria-describedby={error ? 'support-contact-email-error' : undefined}
+                    />
+                    {error && (
+                      <span
+                        id="support-contact-email-error"
+                        className="mt-1 text-xs text-red-500"
+                        role="alert"
+                        aria-live="polite"
+                      >
+                        {error.message}
+                      </span>
+                    )}
+                  </div>
                 )}
-              </div>
-            )}
-          />
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className={cn(fullPage && 'lg:col-start-1 lg:row-start-1')}>
+          {/* INSTRUCTIONS */}
+          <Instructions fullPage={fullPage} />
+          <Reviews agentId={agent_id} />
+
+          {/* TOOLS — unified built-ins / tools / actions / mcp / skills */}
+          <ToolsSection agentId={agent_id} />
+
+          {/* FILE CONTEXT — standalone section, separate from the tool library */}
+          {contextEnabled && (
+            <div className="mb-3">
+              <FileContext agent_id={agent_id} files={contextFiles} />
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -184,10 +184,8 @@ export const guestEmbedSession = (embedId: string) =>
 
 const embedsRoot = `${BASE_URL}/api/embeds`;
 export const embeds = () => embedsRoot;
-export const embedWidget = (embedId: string) =>
-  `${embedsRoot}/${encodeURIComponent(embedId)}`;
-export const embedWidgetIcon = (embedId: string) =>
-  `${embedWidget(embedId)}/icon`;
+export const embedWidget = (embedId: string) => `${embedsRoot}/${encodeURIComponent(embedId)}`;
+export const embedWidgetIcon = (embedId: string) => `${embedWidget(embedId)}/icon`;
 
 export const requestPasswordReset = () => `${BASE_URL}/api/auth/requestPasswordReset`;
 
@@ -541,3 +539,5 @@ export const getAllEffectivePermissions = (resourceType: ResourceType) =>
 // SharePoint Graph API Token
 export const graphToken = (scopes: string) =>
   `${BASE_URL}/api/auth/graph-token?scopes=${encodeURIComponent(scopes)}`;
+export const agentLearning = (agentId: string, action?: 'review' | 'rollback') =>
+  agents({ path: `${encodeURIComponent(agentId)}/learning${action ? `/${action}` : ''}` });

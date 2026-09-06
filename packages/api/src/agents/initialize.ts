@@ -9,6 +9,7 @@ import {
   paramEndpoints,
   isAgentsEndpoint,
   replaceSpecialVars,
+  learningInstructions,
   providerEndpointMap,
 } from 'librechat-data-provider';
 import type {
@@ -617,6 +618,11 @@ export async function initializeAgent(
 
   if (!db) {
     throw new Error('initializeAgent requires db methods to be passed');
+  }
+
+  const learnedGuidance = learningInstructions(agent.learning);
+  if (learnedGuidance) {
+    appendAdditionalInstructions(agent, learnedGuidance);
   }
 
   if (

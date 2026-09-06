@@ -51,6 +51,7 @@ export default function Root() {
   const isGuest = user?.provider === 'anonymous';
   const isEmbed = isEmbedWidget();
   const isStaffView = isStaffPath(location.pathname);
+  const isAgentBuilderPage = location.pathname.startsWith('/staff/agent-builder');
 
   useHealthCheck(isAuthenticated);
 
@@ -113,7 +114,7 @@ export default function Root() {
               {!isEmbed && <Banner onHeightChange={setBannerHeight} />}
               <div className="flex" style={{ height: `calc(100dvh - ${bannerHeight}px)` }}>
                 <div className="relative z-0 flex h-full w-full overflow-hidden">
-                  {isStaffView && <UnifiedSidebar />}
+                  {isStaffView && !isAgentBuilderPage && <UnifiedSidebar />}
                   <div
                     className="relative flex h-full max-w-full flex-1 flex-col overflow-hidden"
                     style={{

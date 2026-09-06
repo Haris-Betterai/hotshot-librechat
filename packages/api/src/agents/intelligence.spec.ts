@@ -1,4 +1,45 @@
-import { resolveIntelligenceParameters, responsesApiOverride } from './intelligence';
+import {
+  parseIntelligence,
+  resolveIntelligenceParameters,
+  responsesApiOverride,
+} from './intelligence';
+
+describe('admin-configured intelligence', () => {
+  it('round-trips five saved levels and resolves guest selections including Max', () => {
+    const levels = ['none', 'low', 'medium', 'high', 'max'].map((effort) => ({
+      label: effort,
+      model: 'gpt-5.6-sol',
+      reasoning_effort: effort,
+    }));
+    const intelligence = parseIntelligence({ heading: 'Thinking', levels });
+    expect(intelligence?.levels).toEqual(levels);
+    const configured = { provider: 'openAI', intelligence: intelligence ?? undefined };
+    expect(resolveIntelligenceParameters(configured, 'max')).toEqual({
+      model: 'gpt-5.6-sol',
+      reasoning_effort: 'max',
+      reasoning_summary: 'auto',
+    });
+    expect(resolveIntelligenceParameters(configured, 'none')).toEqual({
+      model: 'gpt-5.6-sol',
+      reasoning_effort: 'none',
+    });
+    expect(resolveIntelligenceParameters(configured, 'unconfigured')).toBeUndefined();
+    expect(responsesApiOverride({ model: 'gpt-5.6-sol', tools: ['lookup'] })).toEqual({
+      useResponsesApi: true,
+    });
+  });
+
+  it('strips invalid efforts and ignores duplicate labels', () => {
+    expect(
+      parseIntelligence({
+        levels: [
+          { label: 'Custom', model: 'gpt-5.6', reasoning_effort: 'ultra' },
+          { label: 'Custom', model: 'other', reasoning_effort: 'max' },
+        ],
+      })?.levels,
+    ).toEqual([{ label: 'Custom', model: 'gpt-5.6' }]);
+  });
+});
 
 const agent = {
   provider: 'openAI',

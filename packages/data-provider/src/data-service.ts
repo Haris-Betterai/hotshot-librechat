@@ -1424,3 +1424,15 @@ export interface ActiveJobsResponse {
 export const getActiveJobs = (): Promise<ActiveJobsResponse> => {
   return request.get(endpoints.activeJobs());
 };
+export const getAgentLearning = (agentId: string): Promise<import('./learning').LearningReport> =>
+  request.get(endpoints.agentLearning(agentId));
+
+export const updateAgentLearning = (
+  agentId: string,
+  action: 'enable' | 'disable' | 'review' | 'rollback',
+): Promise<import('./learning').LearningReport> => {
+  if (action === 'enable' || action === 'disable') {
+    return request.patch(endpoints.agentLearning(agentId), { enabled: action === 'enable' });
+  }
+  return request.post(endpoints.agentLearning(agentId, action));
+};

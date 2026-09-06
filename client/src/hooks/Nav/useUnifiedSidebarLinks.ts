@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
 import { useRecoilValue } from 'recoil';
 import { MessagesSquare } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useUserKeyQuery } from 'librechat-data-provider/react-query';
-import { getConfigDefaults, getEndpointField } from 'librechat-data-provider';
+import { EModelEndpoint, getConfigDefaults, getEndpointField } from 'librechat-data-provider';
 import type { TEndpointsConfig } from 'librechat-data-provider';
 import type { NavLink } from '~/common';
 import ConversationsSection from '~/components/UnifiedSidebar/ConversationsSection';
@@ -13,6 +14,7 @@ import store from '~/store';
 const defaultInterface = getConfigDefaults().interface;
 
 export default function useUnifiedSidebarLinks() {
+  const navigate = useNavigate();
   const conversation = useRecoilValue(store.conversationByIndex(0));
   const endpoint = conversation?.endpoint;
   const { data: startupConfig } = useGetStartupConfig();
@@ -58,8 +60,23 @@ export default function useUnifiedSidebarLinks() {
       Component: ConversationsSection,
     };
 
-    return [conversationLink, ...sideNavLinks];
-  }, [sideNavLinks]);
+    const staffLinks = sideNavLinks.map((link) => {
+      if (link.id !== EModelEndpoint.agents) {
+        return link;
+      }
+      return {
+        ...link,
+        onClick: () => {
+          const query = conversation?.agent_id
+            ? `?agent_id=${encodeURIComponent(conversation.agent_id)}`
+            : '';
+          navigate(`/staff/agent-builder${query}`);
+        },
+      };
+    });
+
+    return [conversationLink, ...staffLinks];
+  }, [sideNavLinks, conversation?.agent_id, navigate]);
 
   return links;
 }

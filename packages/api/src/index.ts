@@ -76,6 +76,8 @@ export * from './stream';
 export { memoryDiagnostics } from './utils/memory';
 /* RUM */
 export * from './rum/proxy';
+export { learningHandler } from './agents/learning/handlers';
+export { startLearningScheduler } from './agents/learning/service';
 /* types */
 export type * from './mcp/types';
 export type * from './flow/types';

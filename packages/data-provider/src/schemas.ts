@@ -365,7 +365,7 @@ export const defaultAgentFormValues = {
   /** Memory partition: 'agent' isolates memories per (user, agent); default shared pool */
   memory_scope: undefined as MemoryScope | undefined,
   intelligence: undefined as
-    | { heading?: string; levels?: Array<{ label: string; model: string }> }
+    | { heading?: string; levels?: import('./intelligence').IntelligenceLevel[] }
     | undefined,
 };
 

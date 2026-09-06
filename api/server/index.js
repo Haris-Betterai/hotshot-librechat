@@ -10,7 +10,12 @@ const passport = require('passport');
 const compression = require('compression');
 const cookieParser = require('cookie-parser');
 const mongoSanitize = require('express-mongo-sanitize');
-const { logger, runAsSystem, tenantStorage, activeExpirationFilter } = require('@librechat/data-schemas');
+const {
+  logger,
+  runAsSystem,
+  tenantStorage,
+  activeExpirationFilter,
+} = require('@librechat/data-schemas');
 const {
   isEnabled,
   apiNotFound,
@@ -25,6 +30,7 @@ const {
   deleteAgentCheckpoint,
   initializeFileStorage,
   initializeDeploymentSkills,
+  startLearningScheduler,
   loadToolApprovalHooks,
   maybeInjectQueryDevtoolsBootstrap,
   preAuthTenantMiddleware,
@@ -139,6 +145,7 @@ const startServer = async () => {
   initializeFileStorage(appConfig);
   await initializeDeploymentSkills({ projectRoot: path.resolve(__dirname, '../..') });
   initializeGitHubSkillSync(appConfig);
+  startLearningScheduler();
   startExpiredFileSweep({ appConfig, loadAppConfig: getAppConfig });
   // Register any programmatic tool-approval policy hooks declared in
   // `endpoints.agents.toolApproval.hooks`. Honor the `enabled` kill switch: when tool
@@ -244,8 +251,7 @@ const startServer = async () => {
 
       const EmbedWidgetLink = mongoose.models.EmbedWidgetLink;
       const findEmbed = async () =>
-        (await EmbedWidgetLink.findOne({ embedId, ...activeExpirationFilter() }).lean()) ??
-        null;
+        (await EmbedWidgetLink.findOne({ embedId, ...activeExpirationFilter() }).lean()) ?? null;
 
       // embedId is secret/unguessable; resolve in system scope so it can be
       // looked up even if a viewer hits it under a different tenant.
