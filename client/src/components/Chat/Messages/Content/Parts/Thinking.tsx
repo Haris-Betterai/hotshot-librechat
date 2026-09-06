@@ -40,7 +40,7 @@ export const ThinkingButton = memo(
   }: {
     isExpanded: boolean;
     onClick: (e: MouseEvent<HTMLButtonElement>) => void;
-    label: string;
+    label: React.ReactNode;
     content?: string;
     contentId: string;
     showCopyButton?: boolean;
