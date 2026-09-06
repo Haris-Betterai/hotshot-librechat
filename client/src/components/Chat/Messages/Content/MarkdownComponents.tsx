@@ -7,7 +7,7 @@ import CodeBlock from '~/components/Messages/Content/CodeBlock';
 import useHasAccess from '~/hooks/Roles/useHasAccess';
 import { useFileDownload } from '~/data-provider';
 import { useCodeBlockContext } from '~/Providers';
-import { handleDoubleClick, triggerDownload } from '~/utils';
+import { handleDoubleClick, triggerDownload, cn } from '~/utils';
 import { useLocalize } from '~/hooks';
 import store from '~/store';
 
@@ -229,6 +229,21 @@ export const img: React.ElementType = memo(function MarkdownImage({
     return `${baseURL}${src}`;
   }, [src, baseURL]);
 
-  return <img src={fixedSrc} alt={alt} title={title} className={className} style={style} />;
+  /** Inline Markdown images are product shots, not artwork: cap them so a 600px
+   *  product photo does not take over the message. Generated images and
+   *  attachments render through their own components and are unaffected. */
+  return (
+    <img
+      src={fixedSrc}
+      alt={alt}
+      title={title}
+      loading="lazy"
+      className={cn(
+        'my-2 block h-auto max-h-64 w-auto max-w-full rounded-lg border border-border-light bg-surface-secondary object-contain',
+        className,
+      )}
+      style={style}
+    />
+  );
 });
 img.displayName = 'MarkdownImage';
