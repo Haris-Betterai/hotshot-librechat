@@ -169,6 +169,20 @@ ensure_data_dirs() {
 Then re-run: ./run.sh"
 }
 
+# BSD/macOS sed requires an argument to -i, GNU sed must not have one, so a bare
+# `sed -i script file` silently fails on macOS. Write through a temp file instead:
+# one call site, both platforms.
+sed_inplace() {
+  local script="$1" file="$2" tmp
+  tmp="$(mktemp "${file}.XXXXXX")" || return 1
+  if ! sed "$script" "$file" > "$tmp"; then
+    rm -f "$tmp"
+    return 1
+  fi
+  chmod 644 "$tmp"
+  mv "$tmp" "$file"
+}
+
 refresh_guest_index() {
   # Bind-mounted guest HTML must match JS hashes inside the librechat image.
   # After a rebuild, old hashes 404 (Staff login JS never loads).
@@ -185,12 +199,17 @@ Rebuild with:
 Then:
   ./run.sh restart"
   fi
-  sed -i 's#<title>[^<]*</title>#<title>Hotshot AI</title>#' admin-branding/guest/index.html || true
+  sed_inplace 's#<title>[^<]*</title>#<title>Hotshot AI</title>#' admin-branding/guest/index.html \
+    || log "warning: could not set the guest <title>"
   # PWA service worker made Staff login / logout need a hard refresh.
-  sed -i 's#<script id="vite-plugin-pwa:register-sw"[^>]*></script>##' admin-branding/guest/index.html || true
+  sed_inplace 's#<script id="vite-plugin-pwa:register-sw"[^>]*></script>##' admin-branding/guest/index.html \
+    || log "warning: could not strip the PWA register-sw script"
   if ! grep -q 'serviceWorker.getRegistrations' admin-branding/guest/index.html; then
-    sed -i 's#</head>#<script>if(navigator.serviceWorker){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(reg){reg.unregister();});});}</script></head>#' admin-branding/guest/index.html || true
+    sed_inplace 's#</head>#<script>if(navigator.serviceWorker){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(reg){reg.unregister();});});}</script></head>#' admin-branding/guest/index.html \
+      || log "warning: could not inject the service-worker cleanup script"
   fi
+  grep -q 'serviceWorker.getRegistrations' admin-branding/guest/index.html \
+    || log "warning: guest index.html has no service-worker cleanup; a stale worker can serve old assets"
 }
 
 cmd_up() {
