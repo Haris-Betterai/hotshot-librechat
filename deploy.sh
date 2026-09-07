@@ -47,8 +47,33 @@ cmd_status() {
     || log "app: not reachable at ${APP_URL}"
 }
 
+# The guest index is a tracked build artifact that cmd_deploy rewrites after every
+# build, so it is always dirty by the time the next deploy pulls — which made
+# `git pull --ff-only` refuse and left the server silently on the old commit.
+# Restore just that file. Anything else dirty is a real local change and is never
+# discarded automatically.
+GUEST_INDEX="admin-branding/guest/index.html"
+
+restore_generated_files() {
+  git diff --quiet -- "$GUEST_INDEX" 2>/dev/null && return 0
+  log "Restoring generated ${GUEST_INDEX} (rewritten by the last deploy)..."
+  git checkout -- "$GUEST_INDEX"
+}
+
+require_clean_tree() {
+  local dirty
+  dirty="$(git status --porcelain --untracked-files=no)"
+  [[ -z "$dirty" ]] && return 0
+  die "Uncommitted tracked changes on the server, refusing to pull:
+
+${dirty}
+Commit or discard them, then re-run ./deploy.sh"
+}
+
 cmd_pull() {
   ensure_server
+  restore_generated_files
+  require_clean_tree
   log "Fetching + checking out ${BRANCH}..."
   git fetch origin "${BRANCH}"
   git checkout "${BRANCH}"
