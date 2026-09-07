@@ -152,4 +152,20 @@ describe('DynamicInput', () => {
     });
     expect(commit).toHaveBeenLastCalledWith(42);
   });
+
+  it('renders without chat context in the standalone agent model editor', () => {
+    const commit = jest.fn();
+    const setOption = jest.fn(() => commit) as unknown as TSetOption;
+
+    render(
+      <DynamicInput
+        settingKey="max_tokens"
+        type="number"
+        setOption={setOption}
+        conversation={{}}
+      />,
+    );
+
+    expect(screen.getByRole('textbox')).toBeInTheDocument();
+  });
 });

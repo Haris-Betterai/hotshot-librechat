@@ -5,7 +5,7 @@ import { Label, Slider, HoverCard, Input, InputNumber, HoverCardTrigger } from '
 import { useLocalize, useDebouncedInput, useParameterEffects, TranslationKeys } from '~/hooks';
 import { cn, defaultTextProps, optionText } from '~/utils';
 import { ESide, defaultDebouncedDelay } from '~/common';
-import { useChatContext } from '~/Providers';
+import { useOptionalChatContext } from '~/Providers';
 import OptionHover from './OptionHover';
 
 function DynamicSlider({
@@ -27,7 +27,7 @@ function DynamicSlider({
   conversation,
 }: DynamicSettingProps) {
   const localize = useLocalize();
-  const { preset } = useChatContext();
+  const preset = useOptionalChatContext()?.preset ?? null;
   const isEnum = useMemo(
     () => (!range && options && options.length > 0) ?? false,
     [options, range],
