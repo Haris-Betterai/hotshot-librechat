@@ -2,7 +2,7 @@ import type { Agent } from './types/assistants';
 
 export const intelligenceEfforts = ['none', 'low', 'medium', 'high', 'xhigh', 'max'] as const;
 export type IntelligenceEffort = (typeof intelligenceEfforts)[number];
-export const MAX_INTELLIGENCE_LEVELS = 5;
+export const MAX_INTELLIGENCE_LEVELS = 10;
 export function isIntelligenceEffort(value: unknown): value is IntelligenceEffort {
   return intelligenceEfforts.some((effort) => effort === value);
 }
@@ -25,12 +25,18 @@ export type IntelligenceOption = IntelligenceLevel & {
 /**
  * Which level a new chat starts on.
  *
- * Fast is the cheapest tier, not the best first impression: it answers without
- * reasoning, so a customer's first question gets the weakest reply unless they
- * know to move the slider. Start on the balanced level when the agent has one,
- * and fall back to the first level otherwise.
+ * Respect an admin-configured default first. Agents saved before that setting
+ * existed continue to start on Balanced when available, then fall back to the
+ * first level.
  */
-export function getDefaultIntelligenceIndex(levels: IntelligenceOption[]): number {
+export function getDefaultIntelligenceIndex(
+  levels: IntelligenceOption[],
+  defaultLevel?: string,
+): number {
+  const configured = defaultLevel ? levels.findIndex((level) => level.label === defaultLevel) : -1;
+  if (configured >= 0) {
+    return configured;
+  }
   const balanced = levels.findIndex(
     (level) => level.preset === 'balanced' || level.label?.trim().toLowerCase() === 'balanced',
   );

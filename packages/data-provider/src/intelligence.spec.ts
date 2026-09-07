@@ -63,6 +63,23 @@ describe('getDefaultIntelligenceIndex', () => {
     expect(getDefaultIntelligenceIndex(levels)).toBe(1);
   });
 
+  it('uses the configured default level before the balanced fallback', () => {
+    const levels = [
+      { label: 'Fast', model: 'a' },
+      { label: 'Balanced', model: 'b' },
+      { label: 'Thorough', model: 'c' },
+    ];
+    expect(getDefaultIntelligenceIndex(levels, 'Thorough')).toBe(2);
+  });
+
+  it('falls back to balanced when the configured default is stale', () => {
+    const levels = [
+      { label: 'Fast', model: 'a' },
+      { label: 'Balanced', model: 'b' },
+    ];
+    expect(getDefaultIntelligenceIndex(levels, 'Removed')).toBe(1);
+  });
+
   it('falls back to the first level when there is no balanced level', () => {
     expect(getDefaultIntelligenceIndex([{ label: 'Only', model: 'a' }])).toBe(0);
     expect(getDefaultIntelligenceIndex([])).toBe(0);

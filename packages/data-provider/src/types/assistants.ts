@@ -317,6 +317,7 @@ export type Agent = {
   intelligence?: {
     heading?: string;
     levels?: import('../intelligence').IntelligenceLevel[];
+    default_level?: string;
   };
 };
 

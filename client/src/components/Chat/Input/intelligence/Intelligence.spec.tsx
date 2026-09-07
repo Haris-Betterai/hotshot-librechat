@@ -3,7 +3,8 @@ import { useGetAgentByIdQuery } from '~/data-provider';
 import Intelligence from '../Intelligence';
 
 let mockPreset = false;
-let mockLabel = 'Smart';
+let mockLabel: string | undefined = 'Smart';
+let mockDefaultLevel: string | undefined;
 const mockSetConversation = jest.fn();
 
 jest.mock('~/data-provider', () => ({
@@ -12,6 +13,7 @@ jest.mock('~/data-provider', () => ({
       provider: 'openAI',
       intelligence: {
         heading: 'Intelligence',
+        default_level: mockDefaultLevel,
         levels: mockPreset
           ? [
               { label: 'fast', model: 'gpt-5.6-luna' },
@@ -42,6 +44,8 @@ jest.mock('~/utils', () => ({
 beforeEach(() => {
   mockPreset = false;
   mockLabel = 'Smart';
+  mockDefaultLevel = undefined;
+  mockSetConversation.mockClear();
 });
 
 it('reads configured levels from agent details, preserving the selected label', () => {
@@ -63,5 +67,16 @@ it('shows five localized stops and sends the stable server label when increasing
   expect(update({ agent_id: 'agent_test', modelLabel: mockLabel })).toEqual({
     agent_id: 'agent_test',
     modelLabel: 'smarter:high',
+  });
+});
+
+it('starts a new chat on the explicitly configured default level', () => {
+  mockLabel = undefined;
+  mockDefaultLevel = 'Smarter';
+  render(<Intelligence />);
+  const update = mockSetConversation.mock.calls[0][0];
+  expect(update({ agent_id: 'agent_test' })).toEqual({
+    agent_id: 'agent_test',
+    modelLabel: 'Smarter',
   });
 });

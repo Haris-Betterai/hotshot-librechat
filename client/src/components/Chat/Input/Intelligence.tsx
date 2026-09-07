@@ -23,7 +23,8 @@ export default function Intelligence() {
   );
   const heading =
     agent?.intelligence?.heading?.trim() || localize('com_ui_intelligence_heading_placeholder');
-  const defaultLabel = levels[getDefaultIntelligenceIndex(levels)]?.label;
+  const defaultLabel =
+    levels[getDefaultIntelligenceIndex(levels, agent?.intelligence?.default_level)]?.label;
   const modelLabel = conversation?.modelLabel;
 
   useEffect(() => {

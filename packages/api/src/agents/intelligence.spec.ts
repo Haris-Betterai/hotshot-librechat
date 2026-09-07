@@ -5,21 +5,27 @@ import {
 } from './intelligence';
 
 describe('admin-configured intelligence', () => {
-  it('round-trips five saved levels and resolves guest selections including Max', () => {
-    const levels = ['none', 'low', 'medium', 'high', 'max'].map((effort) => ({
-      label: effort,
+  it('round-trips ten saved levels and an explicit default', () => {
+    const efforts = ['none', 'low', 'medium', 'high', 'max'] as const;
+    const levels = Array.from({ length: 10 }, (_, index) => ({
+      label: `Level ${index + 1}`,
       model: 'gpt-5.6-sol',
-      reasoning_effort: effort,
+      reasoning_effort: efforts[index % efforts.length],
     }));
-    const intelligence = parseIntelligence({ heading: 'Thinking', levels });
+    const intelligence = parseIntelligence({
+      heading: 'Thinking',
+      levels,
+      default_level: 'Level 8',
+    });
     expect(intelligence?.levels).toEqual(levels);
+    expect(intelligence?.default_level).toBe('Level 8');
     const configured = { provider: 'openAI', intelligence: intelligence ?? undefined };
-    expect(resolveIntelligenceParameters(configured, 'max')).toEqual({
+    expect(resolveIntelligenceParameters(configured, 'Level 10')).toEqual({
       model: 'gpt-5.6-sol',
       reasoning_effort: 'max',
       reasoning_summary: 'auto',
     });
-    expect(resolveIntelligenceParameters(configured, 'none')).toEqual({
+    expect(resolveIntelligenceParameters(configured, 'Level 1')).toEqual({
       model: 'gpt-5.6-sol',
       reasoning_effort: 'none',
     });
@@ -38,6 +44,18 @@ describe('admin-configured intelligence', () => {
         ],
       })?.levels,
     ).toEqual([{ label: 'Custom', model: 'gpt-5.6' }]);
+  });
+
+  it('drops a default that does not match a saved level', () => {
+    expect(
+      parseIntelligence({
+        levels: [{ label: 'Balanced', model: 'gpt-5.6-terra' }],
+        default_level: 'Removed',
+      }),
+    ).toEqual({
+      heading: 'Intelligence',
+      levels: [{ label: 'Balanced', model: 'gpt-5.6-terra' }],
+    });
   });
 });
 

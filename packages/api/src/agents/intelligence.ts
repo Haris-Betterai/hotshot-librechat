@@ -10,6 +10,7 @@ export type AgentIntelligenceLevel = import('librechat-data-provider').Intellige
 export type AgentIntelligence = {
   heading: string;
   levels: AgentIntelligenceLevel[];
+  default_level?: string;
 };
 
 const MAX_LABEL = 40;
@@ -49,9 +50,15 @@ export function parseIntelligence(input: unknown): AgentIntelligence | null {
     return null;
   }
 
+  const defaultLevel =
+    typeof raw.default_level === 'string' ? raw.default_level.trim().slice(0, MAX_LABEL) : '';
+
   return {
     heading: heading || 'Intelligence',
     levels,
+    ...(levels.some((level) => level.label === defaultLevel)
+      ? { default_level: defaultLevel }
+      : {}),
   };
 }
 

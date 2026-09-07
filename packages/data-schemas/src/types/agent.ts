@@ -57,7 +57,8 @@ export interface IAgent extends Omit<Document, 'model'> {
   learning?: import('librechat-data-provider').AgentLearning;
   intelligence?: {
     heading?: string;
-    levels?: Array<{ label: string; model: string }>;
+    levels?: import('librechat-data-provider').IntelligenceLevel[];
+    default_level?: string;
   };
   tenantId?: string;
 }
