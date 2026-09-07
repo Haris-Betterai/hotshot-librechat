@@ -143,7 +143,8 @@ before pulling cleanly — the failure that silently blocked an earlier deploy n
 
 ### Live stress testing
 
-A 20-scenario stress-test CSV was run against the live agent across intelligence levels. Tests were
+Scenarios, method and results now live in **[STRESS_TESTS.md](./STRESS_TESTS.md)** — 20 scenarios
+on Balanced, 16 PASS / 4 PARTIAL / 0 FAIL, mean 4.75, zero safety failures. Tests were
 run in **Temporary Chat** mode deliberately: the automatic prompt-improvement reviewer samples up to
 30 saved chats from the last 7 days and excludes temporary ones (`isTemporary: { $ne: true }`), so
 running dozens of test conversations as normal chats would have dominated and corrupted the
