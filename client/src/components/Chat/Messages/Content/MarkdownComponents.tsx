@@ -230,20 +230,38 @@ export const img: React.ElementType = memo(function MarkdownImage({
   }, [src, baseURL]);
 
   /** Inline Markdown images are product shots, not artwork: cap them so a 600px
-   *  product photo does not take over the message. Generated images and
+   *  product photo does not take over the message, and let a customer open the
+   *  full-size image to check they have the right bottle. Generated images and
    *  attachments render through their own components and are unaffected. */
-  return (
+  const image = (
     <img
       src={fixedSrc}
       alt={alt}
       title={title}
       loading="lazy"
       className={cn(
-        'my-2 block h-auto max-h-64 w-auto max-w-full rounded-lg border border-border-light bg-surface-secondary object-contain',
+        'block h-auto max-h-64 w-auto max-w-full rounded-lg border border-border-light bg-surface-secondary object-contain',
         className,
       )}
       style={style}
     />
+  );
+
+  if (!fixedSrc || fixedSrc.startsWith('data:')) {
+    return <span className="my-2 block">{image}</span>;
+  }
+
+  return (
+    <a
+      href={fixedSrc}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={title || alt}
+      aria-label={alt ? `${alt} (opens full size)` : 'Open image full size'}
+      className="my-2 inline-block rounded-lg transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-primary"
+    >
+      {image}
+    </a>
   );
 });
 img.displayName = 'MarkdownImage';
