@@ -1,4 +1,4 @@
-# Handoff — Hotshot Secret AI session (updated 2026-09-06, after rebuild + live verification)
+# Handoff — Hotshot Secret AI session (updated 2026-09-07, after production deploy + live verification)
 
 ## Current work list
 
@@ -10,15 +10,17 @@
 3. **Assign the model and reasoning effort for every intelligence choice — complete and saved in
    the live Hotshot agent.** Current values are Fast → `gpt-5.6-luna` / Default, Balanced →
    `gpt-5.6-terra` / Low, Deep → `gpt-5.6` / Medium, Deeper → `gpt-5.6` / High, and Deepest →
-   `gpt-5.6` / Max.
+   `gpt-5.6` / Max. Staff can now add/remove levels up to 10 and choose an explicit default; older
+   agents continue to fall back to Balanced.
 4. **Simplify Model and Category — complete.** They remain available because the fallback model is
    required when a request does not choose an intelligence tier and Category organizes agents.
    Both controls now live in a collapsed **Fallback model & category** section.
 5. **Improve the Hotshot Secret AI prompt — complete and saved in the live agent.** The old
-   42-section prompt forced an “Alex” introduction and a follow-up question. It was replaced by a
-   5,066-character prompt that answers directly, reuses known context, keeps simple replies short,
-   verifies product facts through Hotshot resources, and preserves dosage, transmission,
-   compatibility, privacy, manufacturer-specification, and diagnostic safeguards.
+   42-section prompt forced an “Alex” introduction and a follow-up question. The current
+   **8,112-character** prompt answers directly, reuses known context, keeps simple replies short,
+   verifies product facts through Hotshot resources, and strengthens dosage, transmission,
+   compatibility, privacy, manufacturer-specification, and diagnostic safeguards. It was verified
+   after a full reload and scenario 9 now refuses arithmetic on an unverified internet capacity.
 6. **Build automatic prompt improvement into the staff app — complete locally and enabled for
    the live local Hotshot agent.** Staff can enable hourly reviews, run a review immediately,
    inspect redacted request/answer excerpts and evidence counts, see active prompt additions and
@@ -65,6 +67,31 @@
     lookup, and the model response; later turns can reuse the warm connection. Deep/Deeper/Deepest
     also add reasoning time. The logs do not yet separate these costs, so measure cold and warm Fast
     requests before adding MCP prewarming.
+
+## Production update — 2026-09-07
+
+### Configurable intelligence levels and default
+
+Deployed LibreChat commit **`0630e0417`** on `main`. Agent Setup now supports **1–10** intelligence
+levels instead of five fixed slots, with Add/Remove controls and an explicit **Default level**
+selector. `default_level` is validated server-side against the saved labels. New chats use it when
+present; existing agents keep the backward-compatible Balanced-then-first fallback.
+
+Validation: 42 targeted tests passed (8 data-provider, 23 API, 11 client), the data-provider,
+data-schema, API, and production frontend builds passed, ESLint passed, and the frontend production
+build transformed 9,332 modules. The full client type-check still reports five unrelated pre-existing
+errors in embed/auth/SSE code; the new intelligence-level type error found during the check was fixed.
+
+Live browser verification added a sixth unsaved `Visual QA` level, selected `gpt-5.6` / High, and
+chose it as the default. A reload discarded that test-only form state and confirmed the production
+agent still has its five real levels, Balanced fallback, and the saved 8,112-character prompt.
+
+### MCP product-search relevance
+
+Deployed MCP commit **`9bc187e`** on the production `improving` branch. Exact and substring product
+matches no longer receive unrelated fuzzy filler; typo and broad-category searches retain useful
+fuzzy results. Three regression tests pass, and production pane `better_ai_projects:9.1` restarted
+healthy on port 9203.
 
 ## Work added on 2026-09-06 (local code unless explicitly marked live)
 

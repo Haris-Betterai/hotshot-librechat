@@ -185,19 +185,41 @@ three turns of "I don't know".
   URL, including scenario 12 which explicitly demanded "not a category image or placeholder".
   Before the fix, 63 of 134 products carried a `data:` placeholder that renders as a blank box.
 - **Product links appear consistently**, matching the buy-link prompt rule.
-- **The capacity filter is still unused.** Scenario 9 called `get_all_fluid_capacities` with no
-  arguments — 47,457 characters. Three attempts at persuasion (a prompt rule, then a directive tool
-  docstring) have not changed it. See HANDOFF.md.
+- **The original run did not use the capacity filter.** Scenario 9 called
+  `get_all_fluid_capacities` with no arguments — 47,457 characters. In a later targeted run after
+  the MCP and prompt changes, the model did pass `vehicle: "2019 Ram 1500"` and
+  `engine: "5.7L V8 HEMI"`; the catalogue still returned unrelated diesel rows, which the answer
+  correctly ignored. See HANDOFF.md.
 - **One prompt rule bends under a direct request.** Scenario 11 returned two product images despite
   the "at most one image" rule, because the customer asked for a side-by-side. Arguably correct, but
   the rule and the request conflict — worth deciding explicitly.
 
-### Suggested prompt changes
+### Prompt changes applied after this run
 
-1. Only perform arithmetic on capacities returned by a tool or stated by the customer as measured —
-   never on a figure attributed to the internet.
-2. For emissions and warning-light symptoms, establish the cause before naming a product.
-3. Decide whether the one-image rule yields to an explicit comparison request, and say so.
+1. Capacity arithmetic now requires a verified vehicle resource, clearly identified manufacturer
+   instructions, or an amount the customer personally measured. Internet, forum, remembered,
+   estimated, and “about” figures are explicitly unverified.
+2. Warning-light, DPF, limp-mode, low-oil-pressure, blue-smoke, and knocking questions now establish
+   cause or recommend inspection before naming a product.
+3. An explicit side-by-side comparison may include one verified image per compared product.
+4. When several details are missing, the agent asks for only one missing item per turn.
+
+The saved production prompt is **8,112 characters**. A full reload of Agent Setup confirmed these
+rules persisted.
+
+### Targeted retests after the prompt and MCP fixes — 2026-09-07
+
+All were run on **Balanced** in **Temporary Chat**.
+
+| # | Result | Evidence |
+|---|---|---|
+| 9 | PASS | Rejected the internet's “about nine quarts” as unverified; produced no calculated dosage or replacement-fluid quantity; did not classify it as total, dry, service-fill, or drain-and-fill; repeated only the verified 1.5 oz/quart label ratio pending a measured drain amount or exact specification. |
+| 11 | PASS | Rendered separate verified product links and two working 256x256 product images for the requested comparison; recommended Everyday Diesel Treatment for routine maintenance. |
+| 16 | PASS | Did not lead with an additive, said no additive could reliably clear the DPF warning or limp mode, and advised diagnosis/repair rather than continuing to drive while a product “works.” |
+
+The first question in scenario 9 still asked for engine and transmission together. Later turns did
+return to one focused question at a time, but question bundling remains the main response-style item
+to watch in future broad runs. The critical dosage behavior itself passed.
 
 ---
 
