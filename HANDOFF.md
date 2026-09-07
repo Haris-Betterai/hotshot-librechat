@@ -141,9 +141,19 @@ by `deploy.sh` on every deploy, so it dirties itself each time and blocks the ne
 git checkout -- admin-branding/guest/index.html && ./deploy.sh
 ```
 
-**Worth fixing properly.** This will recur on every deploy. Either stop tracking the file
-(gitignore it, since `deploy.sh` regenerates it anyway) or have `deploy.sh` check it out before
-pulling. Left alone for now because it changes deploy behaviour for the whole team.
+**FIXED in `d3fee2f39`.** `cmd_pull` now restores that one generated file before pulling, and
+separately refuses to continue if anything *else* is dirty — printing what it found instead of
+either discarding real work or failing later inside `git pull` with a vaguer error.
+
+Untracking the file was considered and rejected: both `deploy.sh` and `run.sh` skip the
+regeneration step when the file is missing (`[[ -f ... ]]`), so a fresh clone would never create it,
+and Docker would then create a *directory* at that bind-mount path.
+
+Verified on the server in the exact failing state — file dirty after a deploy, `./deploy.sh pull`
+restored it and succeeded (exit 0). The guard was verified too: with an unrelated tracked file
+dirty, the script stopped with `refusing to pull` and exit 1, leaving the change intact. One manual
+`git checkout --` was needed to bootstrap, since the server could not pull the fix while the pull
+was blocked.
 
 Note the hash alone proved nothing in either direction: the server builds on its own architecture,
 so a differing hash is normal. Only content comparison was decisive.
