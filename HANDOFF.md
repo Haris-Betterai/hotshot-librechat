@@ -121,6 +121,36 @@
 - Docker emitted existing direct-eval, large-chunk, PWA glob, and dependency-audit warnings; none
   were introduced by a new package because this work added no dependencies.
 
+## New chats start on Balanced — 2026-09-07
+
+The intelligence selector defaulted to `levels[0]`, which is **Fast**: the cheapest tier, answering
+with no reasoning. A customer's first question — the one most likely to decide whether they trust
+the answer — got the weakest reply unless they knew to move the slider.
+
+New chats now start on the level whose `preset` or label is `balanced`, falling back to the first
+level when an agent defines none, so agents without a balanced tier are unaffected. The rule lives
+in `getDefaultIntelligenceIndex` in `packages/data-provider/src/intelligence.ts` rather than as a
+magic index inside the component, with tests covering the balanced label, the balanced preset, and
+the fallback.
+
+Note `preset` is only assigned by `getIntelligenceOptions` for the legacy three-level Hotshot
+profile; the live agent has five explicit levels, so the label match is the path that actually
+fires for it.
+
+Deployed in `1b0d8843c`. **This deploy was the first to exercise the `deploy.sh` fix**, and the log
+opened with "Restoring generated admin-branding/guest/index.html (rewritten by the last deploy)..."
+before pulling cleanly — the failure that silently blocked an earlier deploy now self-heals.
+
+### Live stress testing
+
+A 20-scenario stress-test CSV was run against the live agent across intelligence levels. Tests were
+run in **Temporary Chat** mode deliberately: the automatic prompt-improvement reviewer samples up to
+30 saved chats from the last 7 days and excludes temporary ones (`isTemporary: { $ne: true }`), so
+running dozens of test conversations as normal chats would have dominated and corrupted the
+evidence the learning feature draws on. Anyone repeating this should do the same.
+
+---
+
 ## MCP tool and UX work — 2026-09-07
 
 Five UX improvements were requested. Two are in the MCP server
