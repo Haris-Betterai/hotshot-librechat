@@ -1,5 +1,5 @@
 import { Controller, useFormContext, useWatch } from 'react-hook-form';
-import { Input } from '@librechat/client';
+import { Input, TrashIcon } from '@librechat/client';
 import {
   getDefaultIntelligenceIndex,
   getIntelligenceOptions,
@@ -167,9 +167,9 @@ export default function Levels() {
       {visibleLevels.map((level, slot) => (
         <div
           key={slot}
-          className="grid grid-cols-2 gap-2 rounded-lg border border-border-light p-3"
+          className="relative grid grid-cols-2 gap-2 rounded-lg border border-border-light p-3"
         >
-          <div className="col-span-2">
+          <div className="col-span-2 pr-8">
             <p className="text-sm font-medium">
               {level.preset
                 ? localize(presetLabels[level.preset])
@@ -180,17 +180,18 @@ export default function Levels() {
                 {localize(purposeLabels[level.preset])}
               </p>
             )}
-            {visibleLevels.length > 1 ? (
-              <button
-                type="button"
-                className="mt-2 text-xs text-text-secondary hover:text-text-primary"
-                aria-label={`${localize('com_ui_intelligence_remove_level')} ${slot + 1}`}
-                onClick={() => removeLevel(slot)}
-              >
-                {localize('com_ui_intelligence_remove_level')}
-              </button>
-            ) : null}
           </div>
+          {visibleLevels.length > 1 ? (
+            <button
+              type="button"
+              className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-md text-red-500 transition-colors hover:bg-red-500/10 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 dark:text-red-400 dark:hover:text-red-300"
+              aria-label={`${localize('com_ui_intelligence_remove_level')} ${slot + 1}`}
+              title={localize('com_ui_intelligence_remove_level')}
+              onClick={() => removeLevel(slot)}
+            >
+              <TrashIcon className="h-4 w-4" aria-hidden="true" />
+            </button>
+          ) : null}
           <Input
             className="h-9"
             value={level.label}
