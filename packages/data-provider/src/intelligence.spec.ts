@@ -1,4 +1,4 @@
-import { getIntelligenceOptions } from './intelligence';
+import { getIntelligenceOptions, getDefaultIntelligenceIndex } from './intelligence';
 
 const intelligence = {
   heading: 'Intelligence',
@@ -42,5 +42,29 @@ describe('Hotshot intelligence options', () => {
     expect(getIntelligenceOptions(intelligence, 'custom')).toEqual(intelligence.levels);
     const renamed = { levels: intelligence.levels.map((level) => ({ ...level, label: 'Custom' })) };
     expect(getIntelligenceOptions(renamed, 'openAI')).toEqual(renamed.levels);
+  });
+});
+
+describe('getDefaultIntelligenceIndex', () => {
+  it('starts on the balanced level when the agent defines one', () => {
+    const levels = [
+      { label: 'Fast', model: 'gpt-5.6-luna' },
+      { label: 'Balanced', model: 'gpt-5.6-terra' },
+      { label: 'Deep', model: 'gpt-5.6' },
+    ];
+    expect(getDefaultIntelligenceIndex(levels)).toBe(1);
+  });
+
+  it('matches the balanced preset regardless of the label text', () => {
+    const levels = [
+      { label: 'Quick', model: 'a', preset: 'fast' as const },
+      { label: 'Standard', model: 'b', preset: 'balanced' as const },
+    ];
+    expect(getDefaultIntelligenceIndex(levels)).toBe(1);
+  });
+
+  it('falls back to the first level when there is no balanced level', () => {
+    expect(getDefaultIntelligenceIndex([{ label: 'Only', model: 'a' }])).toBe(0);
+    expect(getDefaultIntelligenceIndex([])).toBe(0);
   });
 });

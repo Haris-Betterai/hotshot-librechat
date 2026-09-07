@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { getIntelligenceOptions } from 'librechat-data-provider';
+import { getIntelligenceOptions, getDefaultIntelligenceIndex } from 'librechat-data-provider';
 import { useGetAgentByIdQuery } from '~/data-provider';
 import { useChatContext } from '~/Providers';
 import Control from './intelligence/Control';
@@ -23,17 +23,17 @@ export default function Intelligence() {
   );
   const heading =
     agent?.intelligence?.heading?.trim() || localize('com_ui_intelligence_heading_placeholder');
-  const firstLabel = levels[0]?.label;
+  const defaultLabel = levels[getDefaultIntelligenceIndex(levels)]?.label;
   const modelLabel = conversation?.modelLabel;
 
   useEffect(() => {
-    if (!firstLabel || modelLabel) {
+    if (!defaultLabel || modelLabel) {
       return;
     }
     setConversation((prev) =>
-      prev && !prev.modelLabel ? { ...prev, modelLabel: firstLabel } : prev,
+      prev && !prev.modelLabel ? { ...prev, modelLabel: defaultLabel } : prev,
     );
-  }, [firstLabel, modelLabel, setConversation]);
+  }, [defaultLabel, modelLabel, setConversation]);
 
   if (!conversation || !levels.length) {
     return null;

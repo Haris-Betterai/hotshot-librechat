@@ -22,6 +22,21 @@ export type IntelligenceOption = IntelligenceLevel & {
   preset?: 'fast' | 'balanced' | 'deep' | 'deeper' | 'deepest';
 };
 
+/**
+ * Which level a new chat starts on.
+ *
+ * Fast is the cheapest tier, not the best first impression: it answers without
+ * reasoning, so a customer's first question gets the weakest reply unless they
+ * know to move the slider. Start on the balanced level when the agent has one,
+ * and fall back to the first level otherwise.
+ */
+export function getDefaultIntelligenceIndex(levels: IntelligenceOption[]): number {
+  const balanced = levels.findIndex(
+    (level) => level.preset === 'balanced' || level.label?.trim().toLowerCase() === 'balanced',
+  );
+  return balanced >= 0 ? balanced : 0;
+}
+
 /** Expands the original Hotshot profile without rewriting shared agent documents. */
 export function getIntelligenceOptions(
   intelligence: Agent['intelligence'],
