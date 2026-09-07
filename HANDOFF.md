@@ -121,6 +121,118 @@
 - Docker emitted existing direct-eval, large-chunk, PWA glob, and dependency-audit warnings; none
   were introduced by a new package because this work added no dependencies.
 
+## MCP tool and UX work — 2026-09-07
+
+Five UX improvements were requested. Two are in the MCP server
+(`/root/better-ai-projects/hotshot-ai-mcp-server`), two in LibreChat, one in the prompt.
+
+### Read this first: production runs the `improving` branch, not `main`
+
+The MCP server on the box is checked out on **`improving`**, which was 10 commits ahead of `main`
+and holds the `main()` entry point (`uv run hotshot-mcp`), the `get_data_freshness` tool, the
+scrapers and the scheduler. Work committed to `main` and pulled onto that server would **revert all
+of it and break the console script the tmux pane runs**. All fixes here went to `improving`.
+
+It runs in tmux: session `better_ai_projects`, window `hotshot-ai-tools`, **pane `9.1`**, command
+`uv run hotshot-mcp`, listening on `0.0.0.0:9203`, fronted by `https://mcp.hotshot.thebetterai.com/mcp`.
+Pane 9.2 is the scraper scheduler — leave it alone. To restart:
+
+```
+tmux send-keys -t better_ai_projects:9.1 C-c
+tmux send-keys -t better_ai_projects:9.1 "uv run hotshot-mcp" Enter
+```
+
+The server's working tree is permanently dirty on three `hotshot_scraped_data/*.json` files, which
+the scheduler rewrites. `git pull --ff-only` still works because no commit touches them.
+
+### Product images — the biggest single win
+
+**63 of 134 products carried a `data:` lazy-load placeholder in `image`.** Only
+`get_product_by_url` resolved it against `product_image_urls.json`; `search_products_by_name` and
+`list_products_by_category` passed it straight through, and it renders as a blank box. All three now
+share one resolver, which also nulls the image when no real URL is known instead of emitting a
+placeholder. **Catalogue placeholders: 63 -> 0**, 132 of 134 now carry a real https URL (the two
+Frantz filter-media products have no image on record).
+
+This also removes the need for the prompt's `data:` guard to ever fire.
+
+### FAQ relevance
+
+`search_faqs` scored with `SequenceMatcher` over the whole query against the whole question, which
+mostly measures length: unrelated FAQs clustered in a 0.30-0.34 band and came back as filler — a
+fluid-capacity question returned a Stiction Eliminator power complaint. Scoring is now keyword
+overlap weighted towards question-side matches, and returns nothing when nothing is related.
+
+Thresholds were tuned against real queries, not guessed: genuine matches score >= 0.5, filler lands
+near 0.23, so the floor sits at 0.35. Verified that asking about FR3 directly still returns the FR3
+FAQ at 1.50, so it is not over-filtered.
+
+### Fluid capacities — filter added, and one design walked back
+
+`get_all_fluid_capacities` took no arguments and returned every truck and engine (~47k characters)
+for a question about one vehicle. It now takes optional `vehicle` and `engine`, token-matched so the
+customer's own phrasing works. **Filtered is 84% smaller.** A displacement written `6.7L` is also
+tokenized as `6.7`, otherwise `6.7 Cummins` scored equal against `5.9 CUMMINS` and both engines came
+back — the wrong one would have been quoted to a customer as fact.
+
+**The first version of this was wrong and was reverted.** It returned a light index when called
+without a filter, expecting a second filtered call. Live testing showed the model never made it:
+
+1. First it answered with a full capacity table — coolant, transmission, transfer case,
+   differentials, DEF — **none of which were in the tool result**. It filled them in from memory and
+   presented them as verified. The pre-change answer had correctly refused.
+2. After the index was made to say plainly that it held no numbers, the model refused to answer at
+   all — safe, but worse than the original, which returned the verified oil capacity.
+
+Filtering is now a speed optimisation only: unfiltered returns exactly what it always did, so the
+tool is never worse than before however it is called.
+
+**Known limitation: the model does not pass the filter.** With a prompt rule and a directive tool
+docstring, `gpt-5.6-luna` still calls `{}` on every attempt, so the 84% saving is available but not
+being realised. Making the parameters required would force it, but the tool would then fail whenever
+the customer has not named a vehicle — that is a product decision, not a safe unilateral change.
+
+### What actually got faster
+
+Measured on the same question ("fluid capacities for a 2021 Ford F-250 6.7 Powerstroke"):
+
+| | before | after |
+|---|---|---|
+| tool calls | 3 | **1** |
+| failed calls | 1 (`get_product_by_url` -> `(No response)`) | **0** |
+| irrelevant FAQ call | yes | **gone** |
+| end-to-end | 22.3s | **11.9s** |
+
+The gain came from eliminating two round-trips, not from the payload — that is unchanged while the
+model declines to filter. Answer quality improved too: it now states the verified 13 qt, surfaces
+the 15 qt variant, and explicitly declines the capacities the guide does not cover instead of
+inventing them.
+
+### Prompt (live, version 18, 6,636 characters)
+
+- Always pass vehicle and engine to the fluid-capacity lookup, and never state a capacity that did
+  not come back in a tool result.
+- Include the product page link when recommending a product; include price only when the lookup
+  returned one.
+
+**Correction to an earlier claim in this file:** the product data does *not* reliably carry price
+and sku. `url` is 134/134, `price` is 81/134, and **`sku` is 0/134 — always null**. The buy link is
+safe to require; the price must stay conditional.
+
+### LibreChat
+
+Product images are now clickable and open full size, with a focus ring and an aria-label. `data:`
+and empty sources are left unwrapped.
+
+### Not done, and why
+
+**Tool progress on Fast is already built.** `ToolCallGroup` shows a running label with humanized
+tool names (from `7d8486e45`), and a "Tools" chip does appear during a Fast reply. The only gap is
+the window before the first tool call arrives, where there is genuinely nothing to report yet.
+Nothing was changed.
+
+---
+
 ## Deployed to production — 2026-09-06
 
 Live at **https://hotshotai.thebetterai.com** on commit **`058ad1abc`**.
