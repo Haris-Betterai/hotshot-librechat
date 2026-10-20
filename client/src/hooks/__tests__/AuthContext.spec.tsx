@@ -2,13 +2,11 @@
  * @jest-environment @happy-dom/jest-environment
  */
 import React from 'react';
-import { render, act, fireEvent } from '@testing-library/react';
 import { RecoilRoot } from 'recoil';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
-
+import { render, act, fireEvent } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { TAuthConfig } from '~/common';
-
 import { AuthContextProvider, useAuthContext } from '../AuthContext';
 import { SESSION_KEY } from '~/utils';
 
@@ -586,6 +584,70 @@ describe('AuthContextProvider — silentRefresh subdirectory deployment', () => 
     expect(mockRefreshMutate).not.toHaveBeenCalled();
   });
 
+  it('retries the refresh instead of starting a guest when refresh hits a rotation conflict', () => {
+    jest.useFakeTimers();
+    try {
+      window.history.replaceState({}, '', '/c/new');
+      renderProviderLive();
+
+      const [, refreshOptions] = mockRefreshMutate.mock.calls[0] as [
+        unknown,
+        { onError: (error: unknown) => void },
+      ];
+      mockRefreshMutate.mockClear();
+      mockGuestMutate.mockClear();
+
+      act(() => {
+        refreshOptions.onError({ response: { status: 409 } });
+      });
+      expect(mockGuestMutate).not.toHaveBeenCalled();
+
+      act(() => {
+        jest.advanceTimersByTime(500);
+      });
+      expect(mockRefreshMutate).toHaveBeenCalledTimes(1);
+      expect(mockGuestMutate).not.toHaveBeenCalled();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('refreshes again when the guest endpoint reports an existing signed-in session', () => {
+    jest.useFakeTimers();
+    try {
+      window.history.replaceState({}, '', '/c/new');
+      renderProviderLive();
+
+      const [, refreshOptions] = mockRefreshMutate.mock.calls[0] as [
+        unknown,
+        { onError: (error: Error) => void },
+      ];
+      act(() => {
+        refreshOptions.onError(new Error('Request failed with status code 401'));
+      });
+      const [, guestOptions] = mockGuestMutate.mock.calls[0] as [
+        unknown,
+        { onError: (error: unknown) => void },
+      ];
+      mockRefreshMutate.mockClear();
+
+      act(() => {
+        guestOptions.onError({ response: { status: 409 } });
+      });
+      act(() => {
+        jest.advanceTimersByTime(500);
+      });
+
+      expect(mockRefreshMutate).toHaveBeenCalledTimes(1);
+      expect(mockNavigate).not.toHaveBeenCalledWith(
+        expect.stringMatching(/^\/login/),
+        expect.anything(),
+      );
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it('does not send guests to login when guest session creation fails', () => {
     window.history.replaceState({}, '', '/c/new');
     renderProviderLive();
@@ -599,10 +661,7 @@ describe('AuthContextProvider — silentRefresh subdirectory deployment', () => 
       refreshOptions.onError(new Error('Request failed with status code 401'));
     });
 
-    const [, guestOptions] = mockGuestMutate.mock.calls[0] as [
-      unknown,
-      { onError: () => void },
-    ];
+    const [, guestOptions] = mockGuestMutate.mock.calls[0] as [unknown, { onError: () => void }];
 
     act(() => {
       guestOptions.onError();

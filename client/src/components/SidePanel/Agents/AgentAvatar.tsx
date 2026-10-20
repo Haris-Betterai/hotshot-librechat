@@ -1,11 +1,12 @@
-import { memo, useCallback, useEffect } from 'react';
+import { memo, useState, useCallback, useEffect } from 'react';
 import { useToastContext } from '@librechat/client';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { mergeFileConfig, fileConfig as defaultFileConfig } from 'librechat-data-provider';
 import type { AgentAvatar } from 'librechat-data-provider';
 import type { AgentForm } from '~/common';
 import { AgentAvatarRender, NoImage, AvatarMenu } from './Images';
-import { useGetFileConfig } from '~/data-provider';
+import { useGetFileConfig, useGetStartupConfig } from '~/data-provider';
+import { getSpecIconForAgent } from './defaults';
 import { useLocalize } from '~/hooks';
 
 function Avatar({ avatar }: { avatar: AgentAvatar | null }) {
@@ -14,6 +15,9 @@ function Avatar({ avatar }: { avatar: AgentAvatar | null }) {
   const { control, setValue } = useFormContext<AgentForm>();
   const avatarPreview = useWatch({ control, name: 'avatar_preview' }) ?? '';
   const avatarAction = useWatch({ control, name: 'avatar_action' });
+  const agentId = useWatch({ control, name: 'id' });
+  const { data: startupConfig } = useGetStartupConfig();
+  const [brokenUrl, setBrokenUrl] = useState<string | null>(null);
   const { data: fileConfig = defaultFileConfig } = useGetFileConfig({
     select: (data) => mergeFileConfig(data),
   });
@@ -74,6 +78,10 @@ function Avatar({ avatar }: { avatar: AgentAvatar | null }) {
     setValue('avatar_action', remoteAvatarExists ? 'reset' : null, { shouldDirty: true });
   }, [avatar?.filepath, setValue]);
 
+  const specIcon = getSpecIconForAgent(agentId, startupConfig?.modelSpecs?.list);
+  const previewUsable =
+    Boolean(avatarPreview) && (avatarAction != null || avatarPreview !== brokenUrl);
+  const shownUrl = previewUsable ? avatarPreview : (specIcon ?? '');
   const hasIcon = Boolean(avatarPreview) || hasRemoteAvatar;
   const canReset = hasIcon;
 
@@ -87,11 +95,11 @@ function Avatar({ avatar }: { avatar: AgentAvatar | null }) {
         >
           <span
             className="t-icon-swap block h-full w-full"
-            data-state={avatarPreview ? 'a' : 'b'}
+            data-state={shownUrl ? 'a' : 'b'}
             aria-hidden="true"
           >
             <span className="t-icon block h-full w-full" data-icon="a">
-              <AgentAvatarRender url={avatarPreview} />
+              <AgentAvatarRender url={shownUrl} onError={() => setBrokenUrl(shownUrl)} />
             </span>
             <span className="t-icon block h-full w-full" data-icon="b">
               <NoImage />

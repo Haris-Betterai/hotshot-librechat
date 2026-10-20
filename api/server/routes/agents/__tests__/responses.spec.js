@@ -19,10 +19,10 @@ const originalEnv = {
 process.env.CREDS_KEY = '0123456789abcdef0123456789abcdef';
 process.env.CREDS_IV = '0123456789abcdef';
 
-/** Skip tests if ANTHROPIC_API_KEY is not available */
-const SKIP_INTEGRATION_TESTS = !process.env.ANTHROPIC_API_KEY;
+const anthropicApiKey = process.env.ANTHROPIC_API_KEY?.trim();
+const SKIP_INTEGRATION_TESTS = !anthropicApiKey || anthropicApiKey === 'user_provided';
 if (SKIP_INTEGRATION_TESTS) {
-  console.warn('ANTHROPIC_API_KEY not found - skipping integration tests');
+  console.warn('ANTHROPIC_API_KEY is unset or user-provided - skipping integration tests');
 }
 
 jest.mock('meilisearch', () => ({

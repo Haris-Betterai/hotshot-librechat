@@ -17,6 +17,7 @@ jest.mock('~/data-provider', () => ({
   useGetFileConfig: () => ({
     data: { avatarSizeLimit: 1024 * 1024 },
   }),
+  useGetStartupConfig: () => ({ data: { modelSpecs: { list: [] } } }),
 }));
 
 jest.mock('~/hooks', () => ({

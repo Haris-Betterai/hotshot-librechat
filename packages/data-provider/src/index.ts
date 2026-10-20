@@ -14,6 +14,7 @@ export * from './parsers';
 export * from './generate';
 export * from './models';
 export * from './intelligence';
+export * from './websearch';
 /* mcp */
 export * from './mcp';
 /* RBAC */

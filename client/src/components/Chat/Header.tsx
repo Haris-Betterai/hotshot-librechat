@@ -1,20 +1,20 @@
 import { memo, useMemo, useCallback, useState } from 'react';
-import { Maximize, Minimize } from 'lucide-react';
 import { useRecoilValue } from 'recoil';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Maximize, Minimize } from 'lucide-react';
 import { useMediaQuery, Button } from '@librechat/client';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { getConfigDefaults, PermissionTypes, Permissions } from 'librechat-data-provider';
+import { cn, SESSION_KEY, isEmbedWidget, isStaffPath, markStaffLoginIntent, publicHomePath, staffHomePath } from '~/utils';
+import { useAuthContext, useHasAccess, useLocalize } from '~/hooks';
+import { useChatContext, useAgentsMapContext } from '~/Providers';
 import ModelSelector from './Menus/Endpoints/ModelSelector';
 import { useGetStartupConfig } from '~/data-provider';
 import ExportAndShareMenu from './ExportAndShareMenu';
 import { OpenSidebar, PresetsMenu } from './Menus';
 import BookmarkMenu from './Menus/BookmarkMenu';
 import { TemporaryChat } from './TemporaryChat';
-import AddMultiConvo from './AddMultiConvo';
-import { useAuthContext, useHasAccess, useLocalize } from '~/hooks';
-import { useChatContext, useAgentsMapContext } from '~/Providers';
 import NewChat from '~/components/Nav/NewChat';
-import { cn, SESSION_KEY, isEmbedWidget, isStaffPath, markStaffLoginIntent, publicHomePath, staffHomePath } from '~/utils';
+import AddMultiConvo from './AddMultiConvo';
 import store from '~/store';
 
 const defaultInterface = getConfigDefaults().interface;

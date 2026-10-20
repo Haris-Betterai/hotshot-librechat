@@ -28,6 +28,7 @@ export interface PricingFns {
 interface BaseTxData {
   user: string;
   model?: string;
+  intelligenceLabel?: string;
   context: string;
   messageId?: string;
   conversationId: string;
@@ -77,6 +78,7 @@ export interface StructuredTokenUsage {
 export interface TxMetadata {
   user: string;
   model?: string;
+  intelligenceLabel?: string;
   context: string;
   messageId?: string;
   conversationId: string;

@@ -1,16 +1,33 @@
-import { Controller, useFormContext, useWatch } from 'react-hook-form';
 import { Input, TrashIcon } from '@librechat/client';
+import { Controller, useFormContext, useWatch } from 'react-hook-form';
+import { useGetModelsQuery } from 'librechat-data-provider/react-query';
 import {
+  seedAutoLevels,
   getDefaultIntelligenceIndex,
   getIntelligenceOptions,
-  intelligenceEfforts,
+  groupIntelligenceModels,
+  normalizeReasoningEffort,
+  getSupportedReasoningEfforts,
   isIntelligenceEffort,
   MAX_INTELLIGENCE_LEVELS,
 } from 'librechat-data-provider';
-import type { IntelligenceLevel, IntelligenceOption } from 'librechat-data-provider';
-import { useGetModelsQuery } from 'librechat-data-provider/react-query';
+import type {
+  IntelligenceOption,
+  IntelligenceLevel,
+  IntelligenceAuto,
+  IntelligenceEffort,
+} from 'librechat-data-provider';
 import type { AgentForm } from '~/common';
 import { useLocalize } from '~/hooks';
+
+type IntelligenceValue = NonNullable<AgentForm['intelligence']>;
+type LevelField =
+  | 'label'
+  | 'model'
+  | 'reasoning_effort'
+  | 'description'
+  | 'instructions'
+  | 'recursion_limit';
 
 const emptyLevel: IntelligenceOption = { label: '', model: '' };
 const presetLabels = {
@@ -35,6 +52,84 @@ const effortLabels = {
   xhigh: 'com_ui_xhigh',
   max: 'com_ui_max',
 } as const;
+const modelGroupLabels = {
+  gpt6: 'GPT-6',
+  gpt5: 'GPT-5',
+  other: 'com_ui_intelligence_other_models',
+} as const;
+
+function optionalText(value: string): string | undefined {
+  return value.trim() ? value : undefined;
+}
+
+function parseTriggers(value: string): string[] | undefined {
+  const triggers = value
+    .split(',')
+    .map((trigger) => trigger.trim())
+    .filter(Boolean);
+  return triggers.length > 0 ? triggers : undefined;
+}
+
+function applyField(level: IntelligenceLevel, field: LevelField, value: string): IntelligenceLevel {
+  if (field === 'reasoning_effort') {
+    return { ...level, reasoning_effort: isIntelligenceEffort(value) ? value : undefined };
+  }
+  if (field === 'recursion_limit') {
+    const limit = Number.parseInt(value, 10);
+    return { ...level, recursion_limit: Number.isFinite(limit) && limit > 0 ? limit : undefined };
+  }
+  if (field === 'description') {
+    return { ...level, description: optionalText(value) };
+  }
+  if (field === 'instructions') {
+    return { ...level, instructions: optionalText(value) };
+  }
+  if (field === 'model') {
+    const reasoning_effort = normalizeReasoningEffort(value, level.reasoning_effort);
+    return { ...level, model: value, ...(reasoning_effort ? { reasoning_effort } : {}) };
+  }
+  return { ...level, label: value };
+}
+
+function effortOptions(level: IntelligenceLevel): IntelligenceEffort[] {
+  const supported = getSupportedReasoningEfforts(level.model);
+  const saved = level.reasoning_effort;
+  return saved && !supported.includes(saved) ? [saved, ...supported] : supported;
+}
+
+function renameAuto(
+  current: IntelligenceAuto | undefined,
+  from: string,
+  to: string,
+): IntelligenceAuto | undefined {
+  if (!current || !from) {
+    return current;
+  }
+  return {
+    ...current,
+    base: current.base === from ? to : current.base,
+    escalate: current.escalate === from ? to : current.escalate,
+  };
+}
+
+/** Keeps Auto pointing at levels that still exist; drops it below two levels. */
+function repairAuto(
+  current: IntelligenceAuto | undefined,
+  nextLevels: IntelligenceLevel[],
+): IntelligenceAuto | undefined {
+  if (!current) {
+    return undefined;
+  }
+  const labels = nextLevels.map((level) => level.label).filter(Boolean);
+  if (labels.length < 2) {
+    return undefined;
+  }
+  return {
+    ...current,
+    base: labels.includes(current.base) ? current.base : labels[0],
+    escalate: labels.includes(current.escalate) ? current.escalate : labels[labels.length - 1],
+  };
+}
 
 export default function Levels() {
   const localize = useLocalize();
@@ -49,65 +144,137 @@ export default function Levels() {
   const options = getIntelligenceOptions(
     intelligence,
     typeof providerValue === 'string' ? providerValue : undefined,
-  );
+  ).filter((option) => !option.auto);
   const levels: IntelligenceOption[] =
     options.length > configuredLevels.length ? options : configuredLevels;
   const visibleLevels = levels.length > 0 ? levels : [emptyLevel];
-  const editableLevels = visibleLevels.map(({ label, model, reasoning_effort }) => ({
-    label,
-    model,
-    reasoning_effort,
-  }));
+  const editableLevels: IntelligenceLevel[] = visibleLevels.map(
+    ({ label, model, reasoning_effort, description, instructions, recursion_limit }) => ({
+      label,
+      model,
+      ...(reasoning_effort ? { reasoning_effort } : {}),
+      ...(description ? { description } : {}),
+      ...(instructions ? { instructions } : {}),
+      ...(recursion_limit ? { recursion_limit } : {}),
+    }),
+  );
+  const usableLevels = visibleLevels.filter((level) => level.label && level.model);
   const defaultIndex = getDefaultIntelligenceIndex(visibleLevels, intelligence?.default_level);
-  const defaultLabel = visibleLevels[defaultIndex]?.label ?? '';
+  const defaultOption = visibleLevels[defaultIndex];
+  const defaultLabel = defaultOption?.label ?? '';
+  const auto = intelligence?.auto;
+  const autoLabel = auto?.label ?? '';
+  const autoIsDefault = autoLabel.length > 0 && intelligence?.default_level === autoLabel;
+  const selectableDefault = defaultOption?.label && defaultOption?.model ? defaultLabel : '';
+  const selectedDefault = autoIsDefault ? autoLabel : selectableDefault;
 
-  const setIntelligence = (nextLevels: IntelligenceLevel[], defaultLevel?: string) => {
+  const setIntelligence = (patch: Partial<IntelligenceValue>) => {
     setValue(
       'intelligence',
       {
         heading: intelligence?.heading ?? '',
-        levels: nextLevels,
-        ...(defaultLevel ? { default_level: defaultLevel } : {}),
+        levels: editableLevels,
+        default_level: intelligence?.default_level,
+        auto,
+        ...patch,
       },
       { shouldDirty: true },
     );
   };
 
-  const updateLevel = (
-    index: number,
-    field: 'label' | 'model' | 'reasoning_effort',
-    value: string,
-  ) => {
-    const next = editableLevels.map((level) => ({ ...level }));
-    const previousLabel = next[index].label;
-    if (field === 'reasoning_effort') {
-      next[index].reasoning_effort = isIntelligenceEffort(value) ? value : undefined;
-    } else {
-      next[index] = { ...next[index], [field]: value };
+  /** Never leaves `default_level` pointing at a level or Auto option that is gone. */
+  const resolveDefault = (
+    candidate: string | undefined,
+    nextLevels: IntelligenceLevel[],
+    nextAuto?: IntelligenceAuto,
+  ): string | undefined => {
+    const matchesAuto = Boolean(nextAuto?.label) && candidate === nextAuto?.label;
+    if (candidate && (matchesAuto || nextLevels.some((level) => level.label === candidate))) {
+      return candidate;
     }
-    const shouldPreserveDefault =
-      field === 'label' &&
-      (previousLabel === intelligence?.default_level ||
-        (!intelligence?.default_level && index === defaultIndex));
-    setIntelligence(next, shouldPreserveDefault ? value : intelligence?.default_level);
+    if (nextAuto?.label) {
+      return nextAuto.label;
+    }
+    if (defaultLabel && nextLevels.some((level) => level.label === defaultLabel)) {
+      return defaultLabel;
+    }
+    return nextLevels[getDefaultIntelligenceIndex(nextLevels)]?.label;
+  };
+
+  const updateLevel = (index: number, field: LevelField, value: string) => {
+    const previousLabel = editableLevels[index].label;
+    const nextLevels = editableLevels.map((level, slot) =>
+      slot === index ? applyField(level, field, value) : level,
+    );
+    const renamed = field === 'label' && previousLabel !== value;
+    const nextAuto = renamed ? renameAuto(auto, previousLabel, value) : auto;
+    const candidate =
+      renamed && intelligence?.default_level === previousLabel
+        ? value
+        : intelligence?.default_level;
+    setIntelligence({
+      levels: nextLevels,
+      auto: nextAuto,
+      default_level: resolveDefault(candidate, nextLevels, nextAuto),
+    });
   };
 
   const addLevel = () => {
     if (visibleLevels.length >= MAX_INTELLIGENCE_LEVELS) {
       return;
     }
-    setIntelligence([...editableLevels, { ...emptyLevel }], intelligence?.default_level);
+    const nextLevels = [...editableLevels, { ...emptyLevel }];
+    setIntelligence({
+      levels: nextLevels,
+      default_level: resolveDefault(intelligence?.default_level, nextLevels, auto),
+    });
   };
 
   const removeLevel = (index: number) => {
-    const removed = editableLevels[index];
-    const next = editableLevels.filter((_, levelIndex) => levelIndex !== index);
-    const nextDefault =
-      removed.label === intelligence?.default_level
-        ? next[getDefaultIntelligenceIndex(next)]?.label
-        : intelligence?.default_level;
-    setIntelligence(next, nextDefault);
+    const nextLevels = editableLevels.filter((_, slot) => slot !== index);
+    const nextAuto = repairAuto(auto, nextLevels);
+    setIntelligence({
+      levels: nextLevels,
+      auto: nextAuto,
+      default_level: resolveDefault(intelligence?.default_level, nextLevels, nextAuto),
+    });
   };
+
+  const toggleAuto = (enabled: boolean) => {
+    if (!enabled) {
+      setIntelligence({
+        auto: undefined,
+        default_level: resolveDefault(intelligence?.default_level, editableLevels),
+      });
+      return;
+    }
+    const nextAuto: IntelligenceAuto = {
+      label: localize('com_ui_intelligence_auto'),
+      ...seedAutoLevels(usableLevels, defaultLabel),
+    };
+    setIntelligence({ auto: nextAuto, default_level: nextAuto.label });
+  };
+
+  const updateAuto = (patch: Partial<IntelligenceAuto>) => {
+    if (!auto) {
+      return;
+    }
+    const nextAuto: IntelligenceAuto = { ...auto, ...patch };
+    const followsLabel = intelligence?.default_level === auto.label;
+    const candidate = followsLabel ? nextAuto.label : intelligence?.default_level;
+    setIntelligence({
+      auto: nextAuto,
+      default_level: resolveDefault(candidate, editableLevels, nextAuto),
+    });
+  };
+
+  const savedModels = editableLevels.map((level) => level.model).filter(Boolean);
+  const modelGroups = groupIntelligenceModels(models, savedModels);
+  const levelOptions = usableLevels.map((level, index) => (
+    <option key={`${level.label}-${index}`} value={level.label}>
+      {level.label}
+    </option>
+  ));
 
   return (
     <div className="mb-3 flex flex-col gap-2">
@@ -126,42 +293,94 @@ export default function Levels() {
             className="h-9"
             onChange={(event) => {
               field.onChange(event);
-              setValue(
-                'intelligence',
-                {
-                  ...intelligence,
-                  heading: event.target.value,
-                  levels: intelligence?.levels ?? [],
-                },
-                { shouldDirty: true },
-              );
+              setIntelligence({
+                heading: event.target.value,
+                levels: intelligence?.levels ?? [],
+              });
             }}
           />
         )}
       />
       <p className="text-xs text-text-secondary">{localize('com_ui_intelligence_levels_hint')}</p>
+      <div className="flex flex-col gap-2 rounded-lg border border-border-light p-3">
+        <label className="flex items-center gap-2 text-sm text-text-primary">
+          <input
+            type="checkbox"
+            className="h-4 w-4 rounded border-border-medium"
+            aria-label={localize('com_ui_intelligence_auto_enable')}
+            checked={auto != null}
+            disabled={auto == null && usableLevels.length < 2}
+            onChange={(event) => toggleAuto(event.target.checked)}
+          />
+          {localize('com_ui_intelligence_auto_enable')}
+        </label>
+        {auto ? (
+          <>
+            <p className="text-xs text-text-secondary">
+              {localize('com_ui_intelligence_auto_hint')}
+            </p>
+            <Input
+              className="h-9"
+              value={auto.label}
+              placeholder={localize('com_ui_intelligence_auto')}
+              aria-label={localize('com_ui_intelligence_auto_label')}
+              onChange={(event) => updateAuto({ label: event.target.value })}
+            />
+            <Input
+              className="h-9"
+              value={auto.description ?? ''}
+              placeholder={localize('com_ui_intelligence_auto_description_placeholder')}
+              aria-label={localize('com_ui_intelligence_auto_description_placeholder')}
+              onChange={(event) => updateAuto({ description: optionalText(event.target.value) })}
+            />
+            <label className="flex items-center justify-between gap-2 text-xs text-text-secondary">
+              {localize('com_ui_intelligence_auto_base')}
+              <select
+                className="h-9 min-w-40 rounded-md border border-border-medium bg-surface-primary px-2 text-sm text-text-primary"
+                aria-label={localize('com_ui_intelligence_auto_base')}
+                value={auto.base}
+                onChange={(event) => updateAuto({ base: event.target.value })}
+              >
+                {levelOptions}
+              </select>
+            </label>
+            <label className="flex items-center justify-between gap-2 text-xs text-text-secondary">
+              {localize('com_ui_intelligence_auto_escalate')}
+              <select
+                className="h-9 min-w-40 rounded-md border border-border-medium bg-surface-primary px-2 text-sm text-text-primary"
+                aria-label={localize('com_ui_intelligence_auto_escalate')}
+                value={auto.escalate}
+                onChange={(event) => updateAuto({ escalate: event.target.value })}
+              >
+                {levelOptions}
+              </select>
+            </label>
+            <Input
+              className="h-9"
+              defaultValue={auto.triggers?.join(', ') ?? ''}
+              placeholder={localize('com_ui_intelligence_auto_triggers')}
+              aria-label={localize('com_ui_intelligence_auto_triggers')}
+              onChange={(event) => updateAuto({ triggers: parseTriggers(event.target.value) })}
+            />
+            <p className="text-xs text-text-secondary">
+              {localize('com_ui_intelligence_auto_triggers_hint')}
+            </p>
+          </>
+        ) : null}
+      </div>
       <label className="flex items-center justify-between gap-3 text-xs text-text-secondary">
         {localize('com_ui_intelligence_default_level')}
         <select
           className="h-9 min-w-40 rounded-md border border-border-medium bg-surface-primary px-2 text-sm text-text-primary"
           aria-label={localize('com_ui_intelligence_default_level')}
-          value={
-            visibleLevels[defaultIndex]?.label && visibleLevels[defaultIndex]?.model
-              ? defaultLabel
-              : ''
-          }
-          onChange={(event) => setIntelligence(editableLevels, event.target.value)}
+          value={selectedDefault}
+          onChange={(event) => setIntelligence({ default_level: event.target.value })}
         >
           <option value="" disabled>
             {localize('com_ui_intelligence_select_default')}
           </option>
-          {visibleLevels.map((level, index) =>
-            level.label && level.model ? (
-              <option key={`${level.label}-${index}`} value={level.label}>
-                {level.label}
-              </option>
-            ) : null,
-          )}
+          {autoLabel ? <option value={autoLabel}>{autoLabel}</option> : null}
+          {levelOptions}
         </select>
       </label>
       {visibleLevels.map((level, slot) => (
@@ -175,11 +394,11 @@ export default function Levels() {
                 ? localize(presetLabels[level.preset])
                 : level.label || localize('com_ui_intelligence_level_number', { number: slot + 1 })}
             </p>
-            {level.preset && (
+            {level.description || level.preset ? (
               <p className="mt-1 text-xs text-text-secondary">
-                {localize(purposeLabels[level.preset])}
+                {level.description || (level.preset ? localize(purposeLabels[level.preset]) : '')}
               </p>
-            )}
+            ) : null}
           </div>
           {visibleLevels.length > 1 ? (
             <button
@@ -206,15 +425,30 @@ export default function Levels() {
             onChange={(event) => updateLevel(slot, 'model', event.target.value)}
           >
             <option value="">{localize('com_ui_select_model')}</option>
-            {models.map((modelName) => (
-              <option key={modelName} value={modelName}>
-                {modelName}
-              </option>
+            {modelGroups.map((group) => (
+              <optgroup
+                key={group.id}
+                label={
+                  group.id === 'other'
+                    ? localize(modelGroupLabels.other)
+                    : modelGroupLabels[group.id]
+                }
+              >
+                {group.models.map((modelName) => (
+                  <option key={modelName} value={modelName}>
+                    {modelName}
+                  </option>
+                ))}
+              </optgroup>
             ))}
-            {level.model && !models.includes(level.model) ? (
-              <option value={level.model}>{level.model}</option>
-            ) : null}
           </select>
+          <Input
+            className="col-span-2 h-9"
+            value={level.description ?? ''}
+            placeholder={localize('com_ui_intelligence_description_placeholder')}
+            aria-label={`${localize('com_ui_intelligence_description_placeholder')} ${slot + 1}`}
+            onChange={(event) => updateLevel(slot, 'description', event.target.value)}
+          />
           <label className="col-span-2 flex items-center justify-between gap-2 text-xs text-text-secondary">
             {localize('com_ui_intelligence_effort')}
             <select
@@ -224,13 +458,41 @@ export default function Levels() {
               onChange={(event) => updateLevel(slot, 'reasoning_effort', event.target.value)}
             >
               <option value="">{localize('com_ui_default')}</option>
-              {intelligenceEfforts.map((effort) => (
+              {effortOptions(level).map((effort) => (
                 <option key={effort} value={effort}>
                   {localize(effortLabels[effort])}
                 </option>
               ))}
             </select>
           </label>
+          <details className="col-span-2 rounded-md border border-border-light px-2 py-1">
+            <summary className="cursor-pointer text-xs text-text-secondary">
+              {localize('com_ui_intelligence_advanced')}
+            </summary>
+            <div className="mt-2 flex flex-col gap-2">
+              <textarea
+                className="min-h-16 w-full resize-y rounded-md border border-border-medium bg-surface-primary px-2 py-1 text-sm text-text-primary"
+                value={level.instructions ?? ''}
+                placeholder={localize('com_ui_intelligence_instructions_placeholder')}
+                aria-label={`${localize('com_ui_intelligence_instructions_placeholder')} ${slot + 1}`}
+                onChange={(event) => updateLevel(slot, 'instructions', event.target.value)}
+              />
+              <label className="flex items-center justify-between gap-2 text-xs text-text-secondary">
+                {localize('com_ui_intelligence_recursion_limit')}
+                <Input
+                  type="number"
+                  min={1}
+                  className="h-9 w-24"
+                  value={level.recursion_limit ?? ''}
+                  aria-label={`${localize('com_ui_intelligence_recursion_limit')} ${slot + 1}`}
+                  onChange={(event) => updateLevel(slot, 'recursion_limit', event.target.value)}
+                />
+              </label>
+              <p className="text-xs text-text-secondary">
+                {localize('com_ui_intelligence_recursion_limit_hint')}
+              </p>
+            </div>
+          </details>
         </div>
       ))}
       <button

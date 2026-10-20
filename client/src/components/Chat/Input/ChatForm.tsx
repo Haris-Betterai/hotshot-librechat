@@ -22,10 +22,10 @@ import {
   useAddedChatContext,
   useAssistantsMapContext,
 } from '~/Providers';
+import { cn, getModelSpec, removeFocusRings, isEmbedWidget } from '~/utils';
 import PendingManualSkillsChips from './PendingManualSkillsChips';
 import useAskAnswerMode from '~/hooks/Input/useAskAnswerMode';
 import AskUserQuestionPopover from './AskUserQuestionPopover';
-import { cn, getModelSpec, removeFocusRings, isEmbedWidget } from '~/utils';
 import DuringRunSendButton from './DuringRunSendButton';
 import { useGetStartupConfig } from '~/data-provider';
 import { mainTextareaId, BadgeItem } from '~/common';
@@ -40,10 +40,10 @@ import PromptsCommand from './PromptsCommand';
 import SkillsCommand from './SkillsCommand';
 import AudioRecorder from './AudioRecorder';
 import CollapseChat from './CollapseChat';
+import Intelligence from './Intelligence';
 import QuoteButton from './QuoteButton';
 import StreamAudio from './StreamAudio';
 import TokenUsage from './TokenUsage';
-import Intelligence from './Intelligence';
 import StopButton from './StopButton';
 import SendButton from './SendButton';
 import EditBadges from './EditBadges';

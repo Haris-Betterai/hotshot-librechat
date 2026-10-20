@@ -3,9 +3,9 @@ import { useRecoilValue } from 'recoil';
 import { DelayedRender } from '@librechat/client';
 import type { TMessage } from 'librechat-data-provider';
 import type { TMessageContentProps, TDisplayProps } from '~/common';
+import useSmoothedStreamText from '~/hooks/Messages/useSmoothedStreamText';
 import Error from '~/components/Messages/Content/Error';
 import { useMessageContext } from '~/Providers';
-import useSmoothedStreamText from '~/hooks/Messages/useSmoothedStreamText';
 import MarkdownLite from './MarkdownLite';
 import EditMessage from './EditMessage';
 import Thinking from './Parts/Thinking';
@@ -110,13 +110,26 @@ const DisplayMessage = ({ text, isCreatedByUser, message, showCursor }: TDisplay
 
   const content = useMemo(() => {
     if (!isCreatedByUser) {
-      return <Markdown content={revealedText} isLatestMessage={isLatestMessage} />;
+      return (
+        <Markdown
+          content={revealedText}
+          isLatestMessage={isLatestMessage}
+          isStreaming={showCursorState}
+        />
+      );
     }
     if (enableUserMsgMarkdown) {
       return <MarkdownLite content={text} />;
     }
     return <>{text}</>;
-  }, [isCreatedByUser, enableUserMsgMarkdown, text, revealedText, isLatestMessage]);
+  }, [
+    isCreatedByUser,
+    enableUserMsgMarkdown,
+    text,
+    revealedText,
+    isLatestMessage,
+    showCursorState,
+  ]);
 
   return (
     <Container message={message}>

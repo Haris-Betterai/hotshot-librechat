@@ -355,6 +355,24 @@ describe('getOpenAILLMConfig', () => {
   });
 
   describe('Web Search Functionality', () => {
+    it('should restrict web_search to valid allowed domains', () => {
+      const result = getOpenAILLMConfig({
+        apiKey: 'test-api-key',
+        streaming: true,
+        modelOptions: {
+          model: 'gpt-6-luna',
+          web_search: true,
+          web_search_domains: [' HotshotSecret.com ', 'https://nope.com/x', 'hotshotsecret.com'],
+        },
+      });
+
+      expect(result.llmConfig.useResponsesApi).toBe(true);
+      expect(result.llmConfig).not.toHaveProperty('web_search_domains');
+      expect(result.tools).toEqual([
+        { type: 'web_search', filters: { allowed_domains: ['hotshotsecret.com'] } },
+      ]);
+    });
+
     it('should enable web search with Responses API', () => {
       const result = getOpenAILLMConfig({
         apiKey: 'test-api-key',
@@ -710,24 +728,29 @@ describe('getOpenAILLMConfig', () => {
   });
 
   describe('GPT-5.6 Responses API Requirement', () => {
-    it.each(['gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.6-sol', 'gpt-5.6'])(
-      'should default to Responses API for %s when reasoning_effort is set',
-      (model) => {
-        const result = getOpenAILLMConfig({
-          apiKey: 'test-api-key',
-          streaming: true,
-          endpoint: EModelEndpoint.openAI,
-          modelOptions: {
-            model,
-            reasoning_effort: ReasoningEffort.high,
-          },
-        });
+    it.each([
+      'gpt-5.6-terra',
+      'gpt-5.6-luna',
+      'gpt-5.6-sol',
+      'gpt-5.6',
+      'gpt-6-astra',
+      'gpt-6.1-sol',
+      'gpt-6-luna',
+    ])('should default to Responses API for %s when reasoning_effort is set', (model) => {
+      const result = getOpenAILLMConfig({
+        apiKey: 'test-api-key',
+        streaming: true,
+        endpoint: EModelEndpoint.openAI,
+        modelOptions: {
+          model,
+          reasoning_effort: ReasoningEffort.high,
+        },
+      });
 
-        expect(result.llmConfig).toHaveProperty('useResponsesApi', true);
-        expect(result.llmConfig.reasoning).toEqual({ effort: ReasoningEffort.high });
-        expect(result.llmConfig).not.toHaveProperty('reasoning_effort');
-      },
-    );
+      expect(result.llmConfig).toHaveProperty('useResponsesApi', true);
+      expect(result.llmConfig.reasoning).toEqual({ effort: ReasoningEffort.high });
+      expect(result.llmConfig).not.toHaveProperty('reasoning_effort');
+    });
 
     it('should NOT default to Responses API without reasoning params', () => {
       const result = getOpenAILLMConfig({

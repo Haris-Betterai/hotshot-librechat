@@ -30,7 +30,6 @@ import type {
   EndpointTokenConfig,
   InitializeResultBase,
 } from '~/types';
-import { resolveIntelligenceParameters, responsesApiOverride } from './intelligence';
 import type { LCAvailableTools, RequestScopedMCPConnectionStore } from '../mcp/types';
 import type { ResolvedManualSkill, ResolvedAlwaysApplySkill } from './skills';
 import type { TFilterFilesByAgentAccess } from './resources';
@@ -52,6 +51,7 @@ import {
   registerFileAuthoringTools,
   isFileAuthoringToolDefinition,
 } from './tools';
+import { resolveIntelligenceParameters, responsesApiOverride } from './intelligence';
 import { normalizeServerName, requiresEphemeralUserConnection } from '~/mcp/utils';
 import { registerMemoryTools, memoryToolUsageGuard } from './memory';
 import { applyBackgroundToolCalls } from './background';
@@ -233,6 +233,12 @@ function resolveProviderToolConflicts({
  */
 export type InitializedAgent = Agent & {
   tools: GenericTool[];
+  /** Slider/default option selected for this request, including Auto. */
+  intelligenceSelectionLabel?: string;
+  /** Concrete intelligence tier selected for this request. */
+  intelligenceLabel?: string;
+  /** Whether Auto selected its escalation tier for this request. */
+  intelligenceAutoEscalated?: boolean;
   /** @deprecated use requestAttachments or agentContextAttachments based on sharing semantics. */
   attachments: IMongoFile[];
   /** Files attached to the current user message/run and safe to share across run agents. */
@@ -410,6 +416,8 @@ export interface InitializeAgentParams {
   allowedProviders: Set<string>;
   /** Whether this is the initial agent */
   isInitialAgent?: boolean;
+  /** User-authored text for intelligence routing when the transport does not use `req.body.text`. */
+  requestText?: string;
   /** Accessible skill IDs for this user (pre-computed by the caller via ACL query) */
   accessibleSkillIds?: import('mongoose').Types.ObjectId[];
   /** Whether skill file authoring should be exposed even before a user has viewable skills. */
@@ -610,6 +618,7 @@ export async function initializeAgent(
     parentMessageId,
     allowedProviders,
     isInitialAgent = false,
+    requestText,
   } = params;
   const requestFileOwnerId = req.user?.id;
   const requestFileOwnerScope: FileOwnerScope | undefined = requestFileOwnerId
@@ -642,11 +651,21 @@ export async function initializeAgent(
   const selectedModelLabel =
     endpointOption?.modelLabel ??
     (endpointOption?.model_parameters as { modelLabel?: string } | undefined)?.modelLabel;
-  const intelligenceParameters = isInitialAgent
-    ? resolveIntelligenceParameters(agent, selectedModelLabel)
+  const intelligence = isInitialAgent
+    ? resolveIntelligenceParameters(
+        agent,
+        selectedModelLabel,
+        requestText ?? req.body?.text,
+        req.resolvedConversation?.intelligenceLabel,
+        req.resolvedConversation?.modelLabel,
+      )
     : undefined;
-  if (intelligenceParameters) {
-    agent.model = intelligenceParameters.model;
+  if (intelligence) {
+    agent.model = intelligence.modelOptions.model;
+    if (intelligence.recursion_limit != null) {
+      agent.recursion_limit = intelligence.recursion_limit;
+    }
+    appendAdditionalInstructions(agent, intelligence.instructions);
   }
 
   let currentFiles: IMongoFile[] | undefined;
@@ -656,7 +675,7 @@ export async function initializeAgent(
       { model: agent.model },
       agent.model_parameters ?? { model: agent.model },
       isInitialAgent === true ? endpointOption?.model_parameters : {},
-      intelligenceParameters,
+      intelligence?.modelOptions,
       responsesApiOverride({ model: agent.model, tools: agent.tools }),
     ),
   );
@@ -1382,6 +1401,16 @@ export async function initializeAgent(
 
   const initializedAgent: InitializedAgent = {
     ...agent,
+    ...(intelligence
+      ? {
+          intelligenceSelectionLabel:
+            intelligence.selectionLabel ?? selectedModelLabel ?? intelligence.label,
+        }
+      : {}),
+    ...(intelligence?.label ? { intelligenceLabel: intelligence.label } : {}),
+    ...(intelligence?.autoEscalated != null
+      ? { intelligenceAutoEscalated: intelligence.autoEscalated }
+      : {}),
     resendFiles,
     toolRegistry,
     mcpAvailableTools,

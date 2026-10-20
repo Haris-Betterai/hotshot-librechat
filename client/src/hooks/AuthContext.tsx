@@ -8,8 +8,8 @@ import {
   createContext,
 } from 'react';
 import { debounce } from 'lodash';
-import { useRecoilState, useSetRecoilState } from 'recoil';
 import { useNavigate } from 'react-router-dom';
+import { useRecoilState, useSetRecoilState } from 'recoil';
 import {
   request,
   apiBaseUrl,
@@ -31,8 +31,18 @@ import {
   useRefreshTokenMutation,
   useGetStartupConfig,
 } from '~/data-provider';
+import {
+  SESSION_KEY,
+  isSafeRedirect,
+  getPostLoginRedirect,
+  markEmbedWidget,
+  isStaffPath,
+  staffHomePath,
+  wantsStaffLogin,
+  markStaffLoginIntent,
+  clearStaffLoginIntent,
+} from '~/utils';
 import { TAuthConfig, TUserContext, TAuthContext, TResError } from '~/common';
-import { SESSION_KEY, isSafeRedirect, getPostLoginRedirect, markEmbedWidget, isStaffPath, staffHomePath, wantsStaffLogin, markStaffLoginIntent, clearStaffLoginIntent } from '~/utils';
 import useTimeout from './useTimeout';
 import store from '~/store';
 
@@ -40,6 +50,19 @@ const AuthContext = (import.meta.hot?.data?.__AuthContext ??
   createContext<TAuthContext | undefined>(undefined)) as React.Context<TAuthContext | undefined>;
 if (import.meta.hot) {
   import.meta.hot.data.__AuthContext = AuthContext;
+}
+
+const SESSION_CONFLICT_STATUS = 409;
+const MAX_CONFLICT_RETRIES = 3;
+const CONFLICT_RETRY_DELAY_MS = 400;
+
+/** Axios-style errors carry the HTTP status on `response`. */
+export function isSessionConflict(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    (error as { response?: { status?: number } }).response?.status === SESSION_CONFLICT_STATUS
+  );
 }
 
 function isStaffRedirect(target?: string | null): boolean {
@@ -75,6 +98,9 @@ const AuthContextProvider = ({
   const embedGuestInitAttemptedRef = useRef(false);
   const currentEmbedIdRef = useRef<string | null>(null);
   const refreshHaltedRef = useRef(false);
+  const conflictRetriesRef = useRef(0);
+  const silentRefreshRef = useRef<() => void>(() => undefined);
+  const userRef = useRef<t.TUser | undefined>(undefined);
 
   const userRoleName = user?.role ?? '';
   const isCustomRole = isAuthenticated && !!user?.role && !isSystemRoleName(user.role);
@@ -90,6 +116,7 @@ const AuthContextProvider = ({
   });
 
   const navigate = useNavigate();
+  userRef.current = user;
 
   const setUserContext = useMemo(
     () =>
@@ -104,6 +131,7 @@ const AuthContextProvider = ({
           refreshHaltedRef.current = false;
           refreshInFlightRef.current = false;
           guestInFlightRef.current = false;
+          conflictRetriesRef.current = 0;
         }
 
         const isGuest = user?.provider === 'anonymous';
@@ -314,12 +342,7 @@ const AuthContextProvider = ({
         navigate('/login', { replace: true });
       },
     });
-  }, [
-    createGuestEmbedSession,
-    getEmbedIdFromPath,
-    navigate,
-    setUserContext,
-  ]);
+  }, [createGuestEmbedSession, getEmbedIdFromPath, navigate, setUserContext]);
 
   const logout = useCallback(
     (redirect?: string) => {
@@ -348,7 +371,24 @@ const AuthContextProvider = ({
     loginUser.mutate(data);
   };
 
+  /** Retries the refresh shortly after a rotation race or an existing-session conflict. */
+  const retryRefreshAfterConflict = useCallback(() => {
+    if (conflictRetriesRef.current >= MAX_CONFLICT_RETRIES) {
+      return false;
+    }
+    conflictRetriesRef.current += 1;
+    refreshHaltedRef.current = false;
+    window.setTimeout(() => silentRefreshRef.current(), CONFLICT_RETRY_DELAY_MS);
+    return true;
+  }, []);
+
   const startGuestSession = useCallback(() => {
+    /** Never replace a signed-in (non-guest) session with a guest one. */
+    const currentUser = userRef.current;
+    if (currentUser != null && currentUser.provider !== 'anonymous' && getTokenHeader()) {
+      return;
+    }
+
     // If we're on an admin-generated embed widget URL, initialize the
     // authorized embed guest session instead of relying on PUBLIC_GUEST_MODE.
     if (getEmbedIdFromPath() != null) {
@@ -403,9 +443,12 @@ const AuthContextProvider = ({
         }
         setUserContext({ user, token, isAuthenticated: true, redirect: '/c/new' });
       },
-      onError: () => {
+      onError: (error) => {
         guestInFlightRef.current = false;
         if (generation !== authGenerationRef.current) {
+          return;
+        }
+        if (isSessionConflict(error) && retryRefreshAfterConflict()) {
           return;
         }
         if (startupConfig?.publicGuestMode === true) {
@@ -422,6 +465,7 @@ const AuthContextProvider = ({
     startupConfig,
     startEmbedGuestSession,
     getEmbedIdFromPath,
+    retryRefreshAfterConflict,
   ]);
 
   const silentRefresh = useCallback(() => {
@@ -480,6 +524,9 @@ const AuthContextProvider = ({
         if (authConfig?.test === true) {
           return;
         }
+        if (isSessionConflict(error) && retryRefreshAfterConflict()) {
+          return;
+        }
         refreshHaltedRef.current = true;
         startGuestSession();
       },
@@ -489,7 +536,9 @@ const AuthContextProvider = ({
     refreshToken,
     setUserContext,
     startGuestSession,
+    retryRefreshAfterConflict,
   ]);
+  silentRefreshRef.current = silentRefresh;
 
   useEffect(() => {
     if (isExternalRedirectRef.current) {

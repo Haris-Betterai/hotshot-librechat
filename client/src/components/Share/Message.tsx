@@ -1,9 +1,9 @@
 import { useAtomValue } from 'jotai';
 import type { TMessageProps } from '~/common';
 import MinimalHoverButtons from '~/components/Chat/Messages/MinimalHoverButtons';
+import MessageModelBadge from '~/components/Chat/Messages/ui/MessageModelBadge';
 import MessageContent from '~/components/Chat/Messages/Content/MessageContent';
 import MessageTimestamp from '~/components/Chat/Messages/ui/MessageTimestamp';
-import MessageModelBadge from '~/components/Chat/Messages/ui/MessageModelBadge';
 import SearchContent from '~/components/Chat/Messages/Content/SearchContent';
 import SiblingSwitch from '~/components/Chat/Messages/SiblingSwitch';
 import SubRow from '~/components/Chat/Messages/SubRow';

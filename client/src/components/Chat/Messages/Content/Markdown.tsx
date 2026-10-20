@@ -9,9 +9,14 @@ import store from '~/store';
 type TContentProps = {
   content: string;
   isLatestMessage: boolean;
+  isStreaming?: boolean;
 };
 
-const Markdown = memo(function Markdown({ content = '', isLatestMessage }: TContentProps) {
+const Markdown = memo(function Markdown({
+  content = '',
+  isLatestMessage,
+  isStreaming = false,
+}: TContentProps) {
   const LaTeXParsing = useRecoilValue<boolean>(store.LaTeXParsing);
   const isInitializing = content === '';
 
@@ -39,6 +44,7 @@ const Markdown = memo(function Markdown({ content = '', isLatestMessage }: TCont
         remarkPlugins={getRemarkPlugins()}
         rehypePlugins={getRehypePlugins()}
         components={getMarkdownComponents()}
+        animateStreaming={isStreaming}
       />
     </MarkdownErrorBoundary>
   );

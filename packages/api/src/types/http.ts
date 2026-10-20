@@ -18,6 +18,8 @@ export type RequestBody = {
   endpointOption?: Partial<TEndpointOption>;
   /** Browser IANA timezone used to resolve local-time prompt variables (e.g. `{{current_datetime}}`). */
   timezone?: string;
+  /** Message text of the current turn, classified by the Auto intelligence router. */
+  text?: string;
 };
 
 export type ServerRequest = Request<unknown, unknown, RequestBody> & {

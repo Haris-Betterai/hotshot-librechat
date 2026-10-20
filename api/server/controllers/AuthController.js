@@ -1,7 +1,12 @@
 const cookies = require('cookie');
 const jwt = require('jsonwebtoken');
 const openIdClient = require('openid-client');
-const { logger, activeExpirationFilter, runAsSystem, getTenantId } = require('@librechat/data-schemas');
+const {
+  logger,
+  activeExpirationFilter,
+  runAsSystem,
+  getTenantId,
+} = require('@librechat/data-schemas');
 const mongoose = require('mongoose');
 const {
   math,
@@ -32,6 +37,7 @@ const { getGraphApiToken } = require('~/server/services/GraphTokenService');
 const { getAppConfig } = require('~/server/services/Config');
 const { getOpenIdConfig, getOpenIdEmail } = require('~/strategies');
 
+const GUEST_PROVIDER = 'anonymous';
 const AUTH_REFRESH_USER_PROJECTION = '-password -__v -totpSecret -backupCodes -federatedTokens';
 const FAILED_REFRESH_COOKIE_OPTIONS = {
   httpOnly: true,
@@ -71,12 +77,42 @@ const registrationController = async (req, res) => {
   }
 };
 
+/**
+ * Returns true when the request carries a live, non-guest refresh session.
+ * Guest endpoints use this to avoid overwriting a real (e.g. staff) session's cookies.
+ */
+const hasLiveMemberSession = async (req) => {
+  const refreshToken = req.headers?.cookie ? cookies.parse(req.headers.cookie).refreshToken : null;
+  if (!refreshToken || !process.env.JWT_REFRESH_SECRET) {
+    return false;
+  }
+
+  try {
+    const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const user = await getUserById(payload.id, 'provider');
+    if (!user || user.provider === GUEST_PROVIDER) {
+      return false;
+    }
+    const session = await findSession({ userId: payload.id, refreshToken });
+    return Boolean(session);
+  } catch {
+    return false;
+  }
+};
+
 const guestController = async (req, res) => {
   if (!isEnabled(process.env.PUBLIC_GUEST_MODE)) {
     return res.sendStatus(404);
   }
 
   try {
+    if (await hasLiveMemberSession(req)) {
+      return res.status(409).json({
+        code: 'SESSION_EXISTS',
+        message: 'A signed-in session already exists; refresh it instead of starting a guest',
+      });
+    }
+
     const appConfig = await getAppConfig();
     const user = await createUser(createGuestUser(), appConfig?.balance, false, true);
     const token = await setAuthTokens(user._id, res, null, req);
@@ -184,6 +220,14 @@ const resetPasswordController = async (req, res) => {
     logger.error('[resetPasswordController]', e);
     return res.status(400).json({ message: e.message });
   }
+};
+
+const isRotationRace = async (payload, userId) => {
+  if (!payload?.sessionId) {
+    return false;
+  }
+  const live = await findSession({ userId, sessionId: payload.sessionId });
+  return Boolean(live);
 };
 
 const refreshController = async (req, res) => {
@@ -325,6 +369,9 @@ const refreshController = async (req, res) => {
       const token = await setAuthTokens(userId, res, session, req);
 
       res.status(200).send({ token, user: sanitizeUserForAuthResponse(user) });
+    } else if (await isRotationRace(payload, userId)) {
+      /** A concurrent refresh already rotated this token; clearing cookies would wipe the winner's fresh one. */
+      res.status(409).send('Refresh token was rotated by a concurrent request');
     } else if (req?.query?.retry) {
       clearFailedRefreshCookies(res);
       res.status(403).send('No session found');

@@ -492,6 +492,7 @@ export interface RecordUsageParams {
   conversationId: string;
   collectedUsage: UsageMetadata[];
   model?: string;
+  intelligenceLabel?: string;
   context?: string;
   messageId?: string;
   balance?: Partial<TCustomConfig['balance']> | null;
@@ -527,6 +528,7 @@ export async function recordCollectedUsage(
   const {
     user,
     model,
+    intelligenceLabel,
     balance,
     messageId,
     transactions,
@@ -601,6 +603,7 @@ export async function recordCollectedUsage(
           : endpointTokenConfig,
         context: usageContext,
         model: usage.model ?? model,
+        intelligenceLabel,
       };
 
       if (useBulk) {

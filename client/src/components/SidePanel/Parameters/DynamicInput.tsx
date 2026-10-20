@@ -2,8 +2,8 @@ import { OptionTypes, SettingTypes } from 'librechat-data-provider';
 import { Label, Input, HoverCard, HoverCardTrigger } from '@librechat/client';
 import type { DynamicSettingProps } from 'librechat-data-provider';
 import { useLocalize, useDebouncedInput, useParameterEffects, TranslationKeys } from '~/hooks';
-import { cn, sanitizeIntegerInput } from '~/utils';
 import { useOptionalChatContext } from '~/Providers';
+import { cn, sanitizeIntegerInput } from '~/utils';
 import OptionHover from './OptionHover';
 import { ESide } from '~/common';
 

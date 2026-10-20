@@ -43,7 +43,7 @@ describe('redisTelemetry', () => {
 
   it('aggregates successful and failed operations onto the request span', async () => {
     const span = createSpan();
-    const telemetry = createRedisRequestTelemetry(span as unknown as Span);
+    const telemetry = createRedisRequestTelemetry(span);
 
     await runWithRedisRequestTelemetry(telemetry, async () => {
       await expect(
@@ -100,7 +100,7 @@ describe('redisTelemetry', () => {
 
   it('counts nested Keyv delegation as one logical operation', async () => {
     const span = createSpan();
-    const telemetry = createRedisRequestTelemetry(span as unknown as Span);
+    const telemetry = createRedisRequestTelemetry(span);
     const cache = instrumentRedisCache(
       {
         getMany: jest.fn(async () => ['cache-value']),
@@ -122,7 +122,7 @@ describe('redisTelemetry', () => {
 
   it('records resolved ioredis pipeline command errors', async () => {
     const span = createSpan();
-    const telemetry = createRedisRequestTelemetry(span as unknown as Span);
+    const telemetry = createRedisRequestTelemetry(span);
     const commandError = new Error('command failed');
     const pipeline = {
       exec: jest.fn(async () => [[commandError, null]]),
@@ -161,7 +161,7 @@ describe('redisTelemetry', () => {
 
   it('instruments Keyv methods and ioredis pipelines without changing their results', async () => {
     const span = createSpan();
-    const telemetry = createRedisRequestTelemetry(span as unknown as Span);
+    const telemetry = createRedisRequestTelemetry(span);
     const cache = instrumentRedisCache(
       {
         get: jest.fn(async () => 'cache-value'),

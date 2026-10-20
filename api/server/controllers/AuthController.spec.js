@@ -132,6 +132,55 @@ describe('guestController', () => {
       user: expect.objectContaining({ provider: 'anonymous', role: 'USER' }),
     });
   });
+
+  describe('with an existing refresh cookie', () => {
+    const secret = 'guest-test-refresh-secret';
+    const cookieFor = (id) => `refreshToken=${jwt.sign({ id }, secret, { expiresIn: '1h' })}`;
+
+    beforeEach(() => {
+      process.env.JWT_REFRESH_SECRET = secret;
+    });
+
+    it('refuses to replace a live staff session and sets no cookies', async () => {
+      req = { headers: { cookie: cookieFor('staff-id') } };
+      getUserById.mockResolvedValue({ _id: 'staff-id', provider: 'local' });
+      findSession.mockResolvedValue({ expiration: new Date(Date.now() + 60_000) });
+
+      await guestController(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(409);
+      expect(createUser).not.toHaveBeenCalled();
+      expect(setAuthTokens).not.toHaveBeenCalled();
+    });
+
+    it('still creates a guest when the cookie belongs to a guest', async () => {
+      req = { headers: { cookie: cookieFor('old-guest') } };
+      getUserById.mockResolvedValue({ _id: 'old-guest', provider: 'anonymous' });
+
+      await guestController(req, res);
+
+      expect(createUser).toHaveBeenCalled();
+      expect(setAuthTokens).toHaveBeenCalledWith('guest-id', res, null, req);
+    });
+
+    it('still creates a guest when the staff cookie has no live session (stale)', async () => {
+      req = { headers: { cookie: cookieFor('staff-id') } };
+      getUserById.mockResolvedValue({ _id: 'staff-id', provider: 'local' });
+      findSession.mockResolvedValue(null);
+
+      await guestController(req, res);
+
+      expect(createUser).toHaveBeenCalled();
+    });
+
+    it('still creates a guest when the cookie signature is invalid', async () => {
+      req = { headers: { cookie: 'refreshToken=not-a-jwt' } };
+
+      await guestController(req, res);
+
+      expect(createUser).toHaveBeenCalled();
+    });
+  });
 });
 
 describe('graphTokenController', () => {
@@ -921,6 +970,23 @@ describe('refreshController – LibreChat path', () => {
         email: 'local@example.com',
       },
     });
+  });
+
+  it('does not clear cookies when a concurrent refresh already rotated the token', async () => {
+    const sessionId = '507f1f77bcf86cd799439011';
+    req.headers.cookie = `refreshToken=${jwt.sign({ id: 'local-user-id', sessionId }, refreshSecret, { expiresIn: '1h' })}`;
+    findSession.mockImplementation(async (params) =>
+      params.refreshToken ? null : { expiration: new Date(Date.now() + 60_000) },
+    );
+    getUserById.mockResolvedValue({
+      toObject: () => ({ _id: 'local-user-id', email: 'local@example.com' }),
+    });
+
+    await refreshController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.clearCookie).not.toHaveBeenCalled();
+    expect(setAuthTokens).not.toHaveBeenCalled();
   });
 
   it('clears refresh cookies when the session is missing', async () => {

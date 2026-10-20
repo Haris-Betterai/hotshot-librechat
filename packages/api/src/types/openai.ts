@@ -5,7 +5,10 @@ import type { OpenAIClientOptions, Providers } from '@librechat/agents';
 import type { TConfig } from 'librechat-data-provider';
 import type { AzureOptions } from './azure';
 
-export type OpenAIParameters = z.infer<typeof openAISchema>;
+export type OpenAIParameters = z.infer<typeof openAISchema> & {
+  /** Allowed hostnames for OpenAI native web search. */
+  web_search_domains?: string[];
+};
 
 export type OpenAIModelOptions = Partial<OpenAIParameters>;
 

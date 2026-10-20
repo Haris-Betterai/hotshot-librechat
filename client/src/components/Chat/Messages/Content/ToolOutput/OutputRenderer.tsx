@@ -1,8 +1,8 @@
 import { useState, useMemo, useCallback } from 'react';
 import copy from 'copy-to-clipboard';
 import CopyButton from '~/components/Messages/Content/CopyButton';
-import JsonView from './JsonView';
 import { useLocalize } from '~/hooks';
+import JsonView from './JsonView';
 import { cn } from '~/utils';
 
 interface ContentBlock {

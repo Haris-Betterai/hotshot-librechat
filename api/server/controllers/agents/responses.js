@@ -246,6 +246,8 @@ async function saveConversation(req, conversationId, agentId, agent) {
       agentId,
       title: agent?.name || 'Open Responses Conversation',
       model: agent?.model,
+      modelLabel: agent?.intelligenceSelectionLabel,
+      intelligenceLabel: agent?.intelligenceLabel,
     },
     { context: 'Responses API - save conversation' },
   );
@@ -303,6 +305,13 @@ const createResponse = async (req, res) => {
   const agentId = request.model;
   const isStreaming = request.stream === true;
   const summarizationConfig = appConfig?.summarization;
+  const inputMessages = convertToInternalMessages(request.input);
+  const requestText = inputMessages
+    .filter((message) => message.role === 'user')
+    .map((message) =>
+      typeof message.content === 'string' ? message.content : JSON.stringify(message.content),
+    )
+    .join('\n');
 
   // Look up the agent
   const agent = await db.getAgent({ id: agentId });
@@ -345,9 +354,11 @@ const createResponse = async (req, res) => {
           'invalid_request',
         );
       }
-      if (!(await db.getConvo(req.user?.id, request.previous_response_id))) {
+      const previousConversation = await db.getConvo(req.user?.id, request.previous_response_id);
+      if (!previousConversation) {
         return sendResponsesErrorResponse(res, 404, 'Conversation not found', 'not_found');
       }
+      req.resolvedConversation = previousConversation;
     }
 
     const conversationId = request.previous_response_id ?? uuidv4();
@@ -450,6 +461,7 @@ const createResponse = async (req, res) => {
         endpointOption,
         allowedProviders,
         isInitialAgent: true,
+        requestText,
         accessibleSkillIds: primaryScopedSkillIds,
         skillAuthoringAvailable: canAuthorSkillFiles({
           agent,
@@ -608,11 +620,6 @@ const createResponse = async (req, res) => {
       const userId = req.user?.id ?? 'api-user';
       previousMessages = await loadPreviousMessages(request.previous_response_id, userId);
     }
-
-    // Convert input to internal messages
-    const inputMessages = convertToInternalMessages(
-      typeof request.input === 'string' ? request.input : request.input,
-    );
 
     const piiHit = findPiiMatchInMessages(inputMessages, appConfig?.messageFilter?.pii);
     if (piiHit != null) {
@@ -842,6 +849,7 @@ const createResponse = async (req, res) => {
           balance: balanceConfig,
           transactions: transactionsConfig,
           model: primaryConfig.model || agent.model_parameters?.model,
+          intelligenceLabel: primaryConfig.intelligenceLabel,
         },
       ).catch((err) => {
         logger.error('[Responses API] Error recording usage:', err);
@@ -858,7 +866,7 @@ const createResponse = async (req, res) => {
       if (request.store === true) {
         try {
           // Save conversation
-          await saveConversation(req, conversationId, agentId, agent);
+          await saveConversation(req, conversationId, agentId, primaryConfig);
 
           // Save input messages
           await saveInputMessages(req, conversationId, inputMessages, agentId);
@@ -1020,6 +1028,7 @@ const createResponse = async (req, res) => {
           balance: balanceConfig,
           transactions: transactionsConfig,
           model: primaryConfig.model || agent.model_parameters?.model,
+          intelligenceLabel: primaryConfig.intelligenceLabel,
         },
       ).catch((err) => {
         logger.error('[Responses API] Error recording usage:', err);
@@ -1037,7 +1046,7 @@ const createResponse = async (req, res) => {
 
       if (request.store === true) {
         try {
-          await saveConversation(req, conversationId, agentId, agent);
+          await saveConversation(req, conversationId, agentId, primaryConfig);
 
           await saveInputMessages(req, conversationId, inputMessages, agentId);
 

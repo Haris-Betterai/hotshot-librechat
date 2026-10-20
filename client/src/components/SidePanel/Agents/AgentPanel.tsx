@@ -509,8 +509,8 @@ export default function AgentPanel({ fullPage = false }: { fullPage?: boolean })
         aria-label="Agent configuration form"
       >
         <div className={`flex-1 ${fullPage ? 'mx-auto w-full max-w-7xl' : ''}`}>
-          <div className="flex w-full flex-wrap gap-2">
-            <div className="w-full">
+          <div className="flex w-full items-center gap-2">
+            <div className="min-w-0 flex-1">
               <AgentSelect
                 createMutation={create}
                 agentQuery={agentQuery}
@@ -519,33 +519,34 @@ export default function AgentPanel({ fullPage = false }: { fullPage?: boolean })
               />
             </div>
             {agent_id && (
-              <div className="flex w-full gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full justify-center"
-                  onClick={() => {
-                    reset(getDefaultAgentFormValues());
-                    setCurrentAgentId(undefined);
-                  }}
-                  disabled={agentQuery.isInitialLoading}
-                  aria-label={localize('com_ui_create_new_agent')}
-                >
-                  <Plus className="mr-1 h-4 w-4" aria-hidden="true" />
-                  {localize('com_ui_create_new_agent')}
-                </Button>
-                <Button
-                  variant="submit"
-                  disabled={isEphemeralAgent(agent_id) || agentQuery.isInitialLoading}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleSelectAgent();
-                  }}
-                  aria-label={localize('com_ui_select_agent')}
-                >
-                  {localize('com_ui_select')}
-                </Button>
-              </div>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-9 flex-shrink-0 gap-1 px-3"
+                onClick={() => {
+                  reset(getDefaultAgentFormValues());
+                  setCurrentAgentId(undefined);
+                }}
+                disabled={agentQuery.isInitialLoading}
+                aria-label={localize('com_ui_new_agent')}
+              >
+                <Plus className="h-4 w-4" aria-hidden="true" />
+                <span className="hidden sm:inline">{localize('com_ui_new_agent')}</span>
+              </Button>
+            )}
+            {agent_id && !fullPage && (
+              <Button
+                variant="submit"
+                className="h-9 flex-shrink-0"
+                disabled={isEphemeralAgent(agent_id) || agentQuery.isInitialLoading}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleSelectAgent();
+                }}
+                aria-label={localize('com_ui_select_agent')}
+              >
+                {localize('com_ui_select')}
+              </Button>
             )}
           </div>
           {agentQuery.isInitialLoading && <AgentPanelSkeleton />}

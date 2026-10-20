@@ -1,6 +1,6 @@
 import { Model } from 'mongoose';
-import { applyTenantIsolation } from '~/models/plugins/tenantIsolation';
 import embedWidgetLinkSchema, { IEmbedWidgetLink } from '~/schema/embedWidgetLink';
+import { applyTenantIsolation } from '~/models/plugins/tenantIsolation';
 
 export function createEmbedWidgetLinkModel(
   mongoose: typeof import('mongoose'),

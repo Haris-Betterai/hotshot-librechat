@@ -1,10 +1,12 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+import type { IntelligenceAuto } from 'librechat-data-provider';
 import { useGetAgentByIdQuery } from '~/data-provider';
 import Intelligence from '../Intelligence';
 
 let mockPreset = false;
 let mockLabel: string | undefined = 'Smart';
 let mockDefaultLevel: string | undefined;
+let mockAuto: IntelligenceAuto | undefined;
 const mockSetConversation = jest.fn();
 
 jest.mock('~/data-provider', () => ({
@@ -14,6 +16,7 @@ jest.mock('~/data-provider', () => ({
       intelligence: {
         heading: 'Intelligence',
         default_level: mockDefaultLevel,
+        auto: mockAuto,
         levels: mockPreset
           ? [
               { label: 'fast', model: 'gpt-5.6-luna' },
@@ -45,6 +48,7 @@ beforeEach(() => {
   mockPreset = false;
   mockLabel = 'Smart';
   mockDefaultLevel = undefined;
+  mockAuto = undefined;
   mockSetConversation.mockClear();
 });
 
@@ -79,4 +83,52 @@ it('starts a new chat on the explicitly configured default level', () => {
     agent_id: 'agent_test',
     modelLabel: 'Smarter',
   });
+});
+
+it('falls back to the default level when a saved label no longer exists', () => {
+  mockLabel = 'Retired level';
+  mockDefaultLevel = 'Smarter';
+  render(<Intelligence />);
+  expect(screen.getByRole('button', { name: 'Intelligence Smarter' })).toBeInTheDocument();
+});
+
+it('explains each preset level to the customer', () => {
+  mockPreset = true;
+  mockLabel = 'smart';
+  render(<Intelligence />);
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Intelligence com_ui_intelligence_balanced' }),
+  );
+  expect(screen.getByText('com_ui_intelligence_balanced_purpose')).toBeInTheDocument();
+});
+
+it('offers Auto first, starts there, and explains what it does', () => {
+  mockLabel = undefined;
+  mockAuto = { label: 'Auto', base: 'Fast', escalate: 'Smarter' };
+  render(<Intelligence />);
+  const update = mockSetConversation.mock.calls[0][0];
+  expect(update({ agent_id: 'agent_test' })).toEqual({
+    agent_id: 'agent_test',
+    modelLabel: 'Auto',
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Intelligence Auto' }));
+  expect(screen.getByRole('slider', { name: 'Intelligence' })).toHaveAttribute(
+    'aria-valuemax',
+    '3',
+  );
+  expect(screen.getByText('com_ui_intelligence_auto_purpose')).toBeInTheDocument();
+});
+
+it('prefers a staff-authored Auto description over the built-in one', () => {
+  mockLabel = 'Auto';
+  mockAuto = {
+    label: 'Auto',
+    base: 'Fast',
+    escalate: 'Smarter',
+    description: 'We pick the right level for you.',
+  };
+  render(<Intelligence />);
+  fireEvent.click(screen.getByRole('button', { name: 'Intelligence Auto' }));
+  expect(screen.getByText('We pick the right level for you.')).toBeInTheDocument();
+  expect(screen.queryByText('com_ui_intelligence_auto_purpose')).not.toBeInTheDocument();
 });

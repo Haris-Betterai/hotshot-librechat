@@ -12,17 +12,17 @@ import { MarketplaceProvider } from '~/components/Agents/MarketplaceContext';
 import AgentMarketplace from '~/components/Agents/Marketplace';
 import { OAuthSuccess, OAuthError } from '~/components/OAuth';
 import { AuthContextProvider } from '~/hooks/AuthContext';
-import WithRum from '~/lib/rum/WithRum';
 import RouteErrorBoundary from './RouteErrorBoundary';
 import StartupLayout from './Layouts/Startup';
 import LoginLayout from './Layouts/Login';
 import dashboardRoutes from './Dashboard';
+import WithRum from '~/lib/rum/WithRum';
+import { staffHomePath } from '~/utils';
 import ShareRoute from './ShareRoute';
+import EmbedRoute from './EmbedRoute';
 import ChatRoute from './ChatRoute';
 import Search from './Search';
 import Root from './Root';
-import EmbedRoute from './EmbedRoute';
-import { staffHomePath } from '~/utils';
 
 const AuthLayout = () => (
   <AuthContextProvider>

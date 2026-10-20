@@ -1,9 +1,9 @@
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
+import type { IConversation } from '..';
+import type { IConversationTag } from '~/schema/conversationTag';
 import { createConversationTagMethods } from './conversationTag';
 import { createModels } from '~/models';
-import type { IConversationTag } from '~/schema/conversationTag';
-import type { IConversation } from '..';
 
 jest.mock('~/config/winston', () => ({
   error: jest.fn(),

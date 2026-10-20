@@ -2,8 +2,8 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Spinner, ThemeSelector } from '@librechat/client';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useVerifyEmailMutation, useResendVerificationEmail } from '~/data-provider';
-import { useLocalize } from '~/hooks';
 import { staffHomePath } from '~/utils';
+import { useLocalize } from '~/hooks';
 
 function RequestPasswordReset() {
   const navigate = useNavigate();

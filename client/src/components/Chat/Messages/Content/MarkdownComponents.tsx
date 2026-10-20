@@ -3,11 +3,11 @@ import { useRecoilValue } from 'recoil';
 import { useToastContext } from '@librechat/client';
 import { PermissionTypes, Permissions, apiBaseUrl } from 'librechat-data-provider';
 import Mermaid, { MermaidErrorBoundary } from '~/components/Messages/Content/Mermaid';
+import { handleDoubleClick, triggerDownload, cn } from '~/utils';
 import CodeBlock from '~/components/Messages/Content/CodeBlock';
 import useHasAccess from '~/hooks/Roles/useHasAccess';
 import { useFileDownload } from '~/data-provider';
 import { useCodeBlockContext } from '~/Providers';
-import { handleDoubleClick, triggerDownload, cn } from '~/utils';
 import { useLocalize } from '~/hooks';
 import store from '~/store';
 
@@ -248,7 +248,7 @@ export const img: React.ElementType = memo(function MarkdownImage({
   );
 
   if (!fixedSrc || fixedSrc.startsWith('data:')) {
-    return <span className="my-2 block">{image}</span>;
+    return <span className="my-1 block">{image}</span>;
   }
 
   return (
@@ -258,7 +258,7 @@ export const img: React.ElementType = memo(function MarkdownImage({
       rel="noopener noreferrer"
       title={title || alt}
       aria-label={alt ? `${alt} (opens full size)` : 'Open image full size'}
-      className="my-2 inline-block rounded-lg transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-primary"
+      className="my-1 inline-block rounded-lg align-top leading-none transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-primary"
     >
       {image}
     </a>

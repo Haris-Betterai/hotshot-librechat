@@ -82,6 +82,7 @@ describe('AgentClient - recordCollectedUsage', () => {
       res: {},
       agent: mockAgent,
       endpointTokenConfig: {},
+      intelligenceLabel: 'Deep',
     };
 
     client = new AgentClient(mockOptions);
@@ -116,6 +117,7 @@ describe('AgentClient - recordCollectedUsage', () => {
           user: 'user-123',
           conversationId: 'convo-123',
           collectedUsage,
+          intelligenceLabel: 'Deep',
           context: 'message',
           balance: { enabled: true },
           transactions: { enabled: true },

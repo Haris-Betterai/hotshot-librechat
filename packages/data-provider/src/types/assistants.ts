@@ -170,6 +170,10 @@ export type AgentModelParameters = {
   frequency_penalty: AgentParameterValue;
   presence_penalty: AgentParameterValue;
   useResponsesApi?: boolean;
+  /** Enables OpenAI Responses API native web search for this agent. */
+  web_search?: boolean;
+  /** Bare hostnames OpenAI web search is restricted to (max 20). */
+  web_search_domains?: string[];
 };
 
 export interface AgentBaseResource {
@@ -318,6 +322,7 @@ export type Agent = {
     heading?: string;
     levels?: import('../intelligence').IntelligenceLevel[];
     default_level?: string;
+    auto?: import('../intelligence').IntelligenceAuto;
   };
 };
 

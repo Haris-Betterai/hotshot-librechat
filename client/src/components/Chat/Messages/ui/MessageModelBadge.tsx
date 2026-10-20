@@ -13,6 +13,11 @@ export function getRespondingModel(message?: TMessage | null): string | undefine
   return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
+export function getRespondingIntelligence(message?: TMessage | null): string | undefined {
+  const value = message?.metadata?.respondingIntelligence;
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
+}
+
 /**
  * Inline model-name badge shown next to the timestamp in the message header.
  * Same reveal behavior as `MessageTimestamp` — visible on touch, fades in on
@@ -20,16 +25,20 @@ export function getRespondingModel(message?: TMessage | null): string | undefine
  */
 export default function MessageModelBadge({ message }: { message?: TMessage | null }) {
   const model = getRespondingModel(message);
-  if (!model) {
+  const intelligence = getRespondingIntelligence(message);
+  const label = intelligence ?? model;
+  if (!label) {
     return null;
   }
 
+  const title = intelligence && model ? `${intelligence} · ${model}` : label;
+
   return (
     <span
-      title={model}
+      title={title}
       className="ml-2 text-xs font-normal text-text-secondary transition-opacity duration-200 group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:hover)]:opacity-0"
     >
-      {model}
+      {label}
     </span>
   );
 }

@@ -4,6 +4,7 @@ import type { PluggableList } from 'unified';
 import type { ElementType } from 'react';
 import { ArtifactProvider, CodeBlockProvider } from '~/Providers';
 import { splitMarkdownIntoBlocks } from './splitMarkdown';
+import { streamFade } from './streamFade';
 
 type SharedProps = {
   remarkPlugins: PluggableList;
@@ -15,6 +16,7 @@ type MarkdownBlockProps = SharedProps & {
   content: string;
   codeBaseIndex: number;
   artifactBaseIndex: number;
+  animateGlyphs: boolean;
 };
 
 /**
@@ -32,7 +34,12 @@ const MarkdownBlock = memo(
     remarkPlugins,
     rehypePlugins,
     components,
+    animateGlyphs,
   }: MarkdownBlockProps) {
+    const activeRehypePlugins = useMemo<PluggableList>(
+      () => (animateGlyphs ? [...rehypePlugins, streamFade] : rehypePlugins),
+      [animateGlyphs, rehypePlugins],
+    );
     return (
       <ArtifactProvider baseIndex={artifactBaseIndex}>
         <CodeBlockProvider baseIndex={codeBaseIndex}>
@@ -40,7 +47,7 @@ const MarkdownBlock = memo(
             /** @ts-ignore */
             remarkPlugins={remarkPlugins}
             /** @ts-ignore */
-            rehypePlugins={rehypePlugins}
+            rehypePlugins={activeRehypePlugins}
             components={components}
           >
             {content}
@@ -52,12 +59,14 @@ const MarkdownBlock = memo(
   (prev, next) =>
     prev.content === next.content &&
     prev.codeBaseIndex === next.codeBaseIndex &&
-    prev.artifactBaseIndex === next.artifactBaseIndex,
+    prev.artifactBaseIndex === next.artifactBaseIndex &&
+    prev.animateGlyphs === next.animateGlyphs,
 );
 MarkdownBlock.displayName = 'MarkdownBlock';
 
 type MarkdownBlocksProps = SharedProps & {
   content: string;
+  animateStreaming?: boolean;
 };
 
 /**
@@ -72,6 +81,7 @@ const MarkdownBlocks = memo(function MarkdownBlocks({
   remarkPlugins,
   rehypePlugins,
   components,
+  animateStreaming = false,
 }: MarkdownBlocksProps) {
   const blocks = useMemo(() => {
     let codeBaseIndex = 0;
@@ -97,6 +107,7 @@ const MarkdownBlocks = memo(function MarkdownBlocks({
           content={block.raw}
           codeBaseIndex={block.codeBaseIndex}
           artifactBaseIndex={block.artifactBaseIndex}
+          animateGlyphs={animateStreaming && index === blocks.length - 1}
           remarkPlugins={remarkPlugins}
           rehypePlugins={rehypePlugins}
           components={components}

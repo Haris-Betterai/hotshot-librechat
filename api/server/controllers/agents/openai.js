@@ -807,6 +807,7 @@ const OpenAIChatCompletionController = async (req, res) => {
         balance: balanceConfig,
         transactions: transactionsConfig,
         model: primaryConfig.model || agent.model_parameters?.model,
+        intelligenceLabel: primaryConfig.intelligenceLabel,
       },
     ).catch((err) => {
       logger.error('[OpenAI API] Error recording usage:', err);

@@ -17,8 +17,8 @@ import {
 } from '~/utils/shortcuts';
 import { mainTextareaId, NotificationSeverity } from '~/common';
 import { useArchiveConvoMutation } from '~/data-provider';
-import { useHasAccess, useLocalize } from '~/hooks';
 import { clearMessagesCache, viewPath } from '~/utils';
+import { useHasAccess, useLocalize } from '~/hooks';
 import useNewConvo from './useNewConvo';
 import store from '~/store';
 

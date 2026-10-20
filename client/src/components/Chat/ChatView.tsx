@@ -19,12 +19,12 @@ import ConversationStarters from './Input/ConversationStarters';
 import { useGetMessagesByConvoId } from '~/data-provider';
 import ProjectLandingChip from './ProjectLandingChip';
 import MessagesView from './Messages/MessagesView';
+import { cn, isEmbedWidget } from '~/utils';
 import Presentation from './Presentation';
 import ChatForm from './Input/ChatForm';
 import Landing from './Landing';
 import Header from './Header';
 import Footer from './Footer';
-import { cn, isEmbedWidget } from '~/utils';
 import store from '~/store';
 
 function LoadingSpinner() {

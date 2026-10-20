@@ -78,6 +78,23 @@ export function publicHomePath(): string {
   return '/c/new';
 }
 
+/**
+ * Where a guest that landed on a /staff URL goes: the same chat under the public tree with the
+ * query string (e.g. `spec`, `temporary`) preserved; non-chat staff pages fall back to the public home.
+ */
+export function guestRedirectTarget(
+  pathname: string,
+  search: string = '',
+  hash: string = '',
+): string {
+  const rest = pathname.slice(STAFF_BASE.length).replace(/^\//, '');
+  const isChat = rest === 'c' || rest.startsWith('c/');
+  if (!isChat) {
+    return publicHomePath();
+  }
+  return `/${rest}${search}${hash}`;
+}
+
 export function isChatConversationPath(pathname: string, conversationId: string): boolean {
   return pathname === `/c/${conversationId}` || pathname === `/staff/c/${conversationId}`;
 }

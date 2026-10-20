@@ -861,7 +861,10 @@ export default function useEventHandlers({
             queryClient.invalidateQueries([QueryKeys.project, conversation.chatProjectId]);
           }
 
-          if (isChatConversationPath(location.pathname, Constants.NEW_CONVO)) {
+          if (
+            conversation.conversationId &&
+            isChatConversationPath(location.pathname, Constants.NEW_CONVO)
+          ) {
             preserveSubagentAtomsForNewConvoIdRef.current = conversation.conversationId;
             navigate(chatPath(conversation.conversationId, location.pathname), { replace: true });
           }

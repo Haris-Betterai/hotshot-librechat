@@ -26,7 +26,7 @@ export function NoImage() {
   );
 }
 
-export const AgentAvatarRender = ({ url }: { url?: string }) => {
+export const AgentAvatarRender = ({ url, onError }: { url?: string; onError?: () => void }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   useEffect(() => {
     setIsLoaded(false);
@@ -45,7 +45,10 @@ export const AgentAvatarRender = ({ url }: { url?: string }) => {
         loading="lazy"
         key={url}
         onLoad={() => setIsLoaded(true)}
-        onError={() => setIsLoaded(false)}
+        onError={() => {
+          setIsLoaded(false);
+          onError?.();
+        }}
         style={{
           opacity: isLoaded ? 1 : 0,
           transition: 'opacity 0.2s ease-in-out',

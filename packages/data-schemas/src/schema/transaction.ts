@@ -6,6 +6,7 @@ export interface ITransaction extends Document {
   conversationId?: string;
   tokenType: 'prompt' | 'completion' | 'credits';
   model?: string;
+  intelligenceLabel?: string;
   context?: string;
   valueKey?: string;
   rate?: number;
@@ -39,6 +40,10 @@ const transactionSchema: Schema<ITransaction> = new Schema(
       required: true,
     },
     model: {
+      type: String,
+      index: true,
+    },
+    intelligenceLabel: {
       type: String,
       index: true,
     },

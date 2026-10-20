@@ -2,9 +2,9 @@
 import React from 'react';
 import { render, waitFor } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
+import { useGetStartupConfig } from '~/data-provider';
 import useAuthRedirect from '../useAuthRedirect';
 import { useAuthContext } from '~/hooks';
-import { useGetStartupConfig } from '~/data-provider';
 
 // Polyfill Request for React Router in test environment
 if (typeof Request === 'undefined') {

@@ -1,6 +1,6 @@
 import React from 'react';
-import { useMessageProcess, useMemoizedChatContext } from '~/hooks';
 import type { TMessageProps } from '~/common';
+import { useMessageProcess, useMemoizedChatContext } from '~/hooks';
 import MessageRender from './ui/MessageRender';
 import MultiMessage from './MultiMessage';
 

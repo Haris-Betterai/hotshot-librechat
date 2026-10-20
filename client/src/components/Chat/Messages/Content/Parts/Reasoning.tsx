@@ -1,10 +1,12 @@
 import { memo, useMemo, useState, useCallback, useRef, useId } from 'react';
 import { useAtomValue } from 'jotai';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ContentTypes } from 'librechat-data-provider';
+import { Lightbulb } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { MouseEvent, FocusEvent } from 'react';
 import { ThinkingContent, ThinkingButton, FloatingThinkingBar } from './Thinking';
 import { useLocalize, useExpandCollapse } from '~/hooks';
+import useReasoningDetail from '~/hooks/useReasoningDetail';
 import { showThinkingAtom } from '~/store/showThinking';
 import { useMessageContext } from '~/Providers';
 import { cn } from '~/utils';
@@ -66,6 +68,7 @@ const Reasoning = memo(({ reasoning, isLast }: ReasoningProps) => {
   const contentId = useId();
   const localize = useLocalize();
   const showThinking = useAtomValue(showThinkingAtom);
+  const showDetail = useReasoningDetail();
   const [isExpanded, setIsExpanded] = useState(showThinking);
   const [isBarVisible, setIsBarVisible] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -142,6 +145,22 @@ const Reasoning = memo(({ reasoning, isLast }: ReasoningProps) => {
 
   if (!reasoningText) {
     return null;
+  }
+
+  if (!showDetail) {
+    if (!(effectiveIsSubmitting && isLast)) {
+      return null;
+    }
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        className="mb-2 flex items-center gap-1.5 py-2 text-sm text-text-secondary"
+      >
+        <Lightbulb className="icon-sm" aria-hidden="true" />
+        {animatedLabel}
+      </div>
+    );
   }
 
   return (

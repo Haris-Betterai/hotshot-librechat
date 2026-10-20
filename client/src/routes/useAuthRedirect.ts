@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { buildLoginRedirectUrl } from 'librechat-data-provider';
+import { isStaffPath, wantsStaffLogin } from '~/utils';
 import { useGetStartupConfig } from '~/data-provider';
 import { useAuthContext } from '~/hooks';
-import { isStaffPath, wantsStaffLogin } from '~/utils';
 
 export default function useAuthRedirect() {
   const { user, roles, isAuthenticated } = useAuthContext();

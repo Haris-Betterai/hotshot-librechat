@@ -958,6 +958,8 @@ export const tConversationSchema = z.object({
   messages: z.array(z.string()).optional(),
   tools: z.union([z.array(tPluginSchema), z.array(z.string())]).optional(),
   modelLabel: z.string().nullable().optional(),
+  /** Concrete intelligence tier that answered the most recent turn. */
+  intelligenceLabel: z.string().optional(),
   userLabel: z.string().optional(),
   model: z.string().nullable().optional(),
   promptPrefix: z.string().nullable().optional(),

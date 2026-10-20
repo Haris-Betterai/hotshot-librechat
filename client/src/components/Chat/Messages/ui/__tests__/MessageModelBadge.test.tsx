@@ -1,6 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import type { TMessage } from 'librechat-data-provider';
-import MessageModelBadge, { getRespondingModel } from '../MessageModelBadge';
+import MessageModelBadge, {
+  getRespondingIntelligence,
+  getRespondingModel,
+} from '../MessageModelBadge';
 
 function makeMessage(metadata?: Record<string, unknown>): TMessage {
   return { metadata } as unknown as TMessage;
@@ -26,6 +29,15 @@ describe('getRespondingModel', () => {
 });
 
 describe('MessageModelBadge', () => {
+  it('prefers the concrete intelligence level and keeps the model in the title', () => {
+    render(
+      <MessageModelBadge
+        message={makeMessage({ respondingIntelligence: 'Deep', respondingModel: 'gpt-5.6' })}
+      />,
+    );
+    expect(screen.getByText('Deep')).toHaveAttribute('title', 'Deep · gpt-5.6');
+  });
+
   it('renders the model name when present', () => {
     render(<MessageModelBadge message={makeMessage({ respondingModel: 'gpt-5.6' })} />);
     expect(screen.getByText('gpt-5.6')).toBeInTheDocument();
@@ -34,5 +46,19 @@ describe('MessageModelBadge', () => {
   it('renders nothing when the message carries no responding model', () => {
     const { container } = render(<MessageModelBadge message={makeMessage(undefined)} />);
     expect(container).toBeEmptyDOMElement();
+  });
+});
+
+describe('getRespondingIntelligence', () => {
+  it('reads a non-empty concrete level from response metadata', () => {
+    expect(getRespondingIntelligence(makeMessage({ respondingIntelligence: 'Deeper' }))).toBe(
+      'Deeper',
+    );
+  });
+
+  it('ignores absent, empty, and non-string values', () => {
+    expect(getRespondingIntelligence(undefined)).toBeUndefined();
+    expect(getRespondingIntelligence(makeMessage({ respondingIntelligence: '' }))).toBeUndefined();
+    expect(getRespondingIntelligence(makeMessage({ respondingIntelligence: 42 }))).toBeUndefined();
   });
 });

@@ -15,6 +15,7 @@ export interface IConversation extends Document {
   chatGptLabel?: string;
   examples?: unknown[];
   modelLabel?: string;
+  intelligenceLabel?: string;
   promptPrefix?: string;
   temperature?: number;
   top_p?: number;

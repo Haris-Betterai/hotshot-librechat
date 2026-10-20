@@ -464,6 +464,22 @@ describe('getMultiplier', () => {
     );
   });
 
+  it('should price the gpt-6 family at the published OpenAI rates', () => {
+    const expected = {
+      'gpt-6-astra': { prompt: 10, completion: 50, write: 12.5, read: 1 },
+      'gpt-6.1-sol': { prompt: 2, completion: 10, write: 2.5, read: 0.1 },
+      'gpt-6-luna': { prompt: 0.1, completion: 0.5, write: 0.125, read: 0.01 },
+    };
+    for (const [model, rates] of Object.entries(expected)) {
+      expect(getValueKey(model)).toBe(model);
+      expect(getMultiplier({ model, tokenType: 'prompt' })).toBe(rates.prompt);
+      expect(getMultiplier({ model, tokenType: 'completion' })).toBe(rates.completion);
+      expect(getCacheMultiplier({ model, cacheType: 'write' })).toBe(rates.write);
+      expect(getCacheMultiplier({ model, cacheType: 'read' })).toBe(rates.read);
+    }
+    expect(getMultiplier({ model: 'openai/gpt-6.1-sol', tokenType: 'completion' })).toBe(10);
+  });
+
   it('should bill gpt-5.6 cache writes at the documented 1.25x input surcharge', () => {
     for (const model of ['gpt-5.6', 'gpt-5.6-terra', 'gpt-5.6-luna']) {
       expect(cacheTokenValues[model].write).toBeCloseTo(tokenValues[model].prompt * 1.25);

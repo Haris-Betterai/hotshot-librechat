@@ -8,8 +8,8 @@ import type { NavLink } from '~/common';
 import { useShortcutAriaKey, useShortcutHint } from '~/hooks/useKeyboardShortcuts';
 import { useActivePanel, resolveActivePanel, DEFAULT_PANEL } from '~/Providers';
 import { CLOSE_SIDEBAR_ID } from '~/components/Chat/Menus/OpenSidebar';
-import { useLocalize, useNewConvo } from '~/hooks';
 import { clearMessagesCache, cn, viewPath } from '~/utils';
+import { useLocalize, useNewConvo } from '~/hooks';
 import store from '~/store';
 
 const AccountSettings = lazy(() => import('~/components/Nav/AccountSettings'));

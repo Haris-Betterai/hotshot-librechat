@@ -266,7 +266,7 @@ const useNewConvo = (index = 0) => {
           return;
         }
 
-        const path = `${chatPath(conversation.conversationId)}${getParams(conversation)}`;
+        const path = `${chatPath(conversation.conversationId ?? Constants.NEW_CONVO)}${getParams(conversation)}`;
         navigate(path, {
           replace: true,
           state: disableFocus ? {} : { focusChat: true },

@@ -101,10 +101,7 @@ interface:
   # Note: This setting does not disable the Agents File Search Capability.
   # To disable the Agents Capability, see the Agents Endpoint configuration instead.
   fileSearch: false
-  # Privacy policy settings
-  privacyPolicy:
-    externalUrl: 'https://librechat.ai/privacy-policy'
-    openNewTab: true
+  # Add privacyPolicy.externalUrl after BetterAI publishes the approved policy.
 
   # Terms of service (hidden)
   # termsOfService:
@@ -376,7 +373,7 @@ endpoints:
   agents:
     # (optional) Agent Capabilities available to all users. Omit the ones you wish to exclude. Defaults to list below.
     # capabilities: ["deferred_tools", "execute_code", "file_search", "actions", "tools"]
-    capabilities: ["tools"]
+    capabilities: ['tools']
 
   # (optional) Custom request headers for the built-in OpenAI / Google endpoints.
   # Forwarded on every request to the provider (or an AI gateway / reverse proxy
@@ -507,17 +504,17 @@ endpoints:
       modelDisplayLabel: 'groq'
 
     # deepseek example
-    - name: "DeepSeek"
-      apiKey: "${DEEPSEEK_API_KEY}"
-      baseURL: "https://api.deepseek.com/v1"
+    - name: 'DeepSeek'
+      apiKey: '${DEEPSEEK_API_KEY}'
+      baseURL: 'https://api.deepseek.com/v1'
       models:
         default:
           - deepseek-v4-flash
           - deepseek-v4-pro
         fetch: false
       titleConvo: true
-      titleModel: "deepseek-v4-flash"
-      modelDisplayLabel: "DeepSeek"
+      titleModel: 'deepseek-v4-flash'
+      modelDisplayLabel: 'DeepSeek'
 
     # Mistral AI Example
     - name: 'Mistral' # Unique name for the endpoint
@@ -656,21 +653,21 @@ endpoints:
 #   Portkey:     endpoint: "Portkey"             model: "gpt-4o-mini"
 modelSpecs:
   list:
-    - name: "hotshot-secret-ai"
-      label: "Hotshot Secret AI"
-      description: "Find the right product, sort out a problem with your vehicle, or check what fits before you buy."
+    - name: 'hotshot-secret-ai'
+      label: 'Hotshot Secret AI'
+      description: 'Find the right product, sort out a problem with your vehicle, or check what fits before you buy.'
       default: true
       showOnLanding: true
-      iconURL: "/assets/hotshot-secret-ai.webp"
+      iconURL: '/assets/hotshot-secret-ai.webp'
       conversation_starters:
-        - "Which product fits my vehicle?"
-        - "My engine is running rough"
-        - "Compare your diesel treatments"
-        - "How much do I need?"
+        - 'Which product fits my vehicle?'
+        - 'My engine is running rough'
+        - 'Compare your diesel treatments'
+        - 'How much do I need?'
       preset:
-        endpoint: "agents"
-        agent_id: "agent_nKWTo2vBXJZCNFl57pA6K"
-        iconURL: "/assets/hotshot-secret-ai.webp"
+        endpoint: 'agents'
+        agent_id: 'agent_nKWTo2vBXJZCNFl57pA6K'
+        iconURL: '/assets/hotshot-secret-ai.webp'
         # endpoint: "DeepSeek"
         # model: "deepseek-v4-flash"
         # endpoint: "agents"
@@ -681,21 +678,21 @@ modelSpecs:
     # column on someone else's page. The client picks the `<spec>-widget`
     # variant automatically when it is running inside the embed iframe, so this
     # entry is hidden from the model menu and is never the default.
-    - name: "hotshot-secret-ai-widget"
-      label: "Hotshot Secret AI"
-      description: "Find the right product, sort out a problem with your vehicle, or check what fits before you buy."
+    - name: 'hotshot-secret-ai-widget'
+      label: 'Hotshot Secret AI'
+      description: 'Find the right product, sort out a problem with your vehicle, or check what fits before you buy.'
       showOnLanding: true
       showInMenu: false
-      iconURL: "/assets/hotshot-secret-ai.webp"
+      iconURL: '/assets/hotshot-secret-ai.webp'
       conversation_starters:
-        - "Which product fits my vehicle?"
-        - "My engine is running rough"
-        - "Compare your diesel treatments"
-        - "How much do I need?"
+        - 'Which product fits my vehicle?'
+        - 'My engine is running rough'
+        - 'Compare your diesel treatments'
+        - 'How much do I need?'
       preset:
-        endpoint: "agents"
-        agent_id: "agent_nKWTo2vBXJZCNFl57pA6K"
-        iconURL: "/assets/hotshot-secret-ai.webp"
+        endpoint: 'agents'
+        agent_id: 'agent_nKWTo2vBXJZCNFl57pA6K'
+        iconURL: '/assets/hotshot-secret-ai.webp'
         promptPrefix: |
           You are answering inside a narrow embedded chat widget on a web page,
           not a full-screen chat. Format for that space:

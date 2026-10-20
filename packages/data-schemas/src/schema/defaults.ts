@@ -36,6 +36,10 @@ export const conversationPreset: {
     type: StringConstructor;
     required: boolean;
   };
+  intelligenceLabel: {
+    type: StringConstructor;
+    required: boolean;
+  };
   promptPrefix: {
     type: StringConstructor;
     required: boolean;
@@ -221,6 +225,10 @@ export const conversationPreset: {
   // for google only
   examples: { type: [{ type: Schema.Types.Mixed }], default: undefined },
   modelLabel: {
+    type: String,
+    required: false,
+  },
+  intelligenceLabel: {
     type: String,
     required: false,
   },

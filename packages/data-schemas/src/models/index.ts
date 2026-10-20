@@ -1,6 +1,7 @@
 import { createSkillSyncCredentialModel } from './skillSyncCredential';
 import { createSkillSyncStatusModel } from './skillSyncStatus';
 import { createConversationTagModel } from './conversationTag';
+import { createEmbedWidgetLinkModel } from './embedWidgetLink';
 import { createAgentCategoryModel } from './agentCategory';
 import { createChatProjectModel } from './chatProject';
 import { createAgentApiKeyModel } from './agentApiKey';
@@ -9,7 +10,6 @@ import { createPromptGroupModel } from './promptGroup';
 import { createSystemGrantModel } from './systemGrant';
 import { createPluginAuthModel } from './pluginAuth';
 import { createSharedLinkModel } from './sharedLink';
-import { createEmbedWidgetLinkModel } from './embedWidgetLink';
 import { createAccessRoleModel } from './accessRole';
 import { createToolFavoriteModel } from './favorite';
 import { createMCPServerModel } from './mcpServer';

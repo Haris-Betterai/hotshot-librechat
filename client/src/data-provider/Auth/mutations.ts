@@ -76,8 +76,8 @@ export const useGuestSessionMutation = (
 };
 
 export const useGuestEmbedSessionMutation = (
-  options?: t.MutationOptions<t.TGuestEmbedSessionResponse, undefined, unknown, unknown>,
-): UseMutationResult<t.TGuestEmbedSessionResponse, unknown, undefined, unknown> => {
+  options?: t.MutationOptions<t.TGuestEmbedSessionResponse, string, unknown, unknown>,
+): UseMutationResult<t.TGuestEmbedSessionResponse, unknown, string, unknown> => {
   return useMutation([MutationKeys.guestEmbedSession], {
     mutationFn: (embedId: string) => request.guestEmbedSession(embedId),
     ...(options || {}),

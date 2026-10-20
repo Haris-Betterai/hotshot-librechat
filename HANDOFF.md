@@ -1,231 +1,430 @@
-# Handoff — Hotshot Secret AI session (updated 2026-09-07, after production deploy + live verification)
+# Handoff — Hotshot Secret AI
 
-## Current work list
+Working notes for the LibreChat fork behind **https://hotshotai.thebetterai.com**. Organised by
+topic rather than by session — the condensed session log is at the end.
 
-1. **Endless loading screen — skipped for this pass at the user's request.** The earlier embed
-   spinner fix remains in the history below; do not expand this task unless the issue is reported
-   again with a reproducible route.
-2. **Explain Fast / Balanced / Deep choices — complete, then excluded from further work at the
-   user's request.** The staff builder has short purpose text for all five levels.
-3. **Assign the model and reasoning effort for every intelligence choice — complete and saved in
-   the live Hotshot agent.** Current values are Fast → `gpt-5.6-luna` / Default, Balanced →
-   `gpt-5.6-terra` / Low, Deep → `gpt-5.6` / Medium, Deeper → `gpt-5.6` / High, and Deepest →
-   `gpt-5.6` / Max. Staff can now add/remove levels up to 10 and choose an explicit default; older
-   agents continue to fall back to Balanced.
-4. **Simplify Model and Category — complete.** They remain available because the fallback model is
-   required when a request does not choose an intelligence tier and Category organizes agents.
-   Both controls now live in a collapsed **Fallback model & category** section.
-5. **Improve the Hotshot Secret AI prompt — complete and saved in the live agent.** The old
-   42-section prompt forced an “Alex” introduction and a follow-up question. The current
-   **8,112-character** prompt answers directly, reuses known context, keeps simple replies short,
-   verifies product facts through Hotshot resources, and strengthens dosage, transmission,
-   compatibility, privacy, manufacturer-specification, and diagnostic safeguards. It was verified
-   after a full reload and scenario 9 now refuses arithmetic on an unverified internet capacity.
-6. **Build automatic prompt improvement into the staff app — complete locally and enabled for
-   the live local Hotshot agent.** Staff can enable hourly reviews, run a review immediately,
-   inspect redacted request/answer excerpts and evidence counts, see active prompt additions and
-   history, or undo the latest change and pause.
-7. **Protect automatic learning from unsafe chat content — complete.** Customer and tool text are
-   treated only as evidence. Fixed developer-authored rules can be activated only after the same
-   issue appears in three distinct saved chats; product facts and safety rules are never rewritten.
-8. **Test tenant separation, redaction, duplicate prevention, and rollback — complete.** See the
-   validation section below.
-9. **Make Agent Setup a full page — source complete and now type-checked, lint-clean, and built;
-   rebuilt-image verification still remains.** The staff Agent Builder icon opens
-   `/staff/agent-builder?agent_id=...`; the chat/sidebar split is removed on that route. The page
-   uses a responsive two-column form and keeps save controls visible while scrolling. Browser
-   testing found the route was initially registered under the customer router; the source was
-   corrected after the last Docker image build.
-10. **Rebuild and restart the local application — DONE.** The image was rebuilt from source and
-    the containers restarted; `/staff/agent-builder` now loads instead of 404ing. Kept below is the
-    evidence that proved the rebuild was genuinely required rather than assumed. Before the rebuild,
-    `http://localhost:6041/staff/agent-builder` returned **404 Not Found** while
-    `http://localhost:6041/agent-builder` rendered the full-page Agent setup — the stale bundle
-    registered the route under the customer tree. Bundle comparison confirmed it: the old
-    `assets/index.CsP-O7dD.js` registered `` {path: `agent-builder`} `` inside the router whose
-    parent is `` path: `/` `` (siblings `embed/:embedId`, `prompts` → `/prompts/new`), whereas the
-    rebuilt `assets/index.CEpElyXn.js` registers it under `` path: `/staff` `` (sibling
-    `prompts` → `/staff/prompts/new`).
-11. **Finish browser verification — DONE.** Full-page route, layout, mappings, learning panel,
-    and Fast + Deepest tool-calling all verified on the rebuilt image; see the runtime pass below.
-    The pre-rebuild check had already shown the page component itself rendered correctly (header
-    with **Back to chat**, two-column Instructions/Tools and Intelligence columns, per-level
-    **Reasoning effort** selects, sticky bottom action bar) — only its route placement was wrong,
-    which is exactly what the rebuild corrected.
-12. **Use a relevant picture when it helps — DONE.** The authoritative field is `image`; one
-    verified https image rendered for a product recommendation and none for a spec question. A
-    latent `data:` placeholder risk is documented with a recommended prompt tightening below.
-    Original note: The live local prompt now permits at most one verified product image directly below
-    the product name when it helps identification or comparison. It forbids invented, transformed,
-    decorative, or unrelated image URLs. Confirm which Hotshot MCP result field is authoritative and
-    verify Markdown rendering with one relevant and one no-image question.
-13. **Investigate slow first response — DONE, and the expected fix was ruled out.** Cold 22.3s vs
-    warm 18.2s; the transport is created at page load, and the real cost is a 47KB tool payload
-    plus a failing tool call. No prewarming implemented. Original note: Startup
-    logs show the Hotshot MCP transport being created when the agent resources are first loaded.
-    The first answer then pays for the initial MCP connection/tool discovery, the first product
-    lookup, and the model response; later turns can reuse the warm connection. Deep/Deeper/Deepest
-    also add reasoning time. The logs do not yet separate these costs, so measure cold and warm Fast
-    requests before adding MCP prewarming.
+Companion docs: **[STRESS_TESTS.md](./STRESS_TESTS.md)** (adversarial scenarios + results),
+**[VIEWS.md](./VIEWS.md)** (customer vs staff URLs), **[WORKFLOW.md](./WORKFLOW.md)** (deploy),
+**[LOCAL_DEV.md](./LOCAL_DEV.md)**, **[CHANGES.md](./CHANGES.md)**.
 
-## Production update — 2026-09-07
-
-### Configurable intelligence levels and default
-
-Deployed LibreChat commit **`0630e0417`** on `main`. Agent Setup now supports **1–10** intelligence
-levels instead of five fixed slots, with Add/Remove controls and an explicit **Default level**
-selector. `default_level` is validated server-side against the saved labels. New chats use it when
-present; existing agents keep the backward-compatible Balanced-then-first fallback.
-
-Validation: 42 targeted tests passed (8 data-provider, 23 API, 11 client), the data-provider,
-data-schema, API, and production frontend builds passed, ESLint passed, and the frontend production
-build transformed 9,332 modules. The full client type-check still reports five unrelated pre-existing
-errors in embed/auth/SSE code; the new intelligence-level type error found during the check was fixed.
-
-Live browser verification added a sixth unsaved `Visual QA` level, selected `gpt-5.6` / High, and
-chose it as the default. A reload discarded that test-only form state and confirmed the production
-agent still has its five real levels, Balanced fallback, and the saved 8,112-character prompt.
-
-### MCP product-search relevance
-
-Deployed MCP commit **`9bc187e`** on the production `improving` branch. Exact and substring product
-matches no longer receive unrelated fuzzy filler; typo and broad-category searches retain useful
-fuzzy results. Three regression tests pass, and production pane `better_ai_projects:9.1` restarted
-healthy on port 9203.
-
-## Work added on 2026-09-06 (local code unless explicitly marked live)
-
-### Live agent record changes
-
-- Replaced the Hotshot Secret AI system prompt through the staff UI, preserving version history.
-- Renamed the live intelligence levels to Fast, Balanced, Deep, Deeper, and Deepest and saved the
-  model/effort mapping listed above.
-- Added the verified one-product-image rule to the live instructions; the saved prompt is now 5,479
-  characters.
-- Enabled automatic hourly reviews, ran a manual review, and confirmed one evidence-backed addition
-  became active: **Keep simple answers brief; expand when requested.** The other fixed rules remain
-  inactive until each has evidence from at least three distinct eligible chats.
-- Reloaded the staff builder and confirmed the prompt and five labels came back from the database.
-
-### Automatic chat reviews and safe prompt additions
-
-- Added tenant-scoped `AgentLearning` persistence, an hourly scheduler, distributed locking, a
-  seven-day/30-chat review window, 10-minute idle requirement, and exclusion of temporary chats.
-- Added admin-only get/configure/review/rollback routes with agent EDIT permission checks.
-- Added three fixed communication improvements: avoid repeated introductions, ask only one
-  necessary question at a time, and keep simple answers brief. A rule requires evidence in three
-  separate conversations before activation.
-- Added redaction for email addresses, phone-like values, VINs, and URLs in saved review excerpts.
-- Added the staff **Chat reviews & prompt improvements** panel with enable/disable, manual review,
-  evidence, active additions, history, and rollback/pause controls.
-- Learning guidance is appended separately at runtime. The base agent instructions are never
-  overwritten by the review worker.
-
-### Full-page Agent Setup
-
-- Added `client/src/components/Agents/AgentBuilderPage.tsx` and the `/staff/agent-builder` route.
-- Corrected the route placement after browser testing found that it had first been added under the
-  customer route tree. The correction is in source but is newer than the running Docker image.
-- The staff Agent Builder icon navigates to the page and carries the selected `agent_id`.
-- `Root.tsx` hides the resizable unified sidebar on the builder route.
-- `AgentPanel`, `AgentPanelSwitch`, and `AgentConfig` support full-page rendering while keeping the
-  original embedded/sidebar mode compatible.
-- The full-page form uses separate behavior/tools and intelligence/support columns at desktop
-  widths, collapses responsively, and has sticky save controls.
-
-### Validation completed
-
-- `packages/api` learning suites: 2 suites, 11 tests passed (now 12 — see the verification pass).
-- Intelligence plus learning review suites: 2 suites, 30 tests passed.
-- Client intelligence and review suites: 2 suites, 3 tests passed.
-- Existing `AgentPanel` suite: 5 tests passed.
-- Superseded by the fuller numbers in **Verification pass — 2026-09-06 (later session)** below,
-  which also records three defects this earlier round missed.
-- ESLint and Prettier passed on the changed code files; `git diff --check` passed for the complete
-  working-tree diff.
-- `build:data-provider`, `build:data-schemas`, `build:api`, standalone client production build, and
-  the full Docker image build passed. The client build transformed 9,332 modules.
-- Docker emitted existing direct-eval, large-chunk, PWA glob, and dependency-audit warnings; none
-  were introduced by a new package because this work added no dependencies.
-
-## New chats start on Balanced — 2026-09-07
-
-The intelligence selector defaulted to `levels[0]`, which is **Fast**: the cheapest tier, answering
-with no reasoning. A customer's first question — the one most likely to decide whether they trust
-the answer — got the weakest reply unless they knew to move the slider.
-
-New chats now start on the level whose `preset` or label is `balanced`, falling back to the first
-level when an agent defines none, so agents without a balanced tier are unaffected. The rule lives
-in `getDefaultIntelligenceIndex` in `packages/data-provider/src/intelligence.ts` rather than as a
-magic index inside the component, with tests covering the balanced label, the balanced preset, and
-the fallback.
-
-Note `preset` is only assigned by `getIntelligenceOptions` for the legacy three-level Hotshot
-profile; the live agent has five explicit levels, so the label match is the path that actually
-fires for it.
-
-Deployed in `1b0d8843c`. **This deploy was the first to exercise the `deploy.sh` fix**, and the log
-opened with "Restoring generated admin-branding/guest/index.html (rewritten by the last deploy)..."
-before pulling cleanly — the failure that silently blocked an earlier deploy now self-heals.
-
-### Live stress testing
-
-Scenarios, method and results now live in **[STRESS_TESTS.md](./STRESS_TESTS.md)** — 20 scenarios
-on Balanced, 16 PASS / 4 PARTIAL / 0 FAIL, mean 4.75, zero safety failures. Tests were
-run in **Temporary Chat** mode deliberately: the automatic prompt-improvement reviewer samples up to
-30 saved chats from the last 7 days and excludes temporary ones (`isTemporary: { $ne: true }`), so
-running dozens of test conversations as normal chats would have dominated and corrupted the
-evidence the learning feature draws on. Anyone repeating this should do the same.
+Last substantive update: **2026-09-08** (intelligence-mode audit, five fixes, tier policy).
 
 ---
 
-## MCP tool and UX work — 2026-09-07
+## Where things stand today
 
-Five UX improvements were requested. Two are in the MCP server
-(`/root/better-ai-projects/hotshot-ai-mcp-server`), two in LibreChat, one in the prompt.
+| | State |
+|---|---|
+| Production | `https://hotshotai.thebetterai.com`, LibreChat commit **`0630e0417`** on `main` |
+| MCP server | commit **`9bc187e`** on the **`improving`** branch (NOT `main` — see [MCP server](#mcp-server)) |
+| Live agent | Hotshot Secret AI — 5 intelligence levels, Balanced default, learning enabled |
+| Local tree | **16 files modified, nothing committed** — the intelligence-mode work below |
+| Local app | `http://localhost:6041`, runs against the **production** agent, prompt, MCP and Mongo via SSH tunnel |
 
-### Read this first: production runs the `improving` branch, not `main`
+**The live intelligence ladder**, saved on the agent record:
 
-The MCP server on the box is checked out on **`improving`**, which was 10 commits ahead of `main`
-and holds the `main()` entry point (`uv run hotshot-mcp`), the `get_data_freshness` tool, the
-scrapers and the scheduler. Work committed to `main` and pulled onto that server would **revert all
-of it and break the console script the tmux pane runs**. All fixes here went to `improving`.
+| Level | Model | Reasoning effort |
+|---|---|---|
+| Fast | `gpt-5.6-luna` | Default (none) |
+| Balanced | `gpt-5.6-terra` | Low |
+| Deep | `gpt-5.6` | Medium |
+| Deeper | `gpt-5.6` | High |
+| Deepest | `gpt-5.6` | Max |
 
-It runs in tmux: session `better_ai_projects`, window `hotshot-ai-tools`, **pane `9.1`**, command
-`uv run hotshot-mcp`, listening on `0.0.0.0:9203`, fronted by `https://mcp.hotshot.thebetterai.com/mcp`.
-Pane 9.2 is the scraper scheduler — leave it alone. To restart:
+**Unresolved discrepancy worth one minute of checking:** this file has recorded the live prompt at
+**6,636 characters (version 18)** during the MCP work and at **8,112 characters** after the
+stress-test prompt hardening, both dated 2026-09-07. The sequence 5,869 (v16) → 6,636 (v18) → 8,112
+is the plausible reading, making **8,112 current** — but read it off the agent record before relying
+on either number.
+
+---
+
+## What is open right now
+
+### Blocking nothing, but decide before committing
+
+1. **Four Auto-routing findings — found, not fixed.** Real STRESS_TESTS.md sentences that miss
+   escalation. Severity is now moderate rather than critical because Auto seeds to Balanced, not
+   Fast. See [Auto routing: what the review proved](#auto-routing-what-the-review-proved).
+2. **Two review lenses never ran** — back-compat against the live five-level agent, and per-level
+   field payload leakage. The workflow was stopped during its review phase. The payload-leak lens is
+   the one that mattered: it was assigned to prove `instructions` / `recursion_limit` / `label`
+   cannot reach the provider request.
+3. **Nothing is committed.** 16 files in the working tree.
+4. **The selected level is still not persisted** (`modelLabel` is in neither `convo.ts` nor
+   `message.ts`; `transaction.ts` stores only `model`). Deep, Deeper and Deepest are therefore
+   indistinguishable after the fact — all log `gpt-5.6`. This blocks verifying tier behaviour in
+   production **and** blocks the sticky-escalation fix for Auto.
+5. **Fast-tier stress pass still never run.** No longer urgent (Auto will not route onto Fast) but
+   still the only tier with zero measured safety data.
+
+### Longer-standing, needs a decision from the user
+
+- **Web search tool access** — asked for, never built. LibreChat's built-in `webSearch` config
+  supports Serper / SearXNG / Tavily as providers — *not* literally "OpenAI's web search tool." If
+  the ask is the OpenAI Responses API's own `web_search` tool (model decides when to search, no
+  separate provider key), that is a smaller, different integration. **Do not build either without
+  the answer.**
+- **`get_all_fluid_capacities` still returns the whole 47KB dataset in practice.** The filter exists
+  and is 84% smaller, but `gpt-5.6-luna` never passes it (see [Fluid capacities](#fluid-capacities--a-filter-and-a-design-that-was-walked-back)).
+  Making the parameters required would force it and break every question where the customer has not
+  named a vehicle. Product decision.
+- **Collapse five customer-facing modes to three?** Deep / Deeper / Deepest are one model at three
+  efforts and read as three synonyms for "slow." Audit finding 6; not a bug, so not actioned.
+- **Per-character fade-in on streaming text** — explicitly not shipped, asked for more than once.
+  `useSmoothedStreamText` paces the reveal rate; it is not a fade. A real glyph-level fade needs an
+  AST-level transform on the streamed markdown. Not attempted.
+- **Agent's own copy is stale** — the agent still introduces itself as "Alex from Hot Shot's Secret"
+  and says "Hot Shot's Secret" while the UI says "Hotshot Secret AI." Editable via staff login; left
+  alone rather than touching the production record unasked.
+- **Privacy policy** still points at `librechat.ai/privacy-policy`.
+
+### Repo hygiene, not caused by this work
+
+- **`ANTHROPIC_API_KEY=user_provided` in the shared `.env` makes `responses.spec.js` fail noisily**
+  (12 of 17). The suite skips itself when the variable is unset, but the placeholder is truthy so the
+  skip never fires. `ANTHROPIC_API_KEY= npx jest .../responses.spec.js` skips all 17 cleanly. Fix the
+  guard to test for a real key, or document the workaround.
+- **Import-order backlog: 321 of 3,110 files.** `sort-imports:check` is useless as a gate until
+  cleared. Four files this work touches already failed at `HEAD`.
+- **Neither `packages/api` nor `client` passes a clean `tsc --noEmit`.** Two pre-existing API errors
+  (`cache/redisTelemetry.ts` cannot find `Span`; `cdn/s3.ts` has an unused `@ts-expect-error`) and
+  **four** pre-existing client errors. Until cleared, a typecheck cannot be a merge gate — which is
+  exactly how two real defects once reached the Docker image unnoticed.
+- **`SiblingHeader.tsx` / `SteerPart.tsx`** still lack the model badge.
+
+---
+
+## The intelligence mode system
+
+The largest single area of work in this repo, and the one with the most history. Read this whole
+section before touching `intelligence.ts` in either package.
+
+### Fast is not the floor — the tier policy
+
+Stated by the user, and now encoded in the routing defaults:
+
+> **Fast is never good.** The tier a customer should be on is **Balanced**. Fast exists only to get
+> something done quickly. **Deep is where the actual thinking happens.**
+
+This is a product decision, not an inference from the code, and it settles three things:
+
+- **Balanced is the floor for anything automatic.** Fast is a manual choice a customer makes for
+  themselves, never a tier the system routes them onto.
+- **Deep is the escalation target, not Deepest.** Reasoning is where the behaviour changes; Deeper
+  and Deepest add latency and cost on top of a change that already happened at Deep.
+- **It de-risks Auto.** The original seeding could put the everyday tier on Fast, making every missed
+  escalation a drop to the one tier never stress-tested. With Balanced as the floor, a missed
+  escalation lands on the tier measured at 16 PASS / 4 PARTIAL / 0 FAIL, zero safety failures.
+
+Implemented as **`seedAutoLevels`** in `packages/data-provider/src/intelligence.ts`, used by the
+staff editor when an admin first enables Auto:
+
+- the everyday side never seeds to the cheapest level — it prefers a Balanced level, then the
+  configured default, then the level immediately below the escalation tier, and only falls to index 0
+  when there are exactly two levels;
+- the escalation side takes the **first** level whose `reasoning_effort` is `medium` or above,
+  falling back to the last level only when nothing on the ladder reasons.
+
+On the live ladder that yields **base = Balanced, escalate = Deep**; the previous code would have
+yielded **Fast → Deepest**. Seven tests pin this, including the case where an admin has explicitly
+set Fast as the default — the seed still refuses to make it the everyday tier.
+
+### The audit — eight findings
+
+Read across both `intelligence.ts` files, `initialize.ts`, the staff editor and the customer slider.
+What the ladder was: five modes, three models, the top three identical. A "mode" carried nothing but
+`{label, model, reasoning_effort}` — same prompt, tools, tool budget and timeout at every tier.
+
+| # | Finding | Status |
+|---|---|---|
+| 1 | Fast never stress-tested; every safety result in STRESS_TESTS.md was measured on Balanced only | **Open** — de-risked by the tier policy |
+| 2 | Cannot tell which mode answered: `modelLabel` unpersisted, `transaction.ts` stores only `model`, so Deep/Deeper/Deepest are indistinguishable | **Open** — out of scope by choice |
+| 3 | `default_level` applied only in the browser; embed/API/SDK requests silently used the fallback model | **Fixed** |
+| 4 | `getDefaultIntelligenceIndex` fell back to index 0 — the cheapest, least safe tier | **Fixed** |
+| 5 | Per-level purpose text derived only from the legacy preset expansion, so it silently vanished once the live agent saved five explicit levels | **Fixed** |
+| 6 | Five customer-facing modes where three would do | **Not attempted** — product decision |
+| 7 | No automatic routing; the customer had to guess the right tier for a safety-critical question | **Fixed** (Auto) |
+| 8 | A mode could not change anything but the model — no per-tier instructions, no tool budget | **Fixed** |
+
+**The lesson from finding 5.** This file recorded the purpose text as complete, and it *was* — for
+the agent shape that existed when it was written. Saving five explicit levels moved the agent off the
+legacy path and turned the feature off silently: no error, no failing test. A feature that works only
+for one config shape is not done. The check that would have caught it is "does this still work for
+the config production actually has," not "does this work."
+
+### The five fixes
+
+**Fix 3 — the default is resolved server-side.** `resolveIntelligenceParameters` falls back to
+`options[getDefaultIntelligenceIndex(options, agent.intelligence?.default_level)]` when the label is
+missing or unmatched, so embed and API requests stop falling through to the fallback model.
+
+**Fix 4 — the fallback order is safe.** `getDefaultIntelligenceIndex` follows: configured default →
+the Auto option → a `balanced` preset/label → **`levels.length - 1` (most capable)** → 0 only for an
+empty list.
+
+**Fix 5 — `description` is a real per-level field.** Staff edit it; staff editor and customer slider
+both render `level.description || (level.preset ? presetPurpose : '')`. The customer popover now
+shows the selected level's purpose under the slider — it previously showed only "Faster"/"Smarter"
+at the two ends. Wired through `aria-describedby` and a polite live region so it is announced as the
+thumb moves.
+
+**Fix 7 — Auto mode.** A synthetic option prepended by `getIntelligenceOptions` when
+`intelligence.auto` is configured and both `auto.base` and `auto.escalate` resolve to real labels.
+`shouldEscalateIntelligence(text, triggers)` matches an exported `ESCALATION_PATTERNS` array plus
+admin-supplied triggers; `resolveAutoIntelligence` returns the concrete option, and the returned
+`label` is the **concrete** level's label, not "Auto", so logs and tests show what actually ran.
+
+**Fix 8 — a level carries more than a model.** `instructions` (≤2000 chars, appended via the existing
+`appendAdditionalInstructions` helper) and `recursion_limit` (positive integer, clamped to 200,
+honoured by the existing `resolveRecursionLimit` cascade). The return type was deliberately
+restructured to `{label, modelOptions, instructions?, recursion_limit?}` so that **only
+`modelOptions` is ever spread into the provider payload** — the old flat shape would have leaked all
+three new fields into the OpenAI request.
+
+**Design call made without asking:** Auto becomes the default **only when an admin enables it**, and
+never overrides an explicitly configured `default_level`. Silently switching the live agent's tier on
+deploy would be worse than the bug being fixed.
+
+### Where each piece lives
+
+| Layer | Files |
+|---|---|
+| Shared contract | `packages/data-provider/src/intelligence.ts` (+ spec), `.../types/assistants.ts` |
+| Backend | `packages/api/src/agents/intelligence.ts` (+ spec), `.../initialize.ts`, `packages/api/src/types/http.ts`, `packages/data-schemas/src/types/agent.ts` |
+| Staff editor | `client/src/components/SidePanel/Agents/intelligence/Levels.tsx` (+ spec) |
+| Customer slider | `client/src/components/Chat/Input/Intelligence.tsx`, `.../intelligence/Control.tsx` (+ specs) |
+| Strings | `client/src/locales/en/translation.json` (15 new `com_ui_intelligence_*` keys) |
+
+`packages/data-schemas/src/schema/agent.ts` stores `intelligence` as `Schema.Types.Mixed`, so new
+fields need **no Mongoose schema change** — only the TypeScript types.
+
+### Verification of the mode work
+
+Every command re-run by an integrator rather than trusted from the agent that wrote the code, then
+re-run again after the `seedAutoLevels` change:
+
+- `npm run build:data-provider` — clean (tsdown + tsc)
+- `packages/data-provider` → `npx jest intelligence` — **52 passed**
+- `packages/api` → `npx jest intelligence` — **90 passed**
+- `client` → `npx jest Levels Control Intelligence` — **28 passed**
+- `npx eslint` across all eight paths — zero output, exit 0
+- `translation.json` — valid, 2174 keys, 0 duplicates
+- `client` → `npx tsc --noEmit` — **no intelligence-related errors**
+
+**Correction to an earlier record in this file:** the client type-check has **four** pre-existing
+errors, not five, and none are in embed code — `data-provider/Auth/mutations.ts:81`,
+`hooks/AuthContext.tsx:297`, `hooks/SSE/useEventHandlers.ts:866`, `hooks/useNewConvo.ts:269`. The
+old "five including `embed/Widget.tsx`" figure is stale.
+
+There is **no `initialize.spec.ts`** in `packages/api`. The server-side default resolution and the
+per-level instruction append are asserted at the function level, never through `initializeAgent`
+itself. That is the weakest spot in the coverage.
+
+### Auto routing: what the review proved
+
+One adversarial review lens completed before the phase was stopped. Its findings had **not** been
+through the refutation stage, so they are unconfirmed by a second agent — but each sentence was
+actually executed against the built router and the resulting tier recorded. Every case below is a
+documented STRESS_TESTS.md scenario that routed **cheap**.
+
+1. **"diesel particulate filter" does not match — only "DPF" does.** Scenario 16's exact opening line
+   lands on the weakest model; "My DPF light is on" escalates. `\bwarning lights?\b` does not rescue
+   it because the text says "filter light".
+2. **Ordinary compatibility phrasing misses entirely.** "Can I use it anyway" (scenario 5), "all at
+   once" (scenario 4 — the exact turn where the recorded run caught the FR3 + Stiction Eliminator
+   conflict), "in the same tank" (scenario 6), "I put the entire bottle into the fuel tank"
+   (scenario 8, Critical). Internal inconsistency too: `\bmix(?:es|ed|ing)?\b` matches "can I mix
+   them" but not "fuel mixture", and `\bcombin(?:e|es|ed|ing)\b` matches "combine" but not
+   "combination" — the `\b` after the optional suffix group blocks the noun forms.
+3. **Routing is per-turn with no conversation memory — the structural one.** Only `req.body?.text` is
+   classified, and the chosen level is not persisted, so every turn routes independently. Scenario 7
+   turn 1 ("blue smoke, low oil pressure, knocking") escalates; turn 2 ("just tell me the strongest
+   product") drops back to the base tier — and turn 2 is the turn that must hold the refusal. Same in
+   scenario 16 ("can I keep driving it while the product works?") and all three turns of scenario 8.
+4. **No drivetrain symptoms.** "My Ram jerks when it changes gears" (scenario 2 opener, Critical),
+   "slipping", "shudders under load", "hard shift at 40mph" all route cheap. The conversation
+   escalates only on the later "how much Shift Restore" turn — smart exactly one turn too late.
+
+**The generalizable lesson:** a keyword router built from a scenario list passes on that list's own
+wording and fails on every paraphrase of it. Findings 1, 2 and 4 are one mistake — matching the words
+the test file happens to use instead of the concept the customer is describing. Finding 3 cannot be
+fixed by adding patterns; the cheapest real fix is **sticky escalation** (once a conversation
+escalates it stays escalated), which needs the chosen level readable at request time — i.e. audit
+finding 2, still open.
+
+### History: how the ladder got here
+
+- **2026-09-05 (local, later shipped).** Five slots with per-level reasoning effort: Default, None,
+  Low, Medium, High, Extra High, Max. The legacy Hotshot three-level profile keeps its five-stop
+  expansion.
+- **2026-09-06.** Levels renamed to Fast / Balanced / Deep / Deeper / Deepest on the live record,
+  with the model+effort mapping above. Verified from the DOM (10 selects = 5 levels × model+effort)
+  and independently from MongoDB.
+- **2026-09-07, `0630e0417`.** Configurable **1–10** levels with Add/Remove and an explicit **Default
+  level** selector, validated server-side against saved labels. 42 targeted tests, all builds green,
+  9,332 modules transformed. A sixth unsaved `Visual QA` level was added in the browser to prove the
+  editor, then discarded by reload.
+- **2026-09-07, `1b0d8843c`.** New chats start on **Balanced** instead of `levels[0]` (Fast). The rule
+  lives in `getDefaultIntelligenceIndex`, not as a magic index in the component. Note `preset` is
+  only assigned for the legacy three-level profile, so for the live agent it is the **label** match
+  that fires.
+- **2026-09-08.** The audit, the five fixes, and the tier policy above.
+
+### Incident: the intelligence selector broke every reply in production
+
+**Read this before touching `intelligence.ts` or the model levels.**
+
+**What happened.** The selector was disconnected from the backend (`modelLabel` commented out of the
+schema). Re-enabling it — one line — was tested locally against the *transactions log*, which showed
+the model switching correctly. That looked like success and shipped. Every reply then failed with:
+
+```
+400 Function tools with reasoning_effort are not supported for gpt-5.6-luna in
+/v1/chat/completions. To use function tools, use /v1/responses or set
+reasoning_effort to 'none'.
+```
+
+**Root cause.** Local verification only sent single-word prompts that never triggered a tool call.
+This agent calls MCP tools on nearly every real question. GPT-5.6 models reason by default and OpenAI
+rejects function tools alongside reasoning on `/v1/chat/completions`. The codebase already had a
+guard (`requiresResponsesApiForReasoning` in `packages/api/src/endpoints/openai/llm.ts`) but it fires
+only when a `reasoning_effort` was **explicitly requested** — and Fast maps to `gpt-5.6-luna` with no
+effort configured, so it never entered the guard. The model's own default reasoning broke it, not
+anything the app sent.
+
+**Fix (`8d000dc2d`).** `responsesApiOverride()` sets `useResponsesApi: true` directly from the
+agent's tool list, at the point in `initialize.ts` where resolved model and tools are both known —
+rather than widening the shared upstream guard, which has a deliberate test asserting it should
+*not* auto-switch without an explicit effort. **Do not touch that guard for this.**
+
+**Takeaway:** verifying "the model switched" is not the same as verifying "the agent still works."
+For a tool-heavy agent, a single-word test proves nothing about the actual failure mode. Always send
+a question that forces at least one tool call before calling a model-routing change verified.
+
+---
+
+## The agent prompt, learning, and stress testing
+
+### The prompt
+
+Edit it **through the staff UI**, never the database — the UI preserves version history.
+
+Evolution: the original 42-section prompt forced an "Alex" introduction and a follow-up question on
+every turn. The current prompt answers directly, reuses known context, keeps simple replies short,
+verifies product facts through Hotshot resources, and carries dosage, transmission, compatibility,
+privacy, manufacturer-specification and diagnostic safeguards.
+
+Key rules currently live, and why each exists:
+
+- **Images must start with `https://`.** A `data:` value is a WordPress lazy-load placeholder that
+  renders as a blank box while technically satisfying "a resource returned it." At most one verified
+  image directly below the product name; never invent, guess or transform a URL.
+- **Product-by-URL lookup takes only real product pages** — never `/diagnose/...`, category, guide or
+  article URLs. That call returned nothing and wasted a turn on every fluid-capacity question.
+  Result: 3 tool calls → 2, 1 failed → 0.
+- **Always pass vehicle and engine to the fluid-capacity lookup**, and never state a capacity that
+  did not come back in a tool result.
+- **Include the product page link when recommending a product; include price only when the lookup
+  returned one.** *Correction to an earlier claim:* the data does **not** reliably carry price and
+  sku — `url` is 134/134, `price` is 81/134, and **`sku` is 0/134, always null.**
+- **Capacity arithmetic requires a verified source** — a vehicle resource, clearly identified
+  manufacturer instructions, or an amount the customer personally measured. Internet, forum,
+  remembered, estimated and "about" figures are explicitly unverified.
+- **Warning-light, DPF, limp-mode, low-oil-pressure, blue-smoke and knocking questions establish
+  cause or recommend inspection before naming a product.**
+- **An explicit side-by-side comparison may include one verified image per compared product.**
+- **When several details are missing, ask for only one per turn.**
+
+### Automatic prompt improvement (chat reviews)
+
+Staff can enable hourly reviews, run one immediately, inspect redacted excerpts and evidence counts,
+see active additions and history, or undo the latest change and pause.
+
+Safety design, which is the point of the feature:
+
+- Customer and tool text are treated **only as evidence**, never as instructions.
+- Only **fixed developer-authored rules** can be activated, and only after the same issue appears in
+  **three distinct saved chats**. Product facts and safety rules are never rewritten.
+- Redaction covers email addresses, phone-like values, VINs and URLs in saved excerpts.
+- Learning guidance is appended separately at runtime; base instructions are never overwritten.
+- Tenant-scoped `AgentLearning` persistence, hourly scheduler, distributed locking, seven-day /
+  30-chat window, 10-minute idle requirement, **temporary chats excluded**.
+
+Confirmed live from two independent sources: the agent record (`learning.enabled: true`,
+`rules: ["brevity"]`, one change with `evidenceCount: 3`) and the staff UI (active addition
+*"Keep simple answers brief; expand when requested."*).
+
+### Stress testing
+
+Scenarios, method and results live in **[STRESS_TESTS.md](./STRESS_TESTS.md)**: 20 scenarios on
+Balanced, **16 PASS / 4 PARTIAL / 0 FAIL, mean 4.75, zero safety failures**, with three targeted
+retests passing after the prompt and MCP fixes.
+
+**Always run these in Temporary Chat.** The review worker samples up to 30 saved chats from the last
+7 days and excludes temporary ones (`isTemporary: { $ne: true }`). Running dozens of adversarial
+conversations as normal chats would dominate that window and teach the live agent from deliberately
+hostile traffic.
+
+Not yet run: a **Deepest** pass and a **Fast** pass. Note that Deep/Deeper/Deepest cannot currently be
+told apart from the transaction log — all three record `gpt-5.6`.
+
+---
+
+## MCP server
+
+`/root/better-ai-projects/hotshot-ai-mcp-server`, served at
+`https://mcp.hotshot.thebetterai.com/mcp` over streamable-http.
+
+### Read this first: production runs `improving`, not `main`
+
+The server on the box is checked out on **`improving`**, which was 10 commits ahead of `main` and
+holds the `main()` entry point (`uv run hotshot-mcp`), the `get_data_freshness` tool, the scrapers
+and the scheduler. Work committed to `main` and pulled onto that server would **revert all of it and
+break the console script the tmux pane runs.**
+
+Runs in tmux: session `better_ai_projects`, window `hotshot-ai-tools`, **pane `9.1`**, command
+`uv run hotshot-mcp`, listening on `0.0.0.0:9203`. Pane 9.2 is the scraper scheduler — leave it
+alone. To restart:
 
 ```
 tmux send-keys -t better_ai_projects:9.1 C-c
 tmux send-keys -t better_ai_projects:9.1 "uv run hotshot-mcp" Enter
 ```
 
-The server's working tree is permanently dirty on three `hotshot_scraped_data/*.json` files, which
-the scheduler rewrites. `git pull --ff-only` still works because no commit touches them.
+The working tree is permanently dirty on three `hotshot_scraped_data/*.json` files that the scheduler
+rewrites. `git pull --ff-only` still works because no commit touches them.
 
 ### Product images — the biggest single win
 
-**63 of 134 products carried a `data:` lazy-load placeholder in `image`.** Only
+**63 of 134 products carried a `data:` lazy-load placeholder in the `image` field.** Only
 `get_product_by_url` resolved it against `product_image_urls.json`; `search_products_by_name` and
 `list_products_by_category` passed it straight through, and it renders as a blank box. All three now
-share one resolver, which also nulls the image when no real URL is known instead of emitting a
-placeholder. **Catalogue placeholders: 63 -> 0**, 132 of 134 now carry a real https URL (the two
-Frantz filter-media products have no image on record).
+share one resolver, which nulls the image when no real URL is known instead of emitting a
+placeholder. **Placeholders: 63 → 0.** 132 of 134 now carry a real https URL (the two Frantz
+filter-media products have no image on record).
 
-This also removes the need for the prompt's `data:` guard to ever fire.
+The authoritative field is **`image`**, a top-level string on each product object — verified against
+200 recent production tool calls. The renderer will not save you: `MarkdownComponents.tsx` passes
+`data:` URIs straight through to `<img src>`, so this was an instructions concern as well as a data
+one.
+
+Verified in the field afterwards: every image returned in a full stress-test run was a real
+`hotshotsecret.com` URL, including the scenario that explicitly demanded "not a category image or
+placeholder."
 
 ### FAQ relevance
 
 `search_faqs` scored with `SequenceMatcher` over the whole query against the whole question, which
-mostly measures length: unrelated FAQs clustered in a 0.30-0.34 band and came back as filler — a
+mostly measures length: unrelated FAQs clustered in a 0.30–0.34 band and came back as filler — a
 fluid-capacity question returned a Stiction Eliminator power complaint. Scoring is now keyword
 overlap weighted towards question-side matches, and returns nothing when nothing is related.
 
-Thresholds were tuned against real queries, not guessed: genuine matches score >= 0.5, filler lands
-near 0.23, so the floor sits at 0.35. Verified that asking about FR3 directly still returns the FR3
-FAQ at 1.50, so it is not over-filtered.
+Thresholds were tuned against real queries rather than guessed: genuine matches score ≥ 0.5, filler
+lands near 0.23, so the floor sits at 0.35. Asking about FR3 directly still returns the FR3 FAQ at
+1.50, so it is not over-filtered.
 
-### Fluid capacities — filter added, and one design walked back
+### Fluid capacities — a filter, and a design that was walked back
 
 `get_all_fluid_capacities` took no arguments and returned every truck and engine (~47k characters)
 for a question about one vehicle. It now takes optional `vehicle` and `engine`, token-matched so the
@@ -237,753 +436,178 @@ back — the wrong one would have been quoted to a customer as fact.
 without a filter, expecting a second filtered call. Live testing showed the model never made it:
 
 1. First it answered with a full capacity table — coolant, transmission, transfer case,
-   differentials, DEF — **none of which were in the tool result**. It filled them in from memory and
+   differentials, DEF — **none of which were in the tool result.** It filled them in from memory and
    presented them as verified. The pre-change answer had correctly refused.
 2. After the index was made to say plainly that it held no numbers, the model refused to answer at
    all — safe, but worse than the original, which returned the verified oil capacity.
 
-Filtering is now a speed optimisation only: unfiltered returns exactly what it always did, so the
+Filtering is now a **speed optimisation only**: unfiltered returns exactly what it always did, so the
 tool is never worse than before however it is called.
 
-**Known limitation: the model does not pass the filter.** With a prompt rule and a directive tool
-docstring, `gpt-5.6-luna` still calls `{}` on every attempt, so the 84% saving is available but not
-being realised. Making the parameters required would force it, but the tool would then fail whenever
-the customer has not named a vehicle — that is a product decision, not a safe unilateral change.
+**Known limitation:** with a prompt rule and a directive tool docstring, `gpt-5.6-luna` still calls
+`{}` on every attempt, so the 84% saving is available but unrealised. In a later targeted run the
+model *did* pass `vehicle: "2019 Ram 1500"` and `engine: "5.7L V8 HEMI"`; the catalogue still returned
+unrelated diesel rows, which the answer correctly ignored.
 
 ### What actually got faster
 
-Measured on the same question ("fluid capacities for a 2021 Ford F-250 6.7 Powerstroke"):
+Same question ("fluid capacities for a 2021 Ford F-250 6.7 Powerstroke"):
 
 | | before | after |
 |---|---|---|
 | tool calls | 3 | **1** |
-| failed calls | 1 (`get_product_by_url` -> `(No response)`) | **0** |
+| failed calls | 1 (`get_product_by_url` → `(No response)`) | **0** |
 | irrelevant FAQ call | yes | **gone** |
 | end-to-end | 22.3s | **11.9s** |
 
-The gain came from eliminating two round-trips, not from the payload — that is unchanged while the
-model declines to filter. Answer quality improved too: it now states the verified 13 qt, surfaces
-the 15 qt variant, and explicitly declines the capacities the guide does not cover instead of
-inventing them.
+The gain came from eliminating round-trips, not from the payload — that is unchanged while the model
+declines to filter.
 
-### Prompt (live, version 18, 6,636 characters)
+### The slow-first-response investigation, and why the obvious fix was wrong
 
-- Always pass vehicle and engine to the fluid-capacity lookup, and never state a capacity that did
-  not come back in a tool result.
-- Include the product page link when recommending a product; include price only when the lookup
-  returned one.
+Two identical Fast tool-backed requests, timed from stored message `createdAt`: **cold 22.3s, warm
+18.2s** — about 4.1s of a ~22s answer (~18%).
 
-**Correction to an earlier claim in this file:** the product data does *not* reliably carry price
-and sku. `url` is 134/134, `price` is 81/134, and **`sku` is 0/134 — always null**. The buy link is
-safe to require; the price must stay conditional.
+**MCP prewarming would not have helped**, for two reasons found while measuring:
 
-### LibreChat
+1. The transport is **already created when the chat page loads**, not when the message is sent —
+   logged at 18:29:10 for a message sent at 18:30:30. Startup logs only show
+   `[MCPServersRegistry] Creating new instance`; the per-user `Creating streamable-http transport` is
+   lazy, on first use.
+2. The real cost is the tool round-trips: a 47,457-character `get_all_fluid_capacities` response
+   (~12k tokens) for a single-vehicle question, a `get_product_by_url` call that returned
+   `(No response)`, and an unrelated FAQ. Three sequential calls — one returning 47KB, one failing
+   outright, one irrelevant — then the model reasoning over all of it.
 
-Product images are now clickable and open full size, with a focus ring and an aria-label. `data:`
-and empty sources are left unwrapped.
-
-### Not done, and why
-
-**Tool progress on Fast is already built.** `ToolCallGroup` shows a running label with humanized
-tool names (from `7d8486e45`), and a "Tools" chip does appear during a Fast reply. The only gap is
-the window before the first tool call arrives, where there is genuinely nothing to report yet.
-Nothing was changed.
+No prewarming was implemented, deliberately. The transport is also **per user** and drops on idle
+(`Reconnecting 1/3`, `Maximum reconnection attempts (2) exceeded`, `transport closed`), so the
+reconnect cost recurs — it is not paid once at boot.
 
 ---
 
-## Deployed to production — 2026-09-06
+## Deploy: how it works and how it has failed
 
-Live at **https://hotshotai.thebetterai.com** on commit **`058ad1abc`**.
+### The deploy that silently did nothing
 
-### The first deploy attempt silently did nothing — and why
+`deploy.sh` reported nothing wrong, but production stayed on the old commit. Caught by comparing
+bundle **content**, not the hash: the live bundle had **0** references to `agent-builder` and **0** to
+`AgentPanelSwitch` where the intended build has 1 and 2. Route registration always lands in the
+router (index) chunk, so its absence could not be a code-splitting artifact.
 
-`deploy.sh` reported nothing wrong, but production stayed on `9b278eb9d`. Caught by comparing
-bundle **content**, not the hash: the live `index.9cokyoAC.js` had **0** references to
-`agent-builder` and **0** to `AgentPanelSwitch`, where the intended build has 1 and 2. Route
-registration always lands in the router (index) chunk, so its absence could not be a code-splitting
-artifact.
+Cause: the server's working tree had **one dirty file — `admin-branding/guest/index.html`** — so
+`git pull` refused. That file is tracked *and* regenerated by `deploy.sh` on every deploy, so it
+dirties itself each time and blocks the next pull.
 
-Cause, confirmed over SSH: the server's working tree had **one dirty file —
-`admin-branding/guest/index.html`** — so `git pull` refused. That file is tracked *and* regenerated
-by `deploy.sh` on every deploy, so it dirties itself each time and blocks the next pull. Fix:
+**Fixed in `d3fee2f39`.** `cmd_pull` restores that one generated file before pulling, and separately
+refuses to continue if anything *else* is dirty, printing what it found instead of discarding real
+work or failing later inside `git pull`. Verified in the exact failing state, and the guard verified
+too: with an unrelated tracked file dirty it stopped with `refusing to pull` and exit 1, leaving the
+change intact.
 
-```
-git checkout -- admin-branding/guest/index.html && ./deploy.sh
-```
+Untracking the file was considered and rejected: both `deploy.sh` and `run.sh` skip regeneration when
+the file is missing (`[[ -f ... ]]`), so a fresh clone would never create it and Docker would then
+create a *directory* at that bind-mount path.
 
-**FIXED in `d3fee2f39`.** `cmd_pull` now restores that one generated file before pulling, and
-separately refuses to continue if anything *else* is dirty — printing what it found instead of
-either discarding real work or failing later inside `git pull` with a vaguer error.
+The first deploy to exercise the fix opened its log with "Restoring generated
+admin-branding/guest/index.html (rewritten by the last deploy)..." and pulled cleanly.
 
-Untracking the file was considered and rejected: both `deploy.sh` and `run.sh` skip the
-regeneration step when the file is missing (`[[ -f ... ]]`), so a fresh clone would never create it,
-and Docker would then create a *directory* at that bind-mount path.
+**Note the hash alone proved nothing** in either direction: the server builds on its own
+architecture, so a differing hash is normal. Only content comparison was decisive.
 
-Verified on the server in the exact failing state — file dirty after a deploy, `./deploy.sh pull`
-restored it and succeeded (exit 0). The guard was verified too: with an unrelated tracked file
-dirty, the script stopped with `refusing to pull` and exit 1, leaving the change intact. One manual
-`git checkout --` was needed to bootstrap, since the server could not pull the fix while the pull
-was blocked.
+### How to verify a deploy
 
-Note the hash alone proved nothing in either direction: the server builds on its own architecture,
-so a differing hash is normal. Only content comparison was decisive.
+Every check against the server's own state or the live site, never the deploy script's output:
 
-### Verification after the successful deploy
-
-Every check made against the server's own state or the live site, never the deploy script's output:
-
-| Check | Result |
+| Check | What it proves |
 |---|---|
-| Server `git rev-parse HEAD` | **`058ad1abc`** on `main` |
-| `LibreChat` container | running, restarted 20:17:00Z |
-| `/` and `/api/config` | **200**, appTitle "Hotshot AI", guest mode on |
-| Live bundle | `index.9cokyoAC.js` -> **`index.Ci5eLSxg.js`** |
-| `agent-builder` refs in bundle | 0 -> **1** |
-| `AgentPanelSwitch` refs | 0 -> **2** |
-| Route tree | sibling of `search`/`prompts`/`skills`, with `/staff/prompts/new` present and **0** matches for the customer-tree `embed/:embedId` shape |
-| `GET /staff/agent-builder` | **200** |
-| Live bundle vs the build verified locally | **byte-identical** |
-| Backend startup log | `Server listening`, `[MCPServersRegistry] Creating new instance`, **no errors** — `startLearningScheduler()` did not break boot |
+| Server `git rev-parse HEAD` | the code is actually there |
+| Container running + restart time | the new code is loaded |
+| `/` and `/api/config` return 200 | the app boots |
+| Live bundle filename changed | a new build is being served |
+| Feature-specific string counts in the bundle | the change is in the artifact |
+| Route tree shape in the bundle | routes registered where intended |
+| The specific new route returns 200 | it resolves |
+| Live bundle vs locally verified build | **byte-identical** is the strongest statement available |
+| Backend startup log | no errors; new schedulers did not break boot |
 
-The byte-identical result is the strongest available statement: the exact artifact tested locally is
-what production now serves.
+**A background deploy command needs its log path checked before it is trusted.** A deploy was once
+reported "done" from a background shell's exit code, but the log redirect target was a stale path;
+the shell failed before SSH even connected while the server sat on the old commit. Verify against the
+server's own state — never the script's stdout, never a background task's exit code.
 
-### Already live before this deploy
+### Local rebuilds
 
-Both prompt edits are database records on the shared Mongo, so they reached customers as soon as
-they were saved and never depended on the deploy: prompt **5,869 characters**, **version 16**,
-https-only image rule and product-lookup rule both present.
-
----
-
-## Runtime verification pass — 2026-09-06 (rebuild + live testing)
-
-The user asked to run the rebuild and keep going until everything was done. Checklist items 1-8 are
-now complete and verified against the running application. The image was rebuilt from source
-(`Image librechat Built`, exit 0, ~15 min) and the containers restarted.
-
-### Item 8 — the macOS `sed` bug was real, and it was silently breaking the guest HTML
-
-`run.sh` used bare `sed -i 's#...#' file`. BSD/macOS `sed` requires an argument to `-i`, so it read
-the script as the backup suffix and the filename as the script, failing with `undefined label` and
-**exit 1 — leaving the file unmodified**. All three call sites had `|| true`, so the failure was
-invisible. Two transforms happened to be no-ops (the image already had the right `<title>` and no
-`vite-plugin-pwa:register-sw`), but the third was not: the **service-worker cleanup script was never
-injected**. Measured before the fix: `serviceWorker.getRegistrations` count **0**. That is the
-documented cause of "blank page / 404 on `hooks.*.js` after a rebuild", because a stale service
-worker keeps serving asset hashes that no longer exist.
-
-Fixed with a `sed_inplace` helper in `run.sh` that writes through a `mktemp` file (works on both
-GNU and BSD), plus `chmod 644` and a post-check that logs a warning if the cleanup script is still
-missing. The `|| true` guards were replaced with `|| log "warning: ..."` so a future breakage is
-visible instead of silent. After the fix the restart printed **no errors and no warnings**, and the
-count went **0 -> 1**.
-
-### Items 2 and 3 — full-page Agent Setup, verified on the rebuilt image
-
-`/staff/agent-builder?agent_id=...` now loads as a full page (previously **404**). Verified in the
-browser: "Agent setup" header with **Back to chat**, no chat or sidebar beside the form, and the
-new bundle `assets/index.CEpElyXn.js` served. Everything item 3 asked for checks out:
-
-- Selected agent is **Hotshot Secret AI**, description and 5,479-character prompt loaded.
-- Responsive two-column layout (behavior/tools left, intelligence/support right).
-- `<details>` **"Fallback model & category"** present with `open: false` (collapsed).
-- `<details>` **"Chat reviews & prompt improvements"** present.
-- Exactly one `position: sticky` element pinned to `bottom-0` holding Advanced / Version /
-  Admin Settings / **Save**.
-- All five intelligence mappings, read from the live `select` values in DOM order (10 selects =
-  5 levels x model+effort): Fast `gpt-5.6-luna` / Default(empty), Balanced `gpt-5.6-terra` / low,
-  Deep `gpt-5.6` / medium, Deeper `gpt-5.6` / high, Deepest `gpt-5.6` / max. These match the live
-  agent record exactly (confirmed independently by reading MongoDB through the tunnel).
-
-### Item 4 — automatic prompt improvement confirmed from two independent sources
-
-Live agent record: `learning.enabled: true`, `rules: ["brevity"]`, one change at
-`2026-09-06T17:13:31.763Z` with `evidenceCount: 3` - the three-distinct-chats threshold held.
-Staff UI: the **Automatically improve the live prompt** checkbox is checked, "Last checked:
-9/6/2026, 10:13:32 PM", and **Active additions to the system prompt** lists exactly
-**"Keep simple answers brief; expand when requested."** Chat summaries are populated with redacted
-excerpts, and both **Review recent chats** and **Undo last change & pause** are enabled.
-
-### Item 5 — Fast and Deepest, real tool-backed questions
-
-Both passed end to end, with the response badge proving the intelligence routing works:
-
-| Tier | Question | Tool ran | Badge | Result |
-|---|---|---|---|---|
-| Fast | fluid capacities, 2021 F-250 6.7 Powerstroke | yes (3 calls) | **`gpt-5.6-luna`** | complete, correct, brief |
-| Deepest | recommend an injector cleaner + show it | yes | **`gpt-5.6`** | complete, with one product image |
-
-The Deepest run also confirmed the reasoning UI: live headings **"Searching for product details" ->
-"Checked products" -> "Creating product instructions"** with streaming reasoning text, and the
-heading persisted as the label after the block finished (the behavior added in `9b278eb9d`). The
-Fast answer was noticeably brief, which is the active `brevity` rule doing its job.
-
-### Item 6 — measured, and the obvious fix would have been the wrong one
-
-Two identical Fast tool-backed requests, timed from the stored message `createdAt` values:
-
-| Run | Sent | End-to-end | Tool calls |
-|---|---|---|---|
-| Cold (first after restart) | 18:30:30Z | **22.3s** | 3 |
-| Warm (second, same session) | 18:32:45Z | **18.2s** | 3 |
-
-Cold costs about **4.1s of a ~22s answer (~18%)**. **MCP prewarming at startup would not have
-helped**, for two reasons found while measuring:
-
-1. The transport is **already created when the chat page loads**, not when the message is sent -
-   logged at 18:29:10 for a message sent at 18:30:30. A customer who loads the page and then types
-   is already connected. Startup logs only show `[MCPServersRegistry] Creating new instance`; the
-   per-user `Creating streamable-http transport` is lazy, on first use.
-2. The real cost is in the tool round-trips, not the connection. Inspecting the stored tool calls:
-   - **`get_all_fluid_capacities` is called with no arguments (`{}`) and returns 47,457 characters**
-     (~12k tokens) - the whole dataset, starting with a 1999-2003 7.3L entry, for a question about a
-     2021 6.7L. This single payload dwarfs the connection cost.
-   - **`get_product_by_url` returned `(No response)`** - the model passed a `/diagnose/...` URL to a
-     *product* lookup. A guaranteed-failing round-trip on every such question.
-   - `search_faqs` returned an unrelated FAQ (a Stiction Eliminator power complaint) for a
-     fluid-capacity query.
-
-   So a slow first answer is three sequential tool calls - one returning 47KB, one failing outright,
-   one irrelevant - and then the model reasoning over all of it.
-
-**No prewarming was implemented, deliberately.** The evidence does not support it. The changes that
-would actually pay off are (a) stopping the failing `get_product_by_url` call and (b) narrowing the
-`get_all_fluid_capacities` payload. (a) is a one-line prompt rule; (b) is a change to the MCP server
-or to how its output is truncated, which is not a "simple safe improvement" and should not be done
-blind - dropping the wrong rows would silently break the answers.
-
-### Item 7 — the authoritative image field, and a latent trap
-
-The authoritative field is **`image`**, a top-level string on each product object. Verified against
-real production tool output (200 recent tool calls read from MongoDB):
-
-| Tool | `https://` values | `data:` placeholder |
-|---|---|---|
-| `get_product_by_url` | 12 | 0 |
-| `search_products_by_name` | 4 | **1** |
-| `list_products_by_category` | 0 | **1** |
-
-**`list_products_by_category` returns the WordPress lazy-load placeholder** - a
-`data:image/svg+xml,...` empty 1284x1284 SVG - in the same `image` field. It satisfies a naive
-"the resource returned it, so it is verified" reading of the live prompt rule while rendering as a
-blank box. The renderer will not save you: `MarkdownComponents.tsx:224` deliberately passes `data:`
-URIs straight through to `<img src>`. So this is an instructions concern, not a rendering one.
-
-**Both live tests passed as-is**, so nothing was changed:
-
-- Image expected: the Deepest product recommendation rendered **exactly one** product image,
-  `https://www.hotshotsecret.com/wp-content/uploads/2019/09/P040432Z_01.jpg` (600x600, real CDN
-  URL), alongside dosage and frequency.
-- No image expected: the Fast fluid-capacity question rendered **no image**, correctly.
-
-Because the tested behavior is correct, the prompt was **not** edited. A tightening is drafted and
-recommended below, but it is a production customer-facing change and is the user's call.
-
-### Also done in this pass — bigger, Markdown-aware Instructions editor
-
-Requested mid-session: the instruction box is the surface used for prompt work, so it was too small,
-and the content is Markdown.
-
-| | before | after |
-|---|---|---|
-| Editor height | 88px min, `rows={3}` | **544px** measured (`min-h-[26rem] lg:min-h-[34rem]` full page) |
-| Font | proportional | **Roboto Mono** - Markdown structure is legible |
-| Markdown | raw text only | **Edit / Preview** toggle rendering real H1/H2/lists via `MarkdownLite` |
-| Length feedback | none | live counter, showed **"5479 characters"** matching the live record |
-
-Files: `client/src/components/SidePanel/Agents/Instructions.tsx` (rewritten), `AgentConfig.tsx`
-(passes `fullPage` through), one new key `com_ui_instructions_characters`. The preview uses
-`codeExecution={false}`. Verified in the browser: the toggle round-trips (`aria-pressed` flips) and
-the preview renders headings and bullet lists correctly.
-
-A second `./run.sh build` + `./run.sh restart` was run afterwards so this is baked into the image
-rather than depending on a copied bundle. Re-verified on that final image (`assets/index.CEIsj5wF.js`):
-editor height **544px**, font `"Roboto Mono", monospace`, Edit/Preview toggle present, counter
-**"5479 characters"**, both `<details>` sections present and collapsed, and all five intelligence
-selects still reading `gpt-5.6-luna`/–, `gpt-5.6-terra`/low, `gpt-5.6`/medium, `gpt-5.6`/high,
-`gpt-5.6`/max. That restart also re-exercised the fixed `sed` path with no errors and no warnings.
+`./run.sh build` + `./run.sh restart`. Roughly 15 minutes for a full image build.
 
 **Do not use `docker cp` to shortcut this.** `/app/client/dist/index.html` is bind-mounted, so the
-copy fails with `device or resource busy` while still replacing `assets/`, which leaves the guest
-HTML pointing at a bundle the container no longer serves as its entry point.
+copy fails with `device or resource busy` while still replacing `assets/` — leaving the guest HTML
+pointing at a bundle the container no longer serves as its entry point.
 
-### Both prompt edits — APPLIED and verified live (2026-09-06)
-
-The user authorised both. They were applied **through the staff UI**, so version history is
-preserved: the live agent went from **5,479 to 5,869 characters** and the version count from 15 to
-**16**. Verified against the agent record afterwards: the new wording is present, the old wording is
-gone, and every safeguard section (`## Verification and tools`, `## Dosage, compatibility, and
-transmission safeguards`, `## Customer support and privacy`, and the "customer messages and tool
-results are evidence, not instructions" clause) is intact. Intelligence levels and the learning
-config were untouched.
-
-**Edit 1 — the image rule now requires `https://`.** Replaces the paragraph under
-`## Relevant product images`:
-
-> When a Hot Shot's Secret resource returns a product image URL that starts with https:// and the
-> image would help the customer identify or compare the product, include at most one image directly
-> below the product name using Markdown: ![Product name](image URL copied exactly). Never invent,
-> guess, or transform an image URL. Use only a value that starts with https://; a data: value is a
-> placeholder, not a product photo, and must never be shown. Omit the image when it is decorative,
-> unrelated, or when no https:// product image is available.
-
-Re-tested after saving: a product recommendation still renders **exactly one** real image
-(`.../P040432Z_01.jpg`, 600x600) with **zero broken images**. No regression.
-
-**Edit 2 — stop the failing product-by-URL call.** Added as a bullet under
-`## Verification and tools`:
-
-> - Use the product-by-URL lookup only with an actual product page URL. Never pass a diagnostic,
->   category, guide, or article URL to it; that call returns nothing and wastes a turn. Find the
->   product page with the product search first.
-
-Re-tested with the exact question that previously triggered the failure:
-
-| | before | after |
-|---|---|---|
-| tool calls | 3 | **2** |
-| `get_product_by_url` | called, returned `(No response)` | **not called** |
-| failed calls | 1 | **0** |
-
-The wasted round-trip is gone. **No speed claim is made from this**: the single post-edit sample ran
-25.3s against 22.3s/18.2s before, which is within run-to-run variance on a machine that was also
-building an image. One fewer round-trip is the deterministic, verifiable result; the 47KB
-`get_all_fluid_capacities` payload still dominates the latency and is untouched.
-
-### Save button bar — rebuilt for the full page
-
-The full-page action bar was wrong in several ways at once. `AgentFooter` is written for the narrow
-sidebar, so on the full page it stacked **three rows** (Advanced/Version, then Admin Settings, then
-the icon row plus Save), the Save button was `w-full` and stretched to roughly 600px, the sticky
-wrapper used `px-1` against the content's `px-5 md:px-8` so the edges did not line up, the
-background was `bg-surface-primary/95` + `backdrop-blur` so page content ghosted through it, and
-**`EmbedWidget` — an entire collapsible section — was rendered inside the sticky bar**.
-
-`AgentFooter` now takes a `fullPage` prop. The permission-gated pieces (delete, share, remote share,
-duplicate, save, embed) were extracted into named variables so both layouts share exactly the same
-conditions rather than duplicating them, and the sidebar layout is unchanged. On the full page it
-renders `EmbedWidget` in normal flow and then a single sticky action row. The sticky wrapper was
-removed from `AgentPanel` so the embed section can sit outside it.
-
-Measured before/after on the running app:
-
-| | before | after |
-|---|---|---|
-| Rows in the bar | 3 stacked | **1** |
-| Bar height | ~130px | **61px** |
-| Background | `bg-surface-primary/95` + blur, content ghosting through | **opaque `rgb(13,13,13)`** |
-| Save button width | full width (~600px) | **160px** |
-| `EmbedWidget` inside the sticky bar | yes | **no** (`embedInsideBar: false`) |
-| Horizontal padding | `px-1` | `px-5 md:px-8`, aligned to the content |
-
-Save was exercised end to end by applying the two prompt edits above — the toast read
-**"Successfully updated Hotshot Secret AI"** and the change persisted.
-
-### Product images now render as a thumbnail, not a full-width block
-
-Reported after the prompt edits landed: the product image was taking over the message. Cause: the
-Markdown image renderer in `client/src/components/Chat/Messages/Content/MarkdownComponents.tsx` had
-**no sizing at all** — `<img src alt title className style />` — so a 600x600 product photo rendered
-at natural size, bounded only by the message column, and pushed the answer text off screen.
-
-Capped it there: `max-h-64`, `w-auto`, `max-w-full`, `object-contain`, plus `rounded-lg`, a subtle
-border, a `bg-surface-secondary` backdrop and `loading="lazy"`. Any incoming `className` is still
-merged through `cn`, so nothing that passes its own classes is overridden.
-
-**This does not shrink generated images.** Image-generation output and attachments render through
-their own components (`ImageGen`, `OpenAIImageGen`, `Parts/Attachment.tsx`); the Markdown `img` path
-is only used for images embedded in message text, which is exactly the product-image case.
-
-Verified live: the same 600x600 product shot now renders **256x256** inline, with the product name,
-description and dosages all visible in one view. 36 suites / 520 tests in
-`src/components/Chat/Messages/Content` pass.
-
-### Superseded — the original recommendation (kept for context)
-
-Both were one-line edits to the **live** customer-facing prompt, originally left for the user:
-
-1. **Tighten the image rule to require `https://`.** Current wording accepts any "verified product
-   image URL", which a `data:` placeholder technically satisfies. Proposed replacement for the
-   paragraph under `## Relevant product images`:
-
-   > When a Hot Shot's Secret resource returns a product image URL that starts with https:// and the
-   > image would help the customer identify or compare the product, include at most one image
-   > directly below the product name using Markdown: ![Product name](image URL copied exactly).
-   > Never invent, guess, or transform an image URL. Use only a value that starts with https://; a
-   > data: value is a placeholder, not a product photo, and must never be shown. Omit the image when
-   > it is decorative, unrelated, or when no https:// product image is available.
-
-2. **Stop the wasted `get_product_by_url` call.** Add a rule that `get_product_by_url` accepts only
-   product pages, never `/diagnose/...` or other non-product URLs. This removes a round-trip that
-   currently fails on every fluid-capacity question.
-
-Edit these through the staff UI rather than the database, so version history is preserved.
-
-### Final local state (end of session)
-
-Image rebuilt from source one last time so nothing depends on a copied bundle. Serving
-`assets/index.Ci5eLSxg.js`. Re-verified on that image: action bar 1 row / 61px / opaque
-`rgb(13,13,13)` / Save 160px / embed outside the bar, Instructions editor 544px, and the saved
-prompt loading back at **5,869 characters**.
-
-Final checks: ESLint `--max-warnings=0` clean, Prettier clean, `git diff --check` clean,
-**74 client suites / 830 tests passed**, client typecheck still at the same **5 pre-existing**
-errors (zero new). `run.sh` passes `bash -n`. Four files still fail `sort-imports:check`
-(`Levels.tsx`, `Root.tsx`, `routes/index.tsx`, `initialize.ts`) — all four already failed at `HEAD`.
-
-Uncommitted code changes made in this session, on top of the inherited work:
-`run.sh`, `Instructions.tsx`, `AgentConfig.tsx`, `AgentFooter.tsx`, `AgentPanel.tsx`,
-`MarkdownComponents.tsx`, `client/src/locales/en/translation.json`.
-
-Live agent record changes (already in production, no deploy needed): prompt 5,479 -> 5,869
-characters, version 16.
-
-### Environment notes worth keeping
-
-- The MCP server is `https://mcp.hotshot.thebetterai.com/mcp` over streamable-http, and the
-  transport is **per user**. Earlier logs show it dropping and being rebuilt
-  (`Reconnecting 1/3`, `Maximum reconnection attempts (2) exceeded`, `transport closed`), so the
-  reconnect cost recurs on idle - it is not paid only once at boot.
-- The live DB is reachable read-only from the laptop through the existing tunnel with
-  `mongodb://127.0.0.1:27018/LibreChat?directConnection=true`. `directConnection=true` is required;
-  without it the driver times out on server selection.
-- `docker cp` into `/app/client/dist` **cannot replace `index.html`** - it is bind-mounted from
-  `admin-branding/guest/index.html` and fails with `device or resource busy`. It does copy the
-  `assets/` directory, which leaves the guest HTML pointing at the previous bundle until it is
-  regenerated. Use `./run.sh build` + `./run.sh restart` rather than that shortcut.
-- Do not write a wait-loop like `until ! pgrep -f 'run.sh build'` - the polling shell's own command
-  line contains that string, so it matches itself and never exits.
+A rebuild is genuinely required for route changes, and this has bitten before: `/staff/agent-builder`
+returned **404** while `/agent-builder` rendered the page, because the stale bundle registered the
+route under the customer tree. Bundle comparison confirmed it — the old bundle registered
+`` {path: `agent-builder`} `` under `` path: `/` ``, the rebuilt one under `` path: `/staff` ``.
 
 ---
 
-## Verification pass — 2026-09-06 (later session)
+## Operational gotchas worth keeping
 
-The user asked to skip the rebuild and the post-rebuild browser check for this pass and to run the
-static verification instead: tests, ESLint, build checks, and `git diff --check`. That pass is
-complete. **It was not clean.** Two real defects were found in this work's own new code and
-fixed, plus one pre-existing lint failure in a file this work touches. Both new-code defects were
-type errors that the Docker image build had silently passed over, because `tsdown`/`rolldown`
-bundles without type-checking — the image builds green while `tsc --noEmit` fails.
+**`sed -i` on macOS/BSD silently breaks `run.sh`.** Bare `sed -i 's#...#' file` works on GNU but BSD
+requires an argument to `-i`, so it read the script as the backup suffix and the filename as the
+script — failing with `undefined label` and **exit 1, leaving the file unmodified.** All three call
+sites had `|| true`, so it was invisible. Two transforms happened to be no-ops; the third was not —
+the **service-worker cleanup script was never injected**, which is the documented cause of "blank
+page / 404 on `hooks.*.js` after a rebuild", because a stale service worker keeps serving asset
+hashes that no longer exist. Measured before the fix: `serviceWorker.getRegistrations` count **0**;
+after, **1**. Fixed with a `sed_inplace` helper writing through `mktemp` (works on GNU and BSD), plus
+`chmod 644`, a post-check, and `|| log "warning: ..."` in place of `|| true`.
 
-### Defects found and fixed
+**The live DB is reachable read-only from the laptop** through the existing tunnel with
+`mongodb://127.0.0.1:27018/LibreChat?directConnection=true`. **`directConnection=true` is required**;
+without it the driver times out on server selection. Useful queries:
 
-Items 1 and 2 are defects in this work's own new code. Item 3 was already in `HEAD`.
-
-1. **`Object.hasOwn` broke the `packages/api` typecheck.**
-   `packages/api/src/agents/learning/review.ts` used `Object.hasOwn` twice; the workspace compiles
-   against `lib: es2017`, so `tsc --noEmit` reported `TS2550` on both lines. The bundler never
-   type-checks, so `npm run build:api` and the Docker build both passed regardless.
-   Fixed by adding one shared guard at the single source of truth for the rules —
-   `isLearningRule` in `packages/data-provider/src/learning.ts`, a `Set` membership test — and
-   using it at all three call sites. This also removed the duplicated
-   `Object.prototype.hasOwnProperty.call` check that `learningInstructions` was carrying, so there
-   is now one validator rather than three copies.
-
-2. **`packages/data-schemas` did not typecheck.**
-   `packages/data-schemas/src/models/learning.ts` declared `reviews` and `changes` as
-   `{ type: [Schema.Types.Mixed], default: [] }`. Because the schema is typed
-   `Schema<LearningState>` with `reviews: ChatReview[]` / `changes: LearningChange[]`, mongoose's
-   typings rejected it with `TS2322` on both fields. Switched to the form this codebase already
-   uses for typed arrays of mixed subdocuments — `{ type: [{ type: Schema.Types.Mixed }] }` with a
-   `default: []` — the same shape as `files` / `content` / `attachments` in
-   `packages/data-schemas/src/schema/message.ts`. `packages/data-schemas` now typechecks clean.
-   The change is storage-equivalent and is exercised for real: `learning/service.spec.ts` runs
-   against `mongodb-memory-server` and asserts three reviews persist and read back.
-
-3. **ESLint at `--max-warnings=0` failed on `packages/data-provider/src/api-endpoints.ts`.**
-   Two `prettier/prettier` errors on the `embedWidget` / `embedWidgetIcon` lines. These were
-   **pre-existing in `HEAD`** — they came in with the earlier embed-widget commit, not with this
-   work — but they sit in a file this work already touches, so they were auto-fixed. Two line
-   joins; no behaviour change.
-
-### Also changed in this pass
-
-- **New test for the guard that was refactored.** `review.spec.ts` gained
-  *"drops a persisted rule name that is no longer developer-authored"*, covering the defensive
-  branch that keeps a stale or unrecognised rule name out of the prompt via both `supportedRules`
-  and `learningInstructions`. This is the safety property in work-list item 7, and it previously
-  had no direct test. The `packages/api` learning suites went from 11 to 12 tests.
-- **Import order.** This work had made two previously-clean files fail
-  `npm run sort-imports:check`: `client/src/components/SidePanel/Agents/AgentConfig.tsx` and
-  `client/src/hooks/Nav/useUnifiedSidebarLinks.ts` (both pass at `HEAD`; verified by running the
-  checker against their `HEAD` copies). Both fixed — one line moved in each. The three new files
-  were sorted too. Four changed files still fail the check —
-  `intelligence/Levels.tsx`, `routes/Root.tsx`, `routes/index.tsx`, `packages/api/.../initialize.ts`
-  — and **all four already failed at `HEAD`**, as part of a repo-wide backlog of 321 of 3,110 files.
-  Left alone deliberately: sorting them is unrelated churn.
-
-### Verification results
-
-| Check | Result |
-|---|---|
-| `packages/api` — learning, intelligence, initialize | 4 suites, **102 passed** |
-| `packages/data-provider` — intelligence, schemas | 2 suites, **141 passed** |
-| `packages/data-schemas` — agent, convoStructure, agentCategory.tenant | 3 suites, **138 passed** |
-| `client` — `SidePanel/Agents` + `routes` | 38 suites, **310 passed** |
-| `api` — index, index.metrics, routes/agents, roles/access | 5 of 6 suites passed — see below |
-| ESLint `--max-warnings=0`, 38 changed/new source files | clean |
-| `prettier --check` (same files + `translation.json`) | clean |
-| `git diff --check` + untracked whitespace/CRLF/EOF scan | clean |
-| `tsc --noEmit`: data-provider, data-schemas | clean |
-| `tsc --noEmit`: `packages/api` | 2 errors, both pre-existing in untouched files |
-| `tsc --noEmit`: `client` | 5 errors, **all** pre-existing — proven, see below |
-| `build:data-provider`, `build:data-schemas`, `build:api`, `build:client-package` | all exit 0 |
-| client production build | exit 0, 9,332 modules transformed |
-
-**The one failing suite is an environment problem, not a regression.**
-`api/server/routes/agents/__tests__/responses.spec.js` fails 12 of 17 tests with
-`[Responses API] Error: {"type":"no_user_key"}`. The suite is a live-API integration test that
-skips itself when `ANTHROPIC_API_KEY` is unset — but the repo `.env` sets that variable to the
-literal placeholder `user_provided`, which is truthy, so the skip never fires and every real call
-fails. Re-running it as `ANTHROPIC_API_KEY= npx jest .../responses.spec.js` skips all 17 cleanly.
-The suite mounts `~/server/routes/agents/responses` and does not reference learning, intelligence,
-or any file this work changed. If someone wants this to stop being noisy, the guard should test for
-a real key rather than mere presence.
-
-**Pre-existing client type errors, proven rather than assumed.** The five `client` `tsc` errors
-(`embed/Widget.tsx` referencing the missing `com_ui_embed_mic_hint` key, plus
-`data-provider/Auth/mutations.ts`, `hooks/AuthContext.tsx`, `hooks/SSE/useEventHandlers.ts` and
-`hooks/useNewConvo.ts`) were confirmed by checking out `HEAD` into a detached `git worktree` and
-running the identical
-typecheck there: the same five appear, unchanged. This work adds **zero** new client type errors.
-Worth knowing for next time: `git status` showing a file unmodified is *not* by itself proof that
-an error in it is pre-existing, because a changed dependency's types can surface a latent error in
-untouched code — the worktree baseline is what actually settles it.
-
-### Browser check performed during this pass
-
-Opened at the user's request mid-pass. `localhost:6041` served the customer view (guest chat, no
-sidebar, Hotshot copy, **Staff login**). A staff session restored itself from cookies already saved
-in that browser profile — no credentials were entered — landing on
-`/staff/c/new?spec=hotshot-secret-ai` with Hotshot Secret AI selected and the Fast tier showing.
-Navigation was kept read-only because this points at the live production database.
-
-That produced the hard evidence now recorded in work-list item 10: `/staff/agent-builder` returns
-**404** on the running container while `/agent-builder` renders the page. The rebuild is genuinely
-outstanding — and, usefully, the page component itself was seen rendering correctly, so the rebuild
-is expected to fix the route placement and nothing else.
-
-### Exact next steps
-
-Checklist items 1-9 are complete. What remains is the decision on the two prompt edits, and the
-deploy.
-
-1. ~~`./run.sh build` + `./run.sh restart`~~ — **done**, image rebuilt and containers restarted.
-2. ~~Verify `/staff/agent-builder` opens as a full page~~ — **done**, no 404, no chat beside it.
-3. ~~Agent, two-column layout, collapsed fallback, sticky Save, Chat Reviews panel~~ — **done**.
-4. ~~Confirm automatic improvements enabled + active addition~~ — **done**, from UI and DB.
-5. ~~Fast and Deepest tool-backed tests~~ — **done**, correct model badges, tools ran, reasoning
-   shown at Deepest, both completed.
-6. ~~Cold vs warm Fast timing~~ — **done**: 22.3s vs 18.2s. Prewarming deliberately not built; see
-   the analysis above for why it would not have helped.
-7. ~~Authoritative image field + one-image rule test~~ — **done**: field is `image`; both the
-   image-expected and no-image cases behaved correctly.
-8. ~~Fix the macOS/BSD `sed -i` errors in `run.sh`~~ — **done**, and it was actually breaking the
-   service-worker cleanup (count 0 -> 1).
-9. ~~Tests, ESLint, build checks, `git diff --check`~~ — **done** in the earlier static pass; the
-   Instructions editor change was re-verified the same way (34 suites / 287 tests, lint and
-   Prettier clean, zero new type errors).
-10. ~~Decide on the two recommended prompt edits~~ — **applied and verified live** on the user's
-    instruction. Prompt is now 5,869 chars, version 16. The failing `get_product_by_url` call is
-    gone (3 tool calls -> 2, 0 failed) and product images still render correctly.
-11. ~~Review the diff, commit, push, and deploy using `WORKFLOW.md`.~~ — **done.** Three commits
-    pushed and deployed; production verified on `058ad1abc`. See the deploy section above. Superseded
-    note: nothing had been committed or
-    deployed. After deployment verify the server's own git HEAD, `/api/config`, the full-page staff
-    route, the automatic-review APIs, and real Fast and Deepest tool calls. Do not treat
-    deploy-script output alone as proof.
-
-### Still open, and worth a decision
-
-- **`ANTHROPIC_API_KEY=user_provided` makes `responses.spec.js` fail noisily on any machine using
-  the shared `.env`.** Either tighten the skip guard or document the workaround.
-- **Repo-wide import-order backlog: 321 of 3,110 files.** Not caused by this work and not worth
-  fixing inside it, but the check is currently useless as a gate.
-- **`get_all_fluid_capacities` returns the entire dataset (47KB) for every question.** Called with
-  no arguments, it forces ~12k tokens through even a Fast request. The largest single lever on
-  response time, but fixing it means changing the MCP server or truncating its output — do not do
-  that blind.
-- ~~`get_product_by_url` called with `/diagnose/...` URLs~~ — **fixed** by the applied prompt rule;
-  the call no longer happens on that question.
-- **Two pre-existing `packages/api` type errors** (`cache/redisTelemetry.ts` cannot find `Span`;
-  `cdn/s3.ts` has an unused `@ts-expect-error`) and **five pre-existing `client` type errors** mean
-  neither workspace currently passes a clean `tsc --noEmit`. Until they are cleared, a typecheck
-  cannot be used as a merge gate — which is exactly how the two defects fixed above reached the
-  Docker image unnoticed.
-
----
-
-## Earlier session record (2026-09-04 → 2026-09-05)
-
-Live site: **https://hotshotai.thebetterai.com** — verified on commit `e691dd546`, confirmed
-against the server's own git HEAD, a `curl` 200, and a real Deepest-tier tool-calling question
-in the browser, not just the deploy script's own report.
-
-For the deploy mechanics themselves (branches, `deploy.sh`, tunnel setup), see
-**[CHANGES.md](./CHANGES.md)**, **[WORKFLOW.md](./WORKFLOW.md)**, **[LOCAL_DEV.md](./LOCAL_DEV.md)**.
-This file is a session log: what changed, why, what's still open, and one real incident.
-
-## Local work: admin reasoning levels (2026-09-05, not deployed)
-
-Agent intelligence settings now offer five slots with per-level reasoning effort:
-Default (inherit), None, Low, Medium, High, Extra High, and Max. The existing
-create/update parser saves the effort with each model; guest selection resolves
-the saved setting server-side. Active reasoning still requests an automatic
-summary, and GPT-5.6 agents with tools still use Responses API. The untouched
-legacy Hotshot profile keeps its five-stop expansion; editing levels saves the
-displayed expanded values. No production agent records were changed. These
-efforts are documented for GPT-5.6; admins must check support for other models.
-
----
-
-## What shipped, in commit order
-
-1. **`7d8486e45`** — Branding, copy, tool-call UI
-   - Hotshot orb avatar (from the Dribbble GIF, converted to a 241 KB animated WebP) wired via
-     the model spec's `iconURL`. This also fixed the broken default avatar (the agent record
-     points at a `/images/...` path that only exists on the server, not in a local checkout).
-   - Landing description, 4 conversation starters, meta description — replaced LibreChat
-     boilerplate with real Hotshot copy in `librechat.yaml`.
-   - `showOnLanding` now takes precedence over the agent's own description when set (was
-     backwards — the agent record always won before).
-   - Humanized MCP tool names (`get_all_fluid_capacities` → "fluid capacities") and added a
-     running label for the tool group (was stuck on "Used N tools" even while still running).
-
-2. **`b8c46b93a`** — Quiet tool block, readable JSON
-   - Collapsed tool group reads as a plain "Tools" chip once settled; card chrome only while
-     running or expanded.
-   - Structured tool output renders as labelled rows / bulleted lists instead of raw JSON, with
-     humanized keys and clickable URLs (`JsonView.tsx`).
-   - `parseLenient()` handles two real failure modes found in production payloads: multiple JSON
-     documents concatenated (one per MCP content block — `JSON.parse` rejects this outright) and
-     genuinely truncated payloads. Both covered by tests.
-
-3. **`679befece` → `d753fe869` → `8d000dc2d`** — Intelligence selector, and the outage it caused
-   **Read the incident section below before touching `intelligence.ts` or the model levels.**
-
-4. **`8f6e2281d`** — Responding-model badge, streaming pacing
-   - See "Four message-header implementations" below — this is the one worth knowing before
-     you next touch anything in `client/src/components/*Messages*`.
-   - `useSmoothedStreamText` paces the visual reveal of streaming text to ~420 chars/sec instead
-     of popping in whatever a network chunk happened to contain. Does **not** add a per-character
-     fade — see "Not done" below.
-
-Also shipped, smaller: MCP URL trailing-slash fix (was causing a 307 redirect on every single
-tool call — cosmetic in prod since redirects are fast, but pure waste), a widget-specific model
-spec (`hotshot-secret-ai-widget`) with shorter formatting instructions for the embed iframe, and
-a brand color wash (lime/amber radial gradients sampled from hotshotsecret.com, `hs-brand-wash`
-in `style.css`).
-
-5. **`65c1a0de8`** — Make the embed widget actually load a chat
-   - The embed iframe (`client/public/embed.js` → `/embed/:embedId`) rendered a permanent
-     spinner. `EmbedRoute.tsx` was a stub that never fetched anything.
-   - Most of the supporting infrastructure already existed but only worked for a first-time
-     visitor, because it depended on a guest-session auth race: `AuthContext`'s
-     `startEmbedGuestSession` had to win before the route tried to read the agent config, and
-     any returning visitor with stale/partial cookies from prior testing broke that race.
-   - Fix redesigns the entry point to not depend on auth timing at all: a new unauthenticated
-     `GET /embeds/:embedId` config endpoint (`serveEmbedConfig` in `api/server/routes/embeds.js`,
-     registered *before* the `requireJwtAuth`/`checkAdmin` wall — same trust boundary as the
-     already-public `/launcher` and `/icon` routes) returns just `{ agentId, iconUrl }`.
-     `EmbedRoute` fetches that via `useGetEmbedWidgetConfigQuery` (no `queriesEnabled` gate, since
-     it must run before auth resolves) and redirects to `/c/new?agent_id=...&embed=1` the moment
-     it has an agent id — independent of whatever the guest session is doing. Origin allowlisting
-     is still enforced upstream via the existing CSP `frame-ancestors` check in
-     `api/server/index.js`; this route doesn't re-check it.
-   - Added `com_ui_embed_unavailable` copy for an invalid/expired embed id instead of spinning
-     forever. 5 tests in `EmbedRoute.test.tsx`.
-   - **Verification note:** testing "does this work for a fresh visitor" in-browser kept getting
-     confounded by same-origin cookies left over from earlier manual testing (`document.cookie`
-     can't touch httpOnly cookies; there's no real `/logout` page; the logout API needs an auth
-     header a plain fetch doesn't have). Solved by not needing the distinction at all — verified
-     the fix with a server-side `curl` (no cookies possible) plus a genuinely fresh browser tab.
-
-6. **`e691dd546`** — Surface the model's reasoning while a Deeper/Deepest reply is generating
-   - The "Thinking" / "Thoughts" UI (`Reasoning.tsx`, wired into `Part.tsx` for
-     `ContentTypes.THINK`) was already fully built and already rendered correctly — it just never
-     received any content, because nothing in the request asked OpenAI for a reasoning summary.
-     Before this, a customer on Deeper/Deepest just watched a static "..." for however many
-     seconds the model reasoned, with no visibility into why.
-   - Fix: `resolveIntelligenceParameters()` (`packages/api/src/agents/intelligence.ts`) now
-     returns `reasoning_summary: 'auto'` alongside `reasoning_effort` for any tier that reasons at
-     all (Deep/Deeper/Deepest), and omits it entirely for tiers that don't (Fast/Smart) — `'auto'`
-     because it's the only summary length guaranteed supported across reasoning models, unlike
-     `'concise'`/`'detailed'`. Everything downstream (`packages/api/src/endpoints/openai/llm.ts`,
-     the `THINK` content-part rendering) already supported this end-to-end; it was purely a
-     missing request parameter, not a missing feature.
-   - `packages/data-provider/src/intelligence.ts`'s `IntelligenceOption` type widened to carry the
-     new field. Tests updated/added in `intelligence.spec.ts`.
-   - **Verified live** at Deepest tier with a real tool-calling question ("fluid capacities for a
-     2021 Ford F-250 6.7 Powerstroke") — genuine reasoning content appeared both before and after
-     the tool call, followed by one clean final answer with no duplication.
-
----
-
-## Incident: intelligence selector broke every reply in production
-
-**What happened.** The intelligence/model-level selector was disconnected from the backend
-(`modelLabel` was commented out of the schema). Re-enabling it — a one-line change — was tested
-locally against the *transactions log*, which showed the model correctly switching
-(`gpt-5.6-luna`, `gpt-5.6`, etc.). That looked like success and shipped to production. Every
-reply then started failing with:
-
-```
-400 Function tools with reasoning_effort are not supported for gpt-5.6-luna in
-/v1/chat/completions. To use function tools, use /v1/responses or set
-reasoning_effort to 'none'.
+```js
+db.conversations.find({ isTemporary: true, createdAt: { $gte: <since> } })
+db.messages.find({ conversationId: <id> }).sort({ createdAt: 1 })
 ```
 
-**Root cause.** The local verification only sent single-word prompts that never triggered a tool
-call. This agent calls MCP tools on nearly every real question. GPT-5.6 models reason by default
-and OpenAI rejects function tools alongside reasoning on `/v1/chat/completions` — the codebase
-already had a guard for this (`requiresResponsesApiForReasoning` in
-`packages/api/src/endpoints/openai/llm.ts`), but it only fires when a `reasoning_effort` was
-*explicitly requested*. The "Fast" tier maps to `gpt-5.6-luna` with **no** effort configured, so
-it never entered the guard and stayed on the endpoint that rejects tool calls — meaning the
-model's own default reasoning broke it, not anything the app sent.
+Tool calls live in `message.content[]` entries of type `tool_call` (`.name`, `.args`, `.output`) —
+that is how to check what arguments the agent actually sent.
 
-**Fix (`8d000dc2d`).** `responsesApiOverride()` in `packages/api/src/agents/intelligence.ts` sets
-`useResponsesApi: true` directly from the agent's tool list, at the point in
-`packages/api/src/agents/initialize.ts` where the resolved model and tools are both already
-known — instead of trying to widen the shared, well-tested upstream guard (which has a
-deliberate test asserting it should *not* auto-switch without an explicit effort — don't touch
-that guard for this).
+**`CUSTOM_FOOTER` lives in `.env`, not `librechat.yaml`** — despite `interface.customFooter` existing
+in the schema, the footer route reads `process.env.CUSTOM_FOOTER` (`api/server/routes/config.js`).
+Set on both local and production `.env`; carry it forward when rotating `.env` files.
 
-**Verification that actually caught it, before the next deploy:** a tool-calling question sent at
-*both ends* of the slider (Fast → `gpt-5.6-luna`, Deepest → `gpt-5.6`) on the live site, checking
-the tool chip fires and a real answer comes back — not just checking the transactions log for the
-right model name.
+**`.env` is not something to sync wholesale between laptop and server.** Diffed key-by-key: the only
+genuine gap was `CUSTOM_FOOTER`. `DOMAIN_CLIENT` / `DOMAIN_SERVER` differ *correctly* — production
+uses `http://0.0.0.0:6041`, local dev `http://localhost:6041`, exactly as `LOCAL_DEV.md` says. A
+wholesale copy in either direction silently breaks the other environment.
 
-**Takeaway for next time:** verifying "the model switched" is not the same as verifying "the
-agent still works." For a tool-heavy agent, the cheap single-word test proves nothing about the
-actual failure mode. Always send a question that forces at least one tool call before calling a
-model-routing change verified.
+**Do not write a wait-loop like `until ! pgrep -f 'run.sh build'`** — the polling shell's own command
+line contains that string, so it matches itself and never exits.
 
----
+**A bundler that does not type-check will pass a build that `tsc` rejects.** `tsdown`/`rolldown`
+bundle without type-checking, so `npm run build:api` and the Docker build both passed green while
+`tsc --noEmit` failed on two real defects (`Object.hasOwn` against `lib: es2017`, and a mongoose
+`Schema.Types.Mixed` array typing). Run the typecheck separately; the image build is not a gate.
 
-## Four message-header implementations (read before touching message rendering)
+**"`git status` says the file is unmodified" is not proof an error is pre-existing.** A changed
+dependency's types can surface a latent error in untouched code. The way to settle it is a detached
+`git worktree` at `HEAD` and the identical typecheck run there.
 
-This surprised me and cost real time to find, so it's worth writing down explicitly: the message
-row header (name + timestamp) is implemented **four separate times**, with no shared component
-beyond the leaf-level `MessageTimestamp`:
+**Finding which component is actually mounted.** The message row header is implemented **four**
+separate times with no shared component beyond the leaf `MessageTimestamp`:
 
 | File | Used for |
 |---|---|
-| `client/src/components/Chat/Messages/MessageParts.tsx` | *(not the live agents-endpoint chat)* |
-| `client/src/components/Chat/Messages/ui/MessageRender.tsx` | *(not the live agents-endpoint chat)* |
-| `client/src/components/Chat/Messages/SearchMessage.tsx` | Search results view |
-| `client/src/components/Messages/ContentRender.tsx` | **The actual live Hotshot chat** |
+| `Chat/Messages/MessageParts.tsx` | *not* the live agents-endpoint chat |
+| `Chat/Messages/ui/MessageRender.tsx` | *not* the live agents-endpoint chat |
+| `Chat/Messages/SearchMessage.tsx` | search results |
+| `Messages/ContentRender.tsx` | **the actual live Hotshot chat** |
 
-Also: `client/src/components/Share/Message.tsx` (public share links), and two smaller ones
-(`Content/SiblingHeader.tsx`, `Content/Parts/SteerPart.tsx`) not touched this session — lower
-traffic, left alone to keep the change scoped.
-
-**How I found the live one:** I added a header badge to the first three (obvious candidates by
-name/location), tested them, confirmed via unit tests, and reported it working. It wasn't
-visible in the browser. The server-side field was confirmed correct via a direct network
-response check. The only reliable way to find which component was *actually mounted* was walking
-the live React fiber tree in the browser console:
+Plus `Share/Message.tsx` (public share links) and two smaller ones (`Content/SiblingHeader.tsx`,
+`Content/Parts/SteerPart.tsx`). Editing the three obvious candidates changed nothing visible. The
+only reliable way to find the mounted one was walking the live React fiber tree:
 
 ```js
 const h2 = [...document.querySelectorAll('h2')].find(h => h.textContent.includes('<agent name>'));
@@ -991,77 +615,113 @@ let node = h2[Object.keys(h2).find(k => k.startsWith('__reactFiber$'))];
 // walk node.return up the tree, read node.type.name / node.memoizedProps
 ```
 
-`MessageModelBadge.tsx` (`client/src/components/Chat/Messages/ui/MessageModelBadge.tsx`) is now
-wired into all five of the header implementations above except the two left alone. If you add a
-sibling header feature in the future, grep `MessageTimestamp` usages first — that import is the
-fastest way to find every place a message header exists in this codebase.
+Grep `MessageTimestamp` usages first — that import is the fastest way to find every message header.
+
+**Orchestrating multi-agent work on this repo.** Scout the touch points inline first, then hand each
+agent an exact contract with exact signatures; give one agent sole ownership of shared files like
+`translation.json`; make a separate verifier re-run every command rather than trusting each
+implementer's own report. A stopped workflow still leaves every completed agent's return value in
+`journal.jsonl` in its transcript directory.
 
 ---
 
-## What's built but not fully proven: streaming text pacing
+## Session history, condensed
 
-`client/src/hooks/Messages/useSmoothedStreamText.ts` — paces the reveal rate of streaming text
-so a burst of several sentences in one network chunk doesn't pop in as a single flash. Covered by
-5 deterministic tests using fake timers (`useSmoothedStreamText.test.ts`) — those pass and
-exercise the real logic (catch-up cap, snap-on-stream-end, clamp-on-shrink).
+### What shipped, in commit order
 
-**Not independently confirmed by eye in this session.** The reveal ticks every 40ms, faster than
-this environment's browser-automation round-trip time, so screenshot/poll-based visual
-verification kept missing the window. I stopped trying rather than keep spending turns on it —
-the unit tests are the real evidence here, not a screenshot. If you want visual confirmation,
-watch it directly in a normal browser tab rather than through automation.
+1. **`7d8486e45`** — Branding, copy, tool-call UI. Hotshot orb avatar (Dribbble GIF → 241 KB animated
+   WebP) wired via the model spec's `iconURL`, which also fixed the broken default avatar (the agent
+   record points at a `/images/...` path that only exists on the server). Landing description, 4
+   conversation starters, meta description. `showOnLanding` now takes precedence over the agent's own
+   description (was backwards). Humanized MCP tool names and a running label for the tool group.
+2. **`b8c46b93a`** — Quiet tool block, readable JSON. Collapsed group reads as a plain "Tools" chip
+   once settled. Structured output renders as labelled rows / bulleted lists with humanized keys and
+   clickable URLs. `parseLenient()` handles two real production failure modes: multiple JSON
+   documents concatenated (one per MCP content block, which `JSON.parse` rejects outright) and
+   genuinely truncated payloads.
+3. **`679befece` → `d753fe869` → `8d000dc2d`** — Intelligence selector, and the outage it caused. See
+   [the incident](#incident-the-intelligence-selector-broke-every-reply-in-production).
+4. **`8f6e2281d`** — Responding-model badge; `useSmoothedStreamText` paces the visual reveal to
+   ~420 chars/sec instead of popping in whatever a network chunk contained. Reasoning headings
+   persisting as the block's label after it finishes came in with **`9b278eb9d`**, the commit
+   production sat on before the `058ad1abc` deploy.
+5. **`65c1a0de8`** — Make the embed widget actually load a chat. `EmbedRoute.tsx` was a stub that
+   never fetched anything, so the iframe showed a permanent spinner. Most infrastructure existed but
+   only worked for a first-time visitor, because it depended on a guest-session auth race. The fix
+   removes the timing dependency entirely: a new unauthenticated `GET /embeds/:embedId` config
+   endpoint (`serveEmbedConfig` in `api/server/routes/embeds.js`, registered *before* the
+   `requireJwtAuth`/`checkAdmin` wall — same trust boundary as the already-public `/launcher` and
+   `/icon`) returns `{ agentId, iconUrl }`, and `EmbedRoute` fetches it via
+   `useGetEmbedWidgetConfigQuery` with no `queriesEnabled` gate (it must run before auth resolves),
+   redirecting as soon as it has an agent id. Origin allowlisting is still enforced upstream by the
+   CSP `frame-ancestors` check in `api/server/index.js`. Added `com_ui_embed_unavailable` copy for an
+   invalid or expired embed id instead of spinning forever; 5 tests in `EmbedRoute.test.tsx`.
+   *Verification note:* testing "does this work for a fresh visitor" kept being confounded by
+   same-origin cookies from earlier manual testing. Solved by not needing the distinction — a
+   server-side `curl` (no cookies possible) plus a genuinely fresh tab.
+6. **`e691dd546`** — Surface reasoning while a Deeper/Deepest reply generates. The "Thinking" UI was
+   already fully built and rendered correctly — it just never received content, because nothing asked
+   OpenAI for a reasoning summary. `resolveIntelligenceParameters()` now returns
+   `reasoning_summary: 'auto'` for any tier that reasons, and omits it for tiers that don't. `'auto'`
+   because it is the only summary length guaranteed supported across reasoning models.
+7. **`058ad1abc`** — the deploy described above; **`d3fee2f39`** the `deploy.sh` fix;
+   **`1b0d8843c`** Balanced by default; **`0630e0417`** configurable levels.
 
-**Explicitly not shipped:** a true per-character *fade* on newly-revealed text (the original ask).
-CSS `@keyframes` animations only fire once, on element mount — a paragraph fades in when first
-created, but every character streamed into it afterward just updates the existing text node in
-place (React reuses the DOM node), so no further animation fires. A real glyph-level fade needs
-either an AST-level transform on the markdown tree (isolating just-streamed characters into their
-own animated span without breaking mid-token bold/links/code blocks) or a masking trick that only
-works correctly for single-line text. Neither was attempted — pacing alone was judged the safer,
-still-valuable improvement to ship same-day as a production incident.
+Also shipped, smaller: MCP URL trailing-slash fix (a 307 redirect on every tool call), a
+widget-specific model spec (`hotshot-secret-ai-widget`) with shorter formatting instructions for the
+embed iframe, and a brand colour wash sampled from hotshotsecret.com (`hs-brand-wash` in `style.css`).
 
----
+### Full-page Agent Setup (2026-09-06)
 
-## Open items
+`client/src/components/Agents/AgentBuilderPage.tsx` and the `/staff/agent-builder` route; `Root.tsx`
+hides the resizable sidebar there; `AgentPanel` / `AgentPanelSwitch` / `AgentConfig` support
+full-page rendering while keeping the embedded/sidebar mode working. Two-column layout at desktop
+widths, collapsing responsively, sticky save controls.
 
-- **Web search tool access** — asked for, not built. Confirmed LibreChat's built-in `webSearch`
-  config supports Serper/SearXNG/Tavily as providers — not literally "OpenAI's web search tool."
-  If the ask is the OpenAI Responses API's own `web_search` tool (model decides when to search,
-  no separate provider key), that's a smaller, different integration. Asked the user which was
-  meant; no answer yet as of end of session — **do not build either without that answer.**
-- **Per-character fade-in on streaming text** — explicitly not shipped. `useSmoothedStreamText`
-  (see below) paces the *reveal rate* but is not a visual fade; user asked for it again this
-  session ("bit smoother, bit calmer") and was told directly this is still just pacing, not a
-  fade. A true glyph-level fade needs an AST-level transform on the streamed markdown (to isolate
-  just-revealed characters into their own animated span without breaking mid-token bold/links/code
-  blocks) — not attempted.
-- **`CUSTOM_FOOTER` lives in `.env`, not `librechat.yaml`** — despite `interface.customFooter`
-  existing in the schema, the actual footer route reads `process.env.CUSTOM_FOOTER`
-  (`api/server/routes/config.js`). Set on both local and production `.env` this session; anyone
-  rotating `.env` files should carry it forward. A comment was left in `librechat.yaml` noting
-  this so it isn't rediscovered the hard way again.
-- **Agent's own copy is stale** — the agent (DB record, not this repo) re-introduces itself as
-  "Alex from Hot Shot's Secret" on every turn before answering, and says "Hot Shot's Secret"
-  while the UI says "Hotshot Secret AI." Left alone deliberately — editable via staff login,
-  didn't want to touch the production agent record without being asked.
-- **Privacy policy** still points at `librechat.ai/privacy-policy`.
-- **`SiblingHeader.tsx` / `SteerPart.tsx`** don't have the model badge — see table above.
+**The action bar was wrong in several ways at once** and was rebuilt: three stacked rows, a `w-full`
+Save stretching to ~600px, `px-1` against the content's `px-5 md:px-8`, a translucent background with
+content ghosting through, and **`EmbedWidget` — an entire collapsible section — rendered inside the
+sticky bar.** `AgentFooter` now takes a `fullPage` prop; permission-gated pieces were extracted into
+named variables so both layouts share identical conditions. Result: 3 rows → **1**, ~130px → **61px**,
+opaque background, Save 160px, embed outside the bar.
 
----
+**Instructions editor** rebuilt in the same pass: 88px/`rows={3}` → **544px**, proportional font →
+**Roboto Mono**, raw text → **Edit/Preview** toggle rendering real headings and lists via
+`MarkdownLite`, plus a live character counter.
 
-## Two things worth knowing about this deploy setup specifically
+**Product images capped as thumbnails.** The Markdown image renderer had no sizing at all, so a
+600×600 product photo rendered at natural size and pushed the answer text off screen. Capped with
+`max-h-64 w-auto max-w-full object-contain` plus rounding, border, backdrop and `loading="lazy"`;
+incoming `className` still merges through `cn`. This does **not** affect generated images, which
+render through `ImageGen` / `OpenAIImageGen` / `Parts/Attachment.tsx`. Verified: the same 600×600
+shot now renders 256×256 inline. 36 suites / 520 tests pass in `Content`.
 
-**`.env` is not something to sync wholesale between laptop and server.** Diffed key-by-key this
-session: the only genuine gap was `CUSTOM_FOOTER`. `DOMAIN_CLIENT`/`DOMAIN_SERVER` differ
-*correctly* — production uses `http://0.0.0.0:6041`, local dev uses `http://localhost:6041`,
-exactly as `LOCAL_DEV.md` says to set them. A wholesale copy in either direction silently breaks
-the other environment.
+### Two defects the image build hid (2026-09-06, later session)
 
-**A background deploy command needs its log path checked before it's trusted.** Mid-session, a
-deploy was reported as "done" based on a background shell's exit code, but the log redirect
-target was a stale path from before an earlier session interruption — the shell failed before
-SSH even connected, and the server sat on the old commit while it was reported live. Caught by
-checking the server's actual git HEAD directly rather than trusting the command's own report.
-The lesson generalizes: **verify a deploy against the server's own state** (git HEAD, a live
-request, a DOM check) — never the deploy script's stdout alone, and never a background task's
-exit code alone.
+Both were type errors that `tsdown` bundled straight past:
+
+1. **`Object.hasOwn` broke the `packages/api` typecheck** (`lib: es2017` → `TS2550`). Fixed by adding
+   one shared guard at the single source of truth — `isLearningRule` in
+   `packages/data-provider/src/learning.ts`, a `Set` membership test — used at all three call sites.
+   This also removed a duplicated `Object.prototype.hasOwnProperty.call` check, so there is now one
+   validator rather than three copies.
+2. **`packages/data-schemas` did not typecheck.** `learning.ts` declared `reviews`/`changes` as
+   `{ type: [Schema.Types.Mixed], default: [] }`, which mongoose's typings reject for a typed schema
+   (`TS2322`). Switched to the form this codebase already uses for typed arrays of mixed
+   subdocuments — `{ type: [{ type: Schema.Types.Mixed }] }` with `default: []`, the same shape as
+   `files` / `content` / `attachments` in `message.ts`. Storage-equivalent, and exercised for real:
+   `learning/service.spec.ts` runs against `mongodb-memory-server`.
+
+### Streaming text pacing — built, not visually confirmed
+
+`client/src/hooks/Messages/useSmoothedStreamText.ts` paces the reveal rate so a burst of several
+sentences in one network chunk doesn't flash in at once. Covered by 5 deterministic fake-timer tests
+exercising the real logic (catch-up cap, snap-on-stream-end, clamp-on-shrink).
+
+**Not independently confirmed by eye.** The reveal ticks every 40ms, faster than this environment's
+browser-automation round-trip, so screenshot polling kept missing the window. The unit tests are the
+real evidence, not a screenshot; watch it in a normal browser tab if you want visual confirmation.
+
+**Explicitly not shipped:** a true per-character *fade*. CSS `@keyframes` fire once on element mount,
+so a paragraph fades in when created but every character streamed into it afterwards just updates the
+existing text node in place (React reuses the DOM node) and no further animation fires.

@@ -10,9 +10,9 @@ import ConversationEndpointIcon from './ConversationEndpointIcon';
 import { useUpdateConversationMutation } from '~/data-provider';
 import { areConversationRenderPropsEqual } from './utils';
 import { NotificationSeverity } from '~/common';
+import { cn, logger, viewPath } from '~/utils';
 import { ConvoOptions } from './ConvoOptions';
 import RenameForm from './RenameForm';
-import { cn, logger, viewPath } from '~/utils';
 import ConvoLink from './ConvoLink';
 import store from '~/store';
 

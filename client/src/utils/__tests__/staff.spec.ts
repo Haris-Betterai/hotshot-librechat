@@ -1,4 +1,13 @@
-import { chatPath, clearStaffLoginIntent, isStaffPath, markStaffLoginIntent, staffHomePath, viewPath, wantsStaffLogin } from '../staff';
+import {
+  guestRedirectTarget,
+  chatPath,
+  clearStaffLoginIntent,
+  isStaffPath,
+  markStaffLoginIntent,
+  staffHomePath,
+  viewPath,
+  wantsStaffLogin,
+} from '../staff';
 
 describe('staff view paths', () => {
   it('detects staff routes', () => {
@@ -35,5 +44,23 @@ describe('staff view paths', () => {
     expect(wantsStaffLogin('', '/c/new')).toBe(false);
     expect(sessionStorage.getItem('lc-staff-login')).toBeNull();
     clearStaffLoginIntent();
+  });
+});
+
+describe('guestRedirectTarget', () => {
+  it('moves a staff chat URL to the public tree and keeps spec and temporary params', () => {
+    expect(guestRedirectTarget('/staff/c/new', '?spec=hotshot-secret-ai&temporary=true')).toBe(
+      '/c/new?spec=hotshot-secret-ai&temporary=true',
+    );
+  });
+
+  it('keeps the conversation id and hash', () => {
+    expect(guestRedirectTarget('/staff/c/abc', '?x=1', '#h')).toBe('/c/abc?x=1#h');
+  });
+
+  it('sends non-chat staff pages to the public home without leaking the path', () => {
+    expect(guestRedirectTarget('/staff/agent-builder', '?a=1')).toBe('/c/new');
+    expect(guestRedirectTarget('/staff')).toBe('/c/new');
+    expect(guestRedirectTarget('/staff/cx/new')).toBe('/c/new');
   });
 });

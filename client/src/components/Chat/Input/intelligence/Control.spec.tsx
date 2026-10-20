@@ -82,3 +82,69 @@ describe('Intelligence control', () => {
     expect(screen.getByRole('button', { name: 'Intelligence Fast' })).toBeDisabled();
   });
 });
+
+const descriptions = [
+  'Quick product lookups and short follow-up answers.',
+  'Everyday product guidance and straightforward comparisons.',
+  '',
+  'Multi-step troubleshooting and detailed comparisons.',
+  'Complex cases and thorough maintenance plans.',
+];
+
+function DescribedHarness() {
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  return (
+    <Control
+      heading="Intelligence"
+      labels={labels}
+      descriptions={descriptions}
+      selectedIndex={selectedIndex}
+      onChange={setSelectedIndex}
+    />
+  );
+}
+
+function openSlider() {
+  fireEvent.click(screen.getByRole('button', { name: /^Intelligence / }));
+  return screen.getByRole('slider', { name: 'Intelligence' });
+}
+
+function describedRegion(slider: HTMLElement) {
+  const [regionId] = (slider.getAttribute('aria-describedby') ?? '').split(' ');
+  return document.getElementById(regionId);
+}
+
+describe('Intelligence control purpose text', () => {
+  it('explains the selected level and announces it politely', () => {
+    render(<DescribedHarness />);
+    const slider = openSlider();
+    const region = describedRegion(slider);
+    expect(region).toHaveTextContent(descriptions[0]);
+    expect(region).toHaveAttribute('aria-live', 'polite');
+  });
+
+  it('follows the thumb to the level the customer moved to', () => {
+    render(<DescribedHarness />);
+    const slider = openSlider();
+    fireEvent.keyDown(slider, { key: 'ArrowRight' });
+    expect(screen.getByText(descriptions[1])).toBeInTheDocument();
+    expect(screen.queryByText(descriptions[0])).not.toBeInTheDocument();
+    fireEvent.keyDown(slider, { key: 'End' });
+    expect(screen.getByText(descriptions[4])).toBeInTheDocument();
+  });
+
+  it('renders nothing for a level without a description', () => {
+    render(<DescribedHarness />);
+    const slider = openSlider();
+    fireEvent.keyDown(slider, { key: 'ArrowRight' });
+    fireEvent.keyDown(slider, { key: 'ArrowRight' });
+    expect(slider).toHaveAttribute('aria-valuetext', 'Deep');
+    expect(describedRegion(slider)).toBeEmptyDOMElement();
+  });
+
+  it('renders nothing when no descriptions are supplied at all', () => {
+    render(<Harness />);
+    const slider = openSlider();
+    expect(describedRegion(slider)).toBeEmptyDOMElement();
+  });
+});

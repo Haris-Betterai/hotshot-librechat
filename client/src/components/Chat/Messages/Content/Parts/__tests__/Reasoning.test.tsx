@@ -11,6 +11,13 @@ jest.mock('~/Providers', () => ({
   useMessageContext: () => mockMessageContext,
 }));
 
+let mockShowDetail = true;
+
+jest.mock('~/hooks/useReasoningDetail', () => ({
+  __esModule: true,
+  default: () => mockShowDetail,
+}));
+
 jest.mock('~/hooks', () => ({
   useLocalize: () => (key: string) => key,
   useExpandCollapse: () => ({ style: {}, ref: { current: null } }),
@@ -54,8 +61,46 @@ describe('extractLatestHeading', () => {
   });
 });
 
+describe('Reasoning (customer view)', () => {
+  const body =
+    '**Considering product details**\n\nI need to figure out the causes. Maybe ask mileage?';
+
+  beforeEach(() => {
+    mockShowDetail = false;
+    mockMessageContext = { isSubmitting: true, isLatestMessage: true, nextType: undefined };
+  });
+
+  afterAll(() => {
+    mockShowDetail = true;
+  });
+
+  it('shows only the heading as a live status, never the reasoning body', () => {
+    render(<Reasoning reasoning={body} isLast={true} />);
+    expect(screen.getByRole('status')).toHaveTextContent('Considering product details');
+    expect(screen.queryByText(/Maybe ask mileage/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+  });
+
+  it('renders nothing once the reply has finished', () => {
+    mockMessageContext = { isSubmitting: false, isLatestMessage: true };
+    const { container } = render(<Reasoning reasoning={body} isLast={true} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+});
+
+describe('Reasoning (staff view)', () => {
+  it('keeps the full thinking block with copy control', () => {
+    mockShowDetail = true;
+    mockMessageContext = { isSubmitting: false, isLatestMessage: true };
+    render(<Reasoning reasoning={'**Heading**\n\nSecret body text.'} isLast={true} />);
+    expect(screen.getByText(/Secret body text/)).toBeInTheDocument();
+    expect(screen.getAllByLabelText('com_ui_copy_thoughts_to_clipboard').length).toBeGreaterThan(0);
+  });
+});
+
 describe('Reasoning', () => {
   beforeEach(() => {
+    mockShowDetail = true;
     mockMessageContext = { isSubmitting: false, isLatestMessage: false, nextType: undefined };
   });
 

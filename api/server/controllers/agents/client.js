@@ -357,6 +357,7 @@ class AgentClient extends BaseClient {
           endpoint: this.options.endpoint,
           agent_id: this.options.agent.id,
           modelLabel: this.options.modelLabel,
+          intelligenceLabel: this.options.intelligenceLabel,
           resendFiles: this.options.resendFiles,
           imageDetail: this.options.imageDetail,
           maxContextTokens: this.maxContextTokens,
@@ -1115,6 +1116,8 @@ class AgentClient extends BaseClient {
    *   contextUsage?: import('librechat-data-provider').TContextUsageEvent,
    *   usage?: import('librechat-data-provider').TResponseUsage,
    *   respondingModel?: string,
+   *   respondingIntelligence?: string,
+   *   autoEscalated?: boolean,
    * } | undefined}
    */
   buildResponseMetadata() {
@@ -1123,6 +1126,8 @@ class AgentClient extends BaseClient {
      *   contextUsage?: import('librechat-data-provider').TContextUsageEvent,
      *   usage?: import('librechat-data-provider').TResponseUsage,
      *   respondingModel?: string,
+     *   respondingIntelligence?: string,
+     *   autoEscalated?: boolean,
      * }} */
     const metadata = {};
     const signatures = this.collectedThoughtSignatures;
@@ -1136,6 +1141,15 @@ class AgentClient extends BaseClient {
      *  agent config. */
     if (typeof this.model === 'string' && this.model.length > 0) {
       metadata.respondingModel = this.model;
+    }
+    if (
+      typeof this.options.intelligenceLabel === 'string' &&
+      this.options.intelligenceLabel.length > 0
+    ) {
+      metadata.respondingIntelligence = this.options.intelligenceLabel;
+    }
+    if (this.options.intelligenceAutoEscalated === true) {
+      metadata.autoEscalated = true;
     }
     const usageEvents = this.usageEmitSink ?? [];
     /** Persist the breakdown only when the latest snapshot's OWN run completed —
@@ -1234,6 +1248,7 @@ class AgentClient extends BaseClient {
         conversationId: this.conversationId,
         collectedUsage,
         model: model ?? this.model ?? this.options.agent.model_parameters.model,
+        intelligenceLabel: this.options.intelligenceLabel,
         context,
         messageId: this.responseMessageId,
         balance,

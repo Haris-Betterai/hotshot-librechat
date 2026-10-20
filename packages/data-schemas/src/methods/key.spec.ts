@@ -1,9 +1,9 @@
 import mongoose from 'mongoose';
-import { ErrorTypes, SystemRoles } from 'librechat-data-provider';
 import { MongoMemoryServer } from 'mongodb-memory-server';
+import { ErrorTypes, SystemRoles } from 'librechat-data-provider';
 import { createKeyMethods } from './key';
-import keySchema from '~/schema/key';
 import userSchema from '~/schema/user';
+import keySchema from '~/schema/key';
 
 jest.mock('~/crypto', () => ({
   encrypt: jest.fn(async (value: string) => `enc:${value}`),

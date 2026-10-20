@@ -7,14 +7,23 @@ import { useLocalize } from '~/hooks';
 type ControlProps = {
   heading: string;
   labels: string[];
+  descriptions?: string[];
   selectedIndex: number;
   onChange: (index: number) => void;
 };
 
-export default function Control({ heading, labels, selectedIndex, onChange }: ControlProps) {
+export default function Control({
+  heading,
+  labels,
+  descriptions,
+  selectedIndex,
+  onChange,
+}: ControlProps) {
   const localize = useLocalize();
   const hintId = useId();
+  const descriptionId = useId();
   const selectedLabel = labels[selectedIndex];
+  const selectedDescription = descriptions?.[selectedIndex]?.trim();
 
   return (
     <Popover.Root>
@@ -77,10 +86,15 @@ export default function Control({ heading, labels, selectedIndex, onChange }: Co
               <Slider.Thumb
                 aria-label={heading}
                 aria-valuetext={selectedLabel}
-                aria-describedby={hintId}
+                aria-describedby={`${descriptionId} ${hintId}`}
                 className="relative block size-9 cursor-grab rounded-full bg-white shadow-md ring-1 ring-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2494ff] focus-visible:ring-offset-2 focus-visible:ring-offset-surface-secondary active:cursor-grabbing"
               />
             </Slider.Root>
+          </div>
+          <div id={descriptionId} aria-live="polite" aria-atomic="true">
+            {selectedDescription ? (
+              <p className="mt-1 text-sm leading-snug text-text-secondary">{selectedDescription}</p>
+            ) : null}
           </div>
           <p id={hintId} className="sr-only">
             {localize('com_ui_intelligence_hint')}

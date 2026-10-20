@@ -56,6 +56,11 @@ export default function useSmoothedStreamText(text: string, isStreaming: boolean
     if (!isStreaming) {
       return;
     }
+    if (prefersReducedMotion()) {
+      revealedLengthRef.current = text.length;
+      setRevealed(text);
+      return;
+    }
     // Text shrank (edit/regenerate) — clamp instead of trying to "unreveal".
     if (revealedLengthRef.current > text.length) {
       revealedLengthRef.current = text.length;
@@ -94,7 +99,6 @@ export default function useSmoothedStreamText(text: string, isStreaming: boolean
     return () => clearInterval(intervalId);
     // Intentionally re-armed only when the streaming state itself changes —
     // see the comment above the target-tracking effect.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isStreaming]);
 
   return isStreaming ? revealed : text;

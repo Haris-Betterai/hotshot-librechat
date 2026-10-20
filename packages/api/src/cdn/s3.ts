@@ -1,3 +1,4 @@
+import { createRequire } from 'node:module';
 import { logger } from '@librechat/data-schemas';
 import { isEnabled } from '~/utils/common';
 
@@ -23,8 +24,8 @@ export const initializeS3 = (): S3Client | null => {
     );
   }
 
-  // @ts-expect-error - lazily required to avoid loading the AWS SDK at boot
-  const { S3Client } = require('@aws-sdk/client-s3');
+  const loadModule = createRequire(__filename);
+  const { S3Client }: typeof import('@aws-sdk/client-s3') = loadModule('@aws-sdk/client-s3');
 
   const endpoint = process.env.AWS_ENDPOINT_URL;
   const accessKeyId = process.env.AWS_ACCESS_KEY_ID;

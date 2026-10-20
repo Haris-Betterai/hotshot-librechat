@@ -3,6 +3,7 @@ import {
   ReasoningEffort,
   ReasoningParameterFormat,
   removeNullishValues,
+  parseWebSearchDomains,
   supportsAdaptiveThinking,
 } from 'librechat-data-provider';
 import type { BindToolsInput } from '@librechat/agents/langchain/language_models/chat_models';
@@ -127,7 +128,7 @@ function isOpenAIEndpoint(endpoint?: EModelEndpoint | string | null): boolean {
  * Chat Completions, but tools are bound after config time, so GPT-5.6
  * reasoning requests default to the Responses API to avoid tool failures.
  */
-const responsesApiRequiredPattern = /\bgpt-5\.6\b/;
+const responsesApiRequiredPattern = /\bgpt-(?:5\.6|6(?:\.\d+)?)\b/;
 
 function requiresResponsesApiForReasoning({
   model,
@@ -538,6 +539,7 @@ export function getOpenAILLMConfig({
     reasoning_context,
     verbosity,
     web_search,
+    web_search_domains,
     promptCache,
     promptCacheTtl,
     frequency_penalty,
@@ -755,7 +757,12 @@ export function getOpenAILLMConfig({
   } else if (enableWebSearch) {
     /** Standard OpenAI web search uses tools API */
     llmConfig.useResponsesApi = true;
-    tools.push({ type: 'web_search' });
+    const allowedDomains = parseWebSearchDomains(web_search_domains);
+    tools.push(
+      allowedDomains.length > 0
+        ? { type: 'web_search', filters: { allowed_domains: allowedDomains } }
+        : { type: 'web_search' },
+    );
   }
   if (useOpenRouter && enablePromptCache === true) {
     llmConfig.promptCache = true;

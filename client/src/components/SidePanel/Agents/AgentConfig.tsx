@@ -10,6 +10,7 @@ import { useAgentPanelContext } from '~/Providers';
 import ToolsSection from './Tools/ToolsSection';
 import { icons } from '~/hooks/Endpoint/Icons';
 import Levels from './intelligence/Levels';
+import WebSearch from './WebSearch';
 import Instructions from './Instructions';
 import Reviews from './learning/Reviews';
 import FileContext from './FileContext';
@@ -112,6 +113,8 @@ export default function AgentConfig({ fullPage = false }: { fullPage?: boolean }
       >
         <div className={cn(fullPage && 'lg:col-start-2')}>
           <Levels />
+
+          <WebSearch />
 
           <details className="mb-3 rounded-lg border border-border-light p-3">
             <summary className="cursor-pointer text-sm text-text-secondary">

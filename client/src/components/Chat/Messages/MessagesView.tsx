@@ -7,9 +7,9 @@ import { useScreenshot, useMessageScrolling, useLocalize } from '~/hooks';
 import ScrollToBottom from '~/components/Messages/ScrollToBottom';
 import { MessagesViewProvider } from '~/Providers';
 import { fontSizeAtom } from '~/store/fontSize';
+import { cn, isEmbedWidget } from '~/utils';
 import MultiMessage from './MultiMessage';
 import MessageNav from './MessageNav';
-import { cn, isEmbedWidget } from '~/utils';
 import store from '~/store';
 
 function MessagesViewContent({

@@ -103,6 +103,7 @@ jest.mock('../resources', () => ({
   }),
 }));
 
+import { getOpenAILLMConfig } from '~/endpoints/openai/llm';
 import { initializeAgent } from '../initialize';
 
 const realUtils = jest.requireActual<typeof import('~/utils')>('~/utils');
@@ -2221,5 +2222,82 @@ describe('initializeAgent — run-scoped MCP tool definitions', () => {
     );
 
     expect(result.mcpAvailableTools).toEqual(mcpAvailableTools);
+  });
+});
+
+describe('initializeAgent — OpenAI web search survives intelligence levels', () => {
+  const structuredTool = { name: 'mcp_lookup' };
+  const intelligence = {
+    heading: 'Intelligence',
+    levels: [
+      { label: 'Fast', model: 'gpt-6-luna' },
+      { label: 'Smart', model: 'gpt-6.1-sol', reasoning_effort: 'medium' as const },
+    ],
+    default_level: 'Fast',
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  async function run(modelLabel: string, modelParameters: Record<string, unknown>) {
+    const { agent, req, res, loadTools, db } = createMocks({
+      provider: Providers.OPENAI,
+      model: 'gpt-6-luna',
+      structuredTools: [structuredTool],
+    });
+    agent.tools = ['mcp_lookup'];
+    agent.intelligence = intelligence;
+    agent.model_parameters = {
+      model: 'gpt-6-luna',
+      ...modelParameters,
+    } as Agent['model_parameters'];
+    mockGetProviderConfig.mockReturnValue({
+      overrideProvider: Providers.OPENAI,
+      getOptions: async ({ model_parameters }: { model_parameters: Record<string, unknown> }) =>
+        getOpenAILLMConfig({
+          apiKey: 'test',
+          streaming: true,
+          endpoint: EModelEndpoint.openAI,
+          modelOptions: model_parameters,
+        }),
+    });
+    mockExtractLibreChatParams.mockImplementation(realUtils.extractLibreChatParams);
+    const result = await initializeAgent(
+      {
+        req,
+        res,
+        agent,
+        loadTools,
+        endpointOption: { endpoint: EModelEndpoint.agents, modelLabel } as never,
+        allowedProviders: new Set([Providers.OPENAI]),
+        isInitialAgent: true,
+      },
+      db,
+    );
+    return result;
+  }
+
+  it.each([
+    ['Smart', 'gpt-6.1-sol'],
+    ['Fast', 'gpt-6-luna'],
+  ])('keeps the domain-filtered web_search tool on the %s level', async (label, model) => {
+    const result = await run(label, {
+      web_search: true,
+      web_search_domains: ['HotshotSecret.com', 'https://bad.example/path'],
+    });
+    const params = result.model_parameters as Record<string, unknown>;
+    expect(params.model).toBe(model);
+    expect(params.useResponsesApi).toBe(true);
+    expect(params).not.toHaveProperty('web_search_domains');
+    expect(result.tools).toEqual([
+      structuredTool,
+      { type: 'web_search', filters: { allowed_domains: ['hotshotsecret.com'] } },
+    ]);
+  });
+
+  it('sends the plain web_search tool when no domains are set', async () => {
+    const result = await run('Smart', { web_search: true });
+    expect(result.tools).toEqual([structuredTool, { type: 'web_search' }]);
   });
 });
