@@ -178,7 +178,30 @@ session survived a trip to the customer view.
 - `list_product_categories` (live sitemap per call) and `recommend_youtube_video` (index rebuilt per
   call) still take 2–5s each.
 
-## 7. Not done (first pass)
+## 7. Prompt update — 2026-10-20 23:33 UTC
+
+Applied through Agent setup (8,112 → 9,204 chars): "Hot Shot's Secret AI" → "Hotshot Secret AI"
+(the bot's own name only; the company/brand name is unchanged); link + image always with a
+recommended product; price quoted as returned, per size when known; exactly one usage frequency per
+product; symptom lookups always pass `symptom`/`vehicle`/`engine`; web search only when the tools
+lack the fact. Ladder and the `hotshotsecret.com` limit were unchanged by the save.
+
+Retest (customer view, Auto, Temporary Chat):
+
+| Question | Tier / model | Time | Result |
+|---|---|---|---|
+| Diesel Extreme vs EDT for towing | Deep · `gpt-6.1-sol` | 23s | Both products with link, image and price; one frequency each; website cited 5× (was nearly every line); answered from product + FAQ tools |
+| "Who are you?" + F-350 rough idle, white smoke | Deep · `gpt-6.1-sol` | 14s | "I'm Hotshot Secret AI"; diagnosis first; symptom lookup filtered (252 chars) |
+
+New findings
+- `get_symptom_details` returned 55 chars for a real `/diagnose/ford-pickup/6-7…` URL — looks like a
+  failed live fetch. Check the MCP tool.
+- Links taken from web search carry `?utm_source=openai`. Harmless; strip in the markdown link
+  renderer if it matters for analytics.
+- Web search calls are native to OpenAI and are not stored as `tool_call` parts, so search volume
+  can only be seen in OpenAI usage, not in Mongo.
+
+## 8. Not done (first pass)
 
 - **Backend logs not read.** SSH to the production box was blocked by this session's permission
   rules, so this review used browser timings plus the stored tool calls instead.

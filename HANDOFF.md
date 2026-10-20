@@ -84,7 +84,7 @@ on either number.
 - **Per-character fade-in on streaming text** — explicitly not shipped, asked for more than once.
   `useSmoothedStreamText` paces the reveal rate; it is not a fade. A real glyph-level fade needs an
   AST-level transform on the streamed markdown. Not attempted.
-- **Agent's own copy is stale** — the agent still introduces itself as "Alex from Hot Shot's Secret"
+- ~~Agent's own copy is stale~~ — renamed to "Hotshot Secret AI" in the prompt on 2026-10-20 (REVIEW.md §7).
   and says "Hot Shot's Secret" while the UI says "Hotshot Secret AI." Editable via staff login; left
   alone rather than touching the production record unasked.
 - **Privacy policy** still points at `librechat.ai/privacy-policy`.
