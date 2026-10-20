@@ -15,21 +15,31 @@ Last substantive update: **2026-09-08** (intelligence-mode audit, five fixes, ti
 
 | | State |
 |---|---|
-| Production | `https://hotshotai.thebetterai.com`, LibreChat commit **`0630e0417`** on `main` |
-| MCP server | commit **`9bc187e`** on the **`improving`** branch (NOT `main` — see [MCP server](#mcp-server)) |
-| Live agent | Hotshot Secret AI — 5 intelligence levels, Balanced default, learning enabled |
-| Local tree | **16 files modified, nothing committed** — the intelligence-mode work below |
+| Production | `https://hotshotai.thebetterai.com`, LibreChat commit **`47a10616a`** on `main` (deployed 2026-10-20 23:09 UTC) |
+| MCP server | commit **`0e0cb25`** on the **`improving`** branch (NOT `main` — see [MCP server](#mcp-server)); product data re-scraped 2026-10-20, **133/133 priced** |
+| Live agent | Hotshot Secret AI — 6 levels on GPT-6, **Auto** default (Balanced → Deep), web search limited to `hotshotsecret.com`, learning enabled |
+| Local tree | clean apart from the generated `admin-branding/guest/index.html` |
 | Local app | `http://localhost:6041`, runs against the **production** agent, prompt, MCP and Mongo via SSH tunnel |
 
-**The live intelligence ladder**, saved on the agent record:
+**The live intelligence ladder**, saved on the agent record 2026-10-20 (see [REVIEW.md](./REVIEW.md)):
 
-| Level | Model | Reasoning effort |
-|---|---|---|
-| Fast | `gpt-5.6-luna` | Default (none) |
-| Balanced | `gpt-5.6-terra` | Low |
-| Deep | `gpt-5.6` | Medium |
-| Deeper | `gpt-5.6` | High |
-| Deepest | `gpt-5.6` | Max |
+| Level | Model | Reasoning effort | Live test (tool-calling question) |
+|---|---|---|---|
+| Fast | `gpt-6-luna` | None | 12s, 3 tool calls, OK |
+| Balanced | `gpt-6.1-sol` | Low | 15s, product search + web search, OK |
+| Deep | `gpt-6.1-sol` | Medium | 21s, OK |
+| Deeper | `gpt-6.1-sol` | High | not separately tested |
+| Deepest | `gpt-6.1-sol` | Max | ~45s, OK |
+| Ultra | `gpt-6-astra` | High | 18s, OK — most expensive ($10/$50 per MTok); top tier only |
+
+GPT-6 Astra and GPT-6.1 Sol reject `none`; the editor filters it out and the server normalises it at
+save and run time. **Never point the ladder at a new model family without first widening the
+Responses-API guard** (`RESPONSES_API_MODEL_PATTERN` / `responsesApiRequiredPattern`) — see the
+incident below.
+
+**Production uses LibreChat's default `JWT_SECRET`, `JWT_REFRESH_SECRET`, `CREDS_KEY` and
+`CREDS_IV`** (startup log warnings). These are public values: anyone can mint a valid token. Rotate
+them — it logs everyone out, and `CREDS_KEY`/`CREDS_IV` also encrypt stored credentials, so plan it.
 
 **Unresolved discrepancy worth one minute of checking:** this file has recorded the live prompt at
 **6,636 characters (version 18)** during the MCP work and at **8,112 characters** after the

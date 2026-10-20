@@ -147,7 +147,38 @@ Paste into the instructions (staff UI keeps version history):
   tools lack the fact (e.g. a price), and say the figure came from the live product page.*
 - Rename "Hot Shot's Secret AI" → "Hotshot Secret AI" in the heading and role line.
 
-## 6. Not done
+## 6. Deployed and live-tested — 2026-10-20 23:09–23:25 UTC
+
+LibreChat `47a10616a`, MCP server `0e0cb25`, product data re-scraped (prices **81/134 → 133/133**,
+11 real SKUs, per-size price options). Agent switched to the section 3 ladder plus Ultra; web search
+limited to `hotshotsecret.com` (it was already on, **unrestricted**, before today).
+
+| Level / route | Model (from stored metadata) | Time | Result |
+|---|---|---|---|
+| Fast | `gpt-6-luna` | 12s | FR3 for F-250 with verified 13 qt capacity — tools work on Luna |
+| Balanced | `gpt-6.1-sol` | 15s | Read the live product page via web search, cited it, honest about stock |
+| Deep | `gpt-6.1-sol` | 21s | Consistent EDT/Diesel Extreme routine (the old contradiction is gone) |
+| Deepest | `gpt-6.1-sol` | ~45s | 12 qt Ram 2500 → 48 oz initial / 24 oz maintenance Stiction |
+| Ultra | `gpt-6-astra` | 18s | Firm "don't keep driving", tow conditions |
+| Auto (customer default) | `gpt-6.1-sol`, Deep, `autoEscalated` | 12s | "jerks when it shifts" now escalates (was a documented miss) |
+| Customer price question (pre-switch) | `gpt-5.6-terra` | 4.4s | "$20.49–$540.99 depending on size" |
+
+Payloads live: Stiction search 13,340 → 1,648 chars; symptoms 26,043 → 552 (model passes the
+filters itself). Customers saw only status lines ("Diagnosing symptoms"), no reasoning body. Staff
+session survived a trip to the customer view.
+
+**Still open**
+- **Default secrets in production** (`JWT_SECRET`, `JWT_REFRESH_SECRET`, `CREDS_KEY`, `CREDS_IV`) —
+  anyone can forge a staff token. Highest-priority item now.
+- Web search runs even when the catalogue already has the answer (Deep cited the site on nearly every
+  line) — costs a per-search fee. Add the section 5 prompt rule.
+- The section 5 prompt additions and the "Hot Shot's Secret" rename are not applied.
+- Deeper not separately tested; Fast answered "about 20 oz" FR3 vs Balanced's 19.5 oz earlier
+  (two dosing sources in the data).
+- `list_product_categories` (live sitemap per call) and `recommend_youtube_video` (index rebuilt per
+  call) still take 2–5s each.
+
+## 7. Not done (first pass)
 
 - **Backend logs not read.** SSH to the production box was blocked by this session's permission
   rules, so this review used browser timings plus the stored tool calls instead.
