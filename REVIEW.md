@@ -201,7 +201,22 @@ New findings
 - Web search calls are native to OpenAI and are not stored as `tool_call` parts, so search volume
   can only be seen in OpenAI usage, not in Mongo.
 
-## 8. Not done (first pass)
+## 8. Symptoms, FR3, slow tools — 2026-10-21 (MCP `f7516df`)
+
+- **Symptom details were empty for 32 of 96 symptoms.** Pages store text under heading keys
+  (e.g. `6.7_powerstroke_white_smoke`, `details`), the tool read only `problems`. It now returns every
+  section in page order; URLs match regardless of scheme, `www`, trailing slash or `?utm_source`.
+  The scraper also dropped every bulleted list (the actual causes) — it now keeps `h3`/`h4`/`li`;
+  diagnosis data re-scraped (25 symptoms gained list items). Live: white-smoke details 55 → 3,289
+  chars; the answer lists glow plugs, injectors, fuel quality and the EGR-cooler coolant leak.
+- **FR3 dose.** The live page states **1.5 oz per quart**; the 5/15/42-quart table is rounded.
+  Prompt rule added: calculate from the stated ratio, never scale the example table. Live on Fast:
+  "13 × 1.5 = 19.5 oz" with link, image and price.
+- **Slow tools cached.** Category list 1.3s → 0s after the first call (6h cache, last-good fallback);
+  YouTube recommendations 2.9s → 0.011s (index rebuilt only when `channel_videos.json` changes).
+- MCP tests: 31 passing.
+
+## 9. Not done (first pass)
 
 - **Backend logs not read.** SSH to the production box was blocked by this session's permission
   rules, so this review used browser timings plus the stored tool calls instead.
