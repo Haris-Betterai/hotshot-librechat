@@ -11,20 +11,28 @@ type EmbedOrbProps = {
 };
 
 /** Smallest rendered size that uses the detailed 64px preset. */
-const DETAIL_MIN = 24;
+const DETAIL_MIN = 30;
 const ANIMATE_MIN = 40;
+/** The dotted globe sits inside a dark disc, like the widget launcher. */
+const INSET = 0.8;
 
 function EmbedOrb({ size = 32, className, state = 'searching', paused }: EmbedOrbProps) {
+  const inner = Math.round(size * INSET);
   return (
-    <ThinkingOrb
-      state={state}
-      size={size >= DETAIL_MIN ? 64 : 20}
-      paused={paused ?? size < ANIMATE_MIN}
-      aria-hidden="true"
-      className={className}
-      style={{ width: size, height: size }}
+    <span
+      className={`inline-flex shrink-0 items-center justify-center rounded-full ${className ?? ''}`}
+      style={{ width: size, height: size, background: '#111827' }}
       data-testid="embed-orb"
-    />
+    >
+      <ThinkingOrb
+        state={state}
+        theme="dark"
+        size={inner >= DETAIL_MIN ? 64 : 20}
+        paused={paused ?? size < ANIMATE_MIN}
+        aria-hidden="true"
+        style={{ width: inner, height: inner }}
+      />
+    </span>
   );
 }
 

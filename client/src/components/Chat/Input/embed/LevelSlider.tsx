@@ -8,12 +8,12 @@ type LevelSliderProps = {
   onChange: (index: number) => void;
 };
 
-const THUMB = 24;
+const THUMB = 22;
 
 const position = (fraction: number): string =>
   `calc(${THUMB / 2}px + (100% - ${THUMB}px) * ${fraction})`;
 
-/** Discrete pill slider: level name above, brand-coloured fill up to a white thumb. */
+/** Discrete slider: label and level name above, a thin brand track with a ringed thumb, stop names below. */
 export default function LevelSlider({ names, selectedIndex, onChange }: LevelSliderProps) {
   const localize = useLocalize();
   const trackRef = useRef<HTMLDivElement>(null);
@@ -71,9 +71,13 @@ export default function LevelSlider({ names, selectedIndex, onChange }: LevelSli
     : 'transition-[left,width] duration-150 ease-out motion-reduce:transition-none';
 
   return (
-    <div className="flex flex-col items-center gap-2.5">
+    <div className="flex flex-col gap-1">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-text-secondary">
+        {localize('com_ui_embed_level_label')}
+      </div>
       <div
-        className="text-lg font-semibold leading-tight text-text-primary"
+        className="text-2xl font-bold leading-tight"
+        style={{ color: 'var(--embed-brand, #3b6cf6)' }}
         aria-live="polite"
         aria-atomic="true"
       >
@@ -81,19 +85,24 @@ export default function LevelSlider({ names, selectedIndex, onChange }: LevelSli
       </div>
       <div
         ref={trackRef}
-        className="relative h-[24px] w-full touch-none select-none rounded-full bg-neutral-200 dark:bg-neutral-800"
+        className="relative mt-2 h-[22px] w-full touch-none select-none"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
       >
         <div
-          className={`absolute inset-y-0 left-0 rounded-full ${motion}`}
+          className="absolute inset-x-0 top-1/2 h-2 -translate-y-1/2 rounded-full opacity-15"
+          style={{ background: 'var(--embed-brand, #3b6cf6)' }}
+          aria-hidden="true"
+        />
+        <div
+          className={`absolute left-0 top-1/2 h-2 -translate-y-1/2 rounded-full ${motion}`}
           style={{ width: position(fraction), background: 'var(--embed-brand, #3b6cf6)' }}
           aria-hidden="true"
         />
         {names.map((name, index) =>
-          index === selectedIndex ? null : (
+          index <= selectedIndex ? null : (
             <span
               key={`${name}-${index}`}
               className="pointer-events-none absolute top-1/2 size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/25 dark:bg-white/30"
@@ -112,9 +121,26 @@ export default function LevelSlider({ names, selectedIndex, onChange }: LevelSli
           aria-valuetext={names[selectedIndex]}
           aria-orientation="horizontal"
           onKeyDown={onKeyDown}
-          className={`absolute top-0 size-[24px] -translate-x-1/2 cursor-grab rounded-full bg-white shadow-md ring-1 ring-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--embed-brand,#3b6cf6)] active:cursor-grabbing ${motion}`}
-          style={{ left: position(fraction) }}
+          className={`absolute top-0 size-[22px] -translate-x-1/2 cursor-grab rounded-full border-2 bg-white shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--embed-brand,#3b6cf6)] focus-visible:ring-offset-2 active:cursor-grabbing ${motion}`}
+          style={{ left: position(fraction), borderColor: 'var(--embed-brand, #3b6cf6)' }}
         />
+      </div>
+      <div className="mt-1.5 flex justify-between text-xs" aria-hidden="true">
+        {names.map((name, index) => (
+          <button
+            key={`${name}-${index}-label`}
+            type="button"
+            tabIndex={-1}
+            onClick={() => move(index)}
+            className={
+              index === selectedIndex
+                ? 'font-semibold text-text-primary'
+                : 'text-text-secondary hover:text-text-primary'
+            }
+          >
+            {name}
+          </button>
+        ))}
       </div>
     </div>
   );

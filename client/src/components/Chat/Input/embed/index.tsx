@@ -68,7 +68,7 @@ export default function EmbedLevelControl() {
           collisionPadding={12}
           aria-label={localize('com_ui_embed_level_label')}
           onClick={(event) => event.stopPropagation()}
-          className="z-50 w-56 max-w-[calc(100vw-24px)] rounded-2xl border border-border-light bg-surface-secondary px-4 py-3 shadow-lg outline-none"
+          className="z-50 w-64 max-w-[calc(100vw-24px)] rounded-2xl border border-border-light bg-surface-primary px-5 py-4 shadow-xl outline-none"
         >
           <LevelSlider names={names} selectedIndex={selectedIndex} onChange={apply} />
         </Popover.Content>
