@@ -1528,6 +1528,8 @@ export type TStartupConfig = {
   publicSharedLinksEnabled: boolean;
   /** When true, unauthenticated visitors are auto-signed in as anonymous guests. */
   publicGuestMode?: boolean;
+  /** Embed widget id to show as the floating chat launcher on the public chat pages. */
+  siteWidgetEmbedId?: string;
   /** Whether shared links snapshot conversation files (gates the per-link "share files" checkbox). */
   sharedLinksSnapshotFilesEnabled?: boolean;
   /** Effective default timing for when conversation titles become fetchable.
