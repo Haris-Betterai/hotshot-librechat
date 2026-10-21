@@ -1,6 +1,8 @@
 import React, { memo, useState } from 'react';
 import { AlertCircle } from 'lucide-react';
+import EmbedOrb from '~/components/Chat/EmbedOrb';
 import { icons } from '~/hooks/Endpoint/Icons';
+import { isHotshotOrb } from '~/utils/orb';
 
 export const URLIcon = memo(
   ({
@@ -26,6 +28,14 @@ export const URLIcon = memo(
 
     const DefaultIcon: React.ElementType =
       endpoint && icons[endpoint] ? icons[endpoint]! : icons.unknown!;
+
+    if (isHotshotOrb(iconURL)) {
+      return (
+        <div className={className} style={containerStyle}>
+          <EmbedOrb size={Number(containerStyle.width) || 20} />
+        </div>
+      );
+    }
 
     if (imageError || !iconURL) {
       return (

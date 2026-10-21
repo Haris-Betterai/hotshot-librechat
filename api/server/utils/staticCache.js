@@ -10,7 +10,12 @@ const isEnabled = (value) => value === true || String(value).toLowerCase() === '
 
 /** Files with stable, unhashed names that third-party sites load directly (the embed widget):
  *  cache them, but revalidate on every use so an update reaches visitors at once. */
-const REVALIDATE_FILES = new Set(['embed.js', 'widget-demo.html', 'hotshot-orb.svg']);
+const REVALIDATE_FILES = new Set([
+  'embed.js',
+  'widget-demo.html',
+  'hotshot-orb.svg',
+  'hotshot-orb-launcher.svg',
+]);
 
 /**
  * Creates an Express static middleware with optional precompressed asset serving and configurable caching

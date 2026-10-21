@@ -2,9 +2,11 @@ import { memo, useMemo } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import { ContentTypes } from 'librechat-data-provider';
 import type { Agents, TMessageContentParts } from 'librechat-data-provider';
+import type { OrbState } from 'thinking-orbs';
 import type { TranslationKeys } from '~/hooks';
 import { groupSequentialToolCalls } from '~/utils/groupToolCalls';
 import { ASK_USER_QUESTION } from '~/utils/approval';
+import EmbedOrb from '~/components/Chat/EmbedOrb';
 import { describeStep } from '~/utils/steps';
 import { useLocalize } from '~/hooks';
 import { cn } from '~/utils';
@@ -77,7 +79,20 @@ export function resolveStatus(content: Part[] | undefined): StatusState | null {
   return { kind: 'tool', name: current.name ?? '', args: current.args };
 }
 
-export const StatusText = memo(function StatusText({ text }: { text: string }) {
+/** Which thinking-orb animation matches what the assistant is doing. */
+const ORB_STATE: Record<StatusState['kind'], OrbState> = {
+  thinking: 'breathing',
+  writing: 'composing',
+  tool: 'searching',
+};
+
+export const StatusText = memo(function StatusText({
+  text,
+  kind = 'thinking',
+}: {
+  text: string;
+  kind?: StatusState['kind'];
+}) {
   const reduceMotion = useReducedMotion() === true;
   return (
     <div
@@ -85,12 +100,7 @@ export const StatusText = memo(function StatusText({ text }: { text: string }) {
       aria-live="polite"
       className="my-1.5 flex min-h-[20px] items-center gap-2.5 text-text-secondary"
     >
-      <span className="relative flex size-2.5 shrink-0" aria-hidden="true">
-        {!reduceMotion && (
-          <span className="absolute inline-flex size-full animate-ping rounded-full bg-text-secondary opacity-50" />
-        )}
-        <span className="relative inline-flex size-2.5 rounded-full bg-text-secondary" />
-      </span>
+      <EmbedOrb size={20} state={ORB_STATE[kind]} paused={false} className="shrink-0" />
       <span className={cn('font-medium', !reduceMotion && 'shimmer')}>{text}</span>
     </div>
   );
@@ -124,7 +134,7 @@ const StatusLine = memo(function StatusLine({
   if (!text) {
     return null;
   }
-  return <StatusText text={text} />;
+  return <StatusText text={text} kind={status?.kind} />;
 });
 
 export default StatusLine;

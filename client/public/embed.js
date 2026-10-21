@@ -209,7 +209,7 @@
       img.src = iconUrl;
     } else {
       img.className = 'hse-orb';
-      img.src = origin + '/assets/hotshot-orb.svg';
+      img.src = origin + '/assets/hotshot-orb-launcher.svg';
     }
     icoOpen.appendChild(img);
     var icoClose = document.createElement('span');

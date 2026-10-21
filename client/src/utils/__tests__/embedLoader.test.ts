@@ -69,7 +69,7 @@ describe('embed.js loader', () => {
       document.querySelector<HTMLImageElement>(`${WIDGET} .hse-ico-open img`)?.src;
     mockFetch({ iconUrl: icon, settings: {} });
     await load();
-    expect(src()).toBe(`${ORIGIN}/assets/hotshot-orb.svg`);
+    expect(src()).toBe(`${ORIGIN}/assets/hotshot-orb-launcher.svg`);
 
     root()?.remove();
     document.head.innerHTML = '';
