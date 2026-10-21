@@ -30,7 +30,7 @@ function EmbedOrb({ size = 32, className, state = 'searching', paused }: EmbedOr
         size={inner >= DETAIL_MIN ? 64 : 20}
         paused={paused ?? size < ANIMATE_MIN}
         aria-hidden="true"
-        style={{ width: inner, height: inner }}
+        style={{ width: inner, height: inner, filter: 'brightness(1.6)' }}
       />
     </span>
   );
