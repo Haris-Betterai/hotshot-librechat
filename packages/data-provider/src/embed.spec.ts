@@ -1,5 +1,6 @@
 import type { TEmbedWidgetSettings } from './embed';
 import {
+  MAX_EMBED_LEVELS,
   MAX_EMBED_STARTERS,
   normalizeEmbedWidgetSettings,
   DEFAULT_EMBED_WIDGET_SETTINGS,
@@ -66,6 +67,16 @@ describe('normalizeEmbedWidgetSettings', () => {
     });
     expect(result.starters).toEqual(['Which product fits?', 'a', 'b', 'c']);
     expect(result.starters).toHaveLength(MAX_EMBED_STARTERS);
+  });
+
+  it('dedupes, trims and caps widget levels, falling back to the defaults when empty', () => {
+    expect(
+      normalizeEmbedWidgetSettings({ levels: [' Auto ', 'Deep', 'Deep', 'Ultra', 'Fast'] }).levels,
+    ).toEqual(['Auto', 'Deep', 'Ultra']);
+    expect(normalizeEmbedWidgetSettings({ levels: ['', '  '] }).levels).toEqual(
+      DEFAULT_EMBED_WIDGET_SETTINGS.levels,
+    );
+    expect(MAX_EMBED_LEVELS).toBe(3);
   });
 
   it('drops unknown keys and caps long text', () => {

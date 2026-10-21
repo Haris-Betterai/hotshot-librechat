@@ -32,6 +32,7 @@ const baseWidget: TEmbedWidget = {
   settings: {
     color: '#ff0000',
     theme: 'light',
+    launcherIcon: 'orb',
     title: 'Support',
     subtitle: 'We reply fast',
     position: 'left',
@@ -44,6 +45,7 @@ const baseWidget: TEmbedWidget = {
     teaserText: 'Need help?',
     teaserDelay: 3,
     starters: ['Pricing?'],
+    levels: ['Auto', 'Deep'],
     autoOpenSeconds: 0,
     showIntelligence: false,
     allowVoice: true,

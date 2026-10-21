@@ -26,8 +26,8 @@ beforeEach(() => {
 describe('useEmbedWidgetSettings', () => {
   it('returns defaults while loading', () => {
     const { result } = renderHook(() => useEmbedWidgetSettings());
-    expect(result.current.settings.color).toBe('#2563eb');
-    expect(result.current.settings.showIntelligence).toBe(false);
+    expect(result.current.settings.color).toBe('#3b6cf6');
+    expect(result.current.settings.showIntelligence).toBe(true);
     expect(result.current.isEmbed).toBe(true);
   });
 
@@ -39,7 +39,7 @@ describe('useEmbedWidgetSettings', () => {
     };
     const { result } = renderHook(() => useEmbedWidgetSettings());
     expect(result.current.settings).toMatchObject({
-      color: '#2563eb',
+      color: '#3b6cf6',
       title: 'Hi',
       starters: ['a', 'b'],
       allowFileUpload: true,
@@ -72,9 +72,9 @@ describe('useEmbedAppearance', () => {
 
 describe('getEmbedComposerControls', () => {
   const base = normalizeEmbedWidgetSettings();
-  it('hides intelligence and attach, shows voice, by default in embed', () => {
+  it('hides attach, shows voice, by default in embed', () => {
     expect(getEmbedComposerControls(base, true)).toEqual({
-      intelligence: false,
+      intelligence: true,
       voice: true,
       attach: false,
       poweredBy: false,

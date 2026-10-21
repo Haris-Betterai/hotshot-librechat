@@ -2226,5 +2226,12 @@
   "com_ui_embed_close": "Close chat",
   "com_ui_embed_new_chat": "New chat",
   "com_ui_embed_maximize": "Maximize chat",
-  "com_ui_embed_minimize": "Minimize chat"
+  "com_ui_embed_minimize": "Minimize chat",
+  "com_ui_embed_level_label": "Thinking level",
+  "com_ui_embed_levels": "Slider levels",
+  "com_ui_embed_level": "Level",
+  "com_ui_embed_level_none": "None",
+  "com_ui_embed_launcher_icon": "Launcher icon",
+  "com_ui_embed_launcher_orb": "Orb",
+  "com_ui_embed_launcher_custom": "Uploaded icon"
 }

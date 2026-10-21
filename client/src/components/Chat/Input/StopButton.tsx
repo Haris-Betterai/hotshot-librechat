@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { TooltipAnchor } from '@librechat/client';
 import { useLocalize } from '~/hooks';
-import { cn } from '~/utils';
+import { cn, isEmbedWidget } from '~/utils';
 
 export default memo(function StopButton({
   stop,
@@ -11,6 +11,7 @@ export default memo(function StopButton({
   setShowStopButton: (value: boolean) => void;
 }) {
   const localize = useLocalize();
+  const isEmbed = isEmbedWidget();
 
   return (
     <TooltipAnchor
@@ -20,8 +21,12 @@ export default memo(function StopButton({
           type="button"
           data-testid="stop-generation-button"
           className={cn(
-            'rounded-full bg-text-primary p-1.5 text-text-primary outline-offset-4 transition-all duration-200 disabled:cursor-not-allowed disabled:text-text-secondary disabled:opacity-10',
+            'rounded-full p-1.5 outline-offset-4 transition-all duration-200 disabled:cursor-not-allowed',
+            isEmbed
+              ? 'text-white'
+              : 'bg-text-primary text-text-primary disabled:text-text-secondary disabled:opacity-10',
           )}
+          style={isEmbed ? { backgroundColor: 'var(--embed-brand, #3b6cf6)' } : undefined}
           aria-label={localize('com_nav_stop_generating')}
           onClick={(e) => {
             setShowStopButton(false);
@@ -34,7 +39,7 @@ export default memo(function StopButton({
             viewBox="0 0 24 24"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            className="icon-lg text-surface-primary"
+            className={cn('icon-lg', isEmbed ? 'text-white' : 'text-surface-primary')}
           >
             <rect x="7" y="7" width="10" height="10" rx="1.25" fill="currentColor"></rect>
           </svg>

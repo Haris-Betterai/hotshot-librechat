@@ -23,7 +23,8 @@
 
   /* Mirrors DEFAULT_EMBED_WIDGET_SETTINGS in packages/data-provider/src/embed.ts */
   var DEFAULTS = {
-    color: '#2563eb',
+    color: '#3b6cf6',
+    launcherIcon: 'orb',
     position: 'right',
     offsetX: 20,
     offsetY: 20,
@@ -60,6 +61,7 @@
     var color = typeof s.color === 'string' ? s.color.trim() : '';
     return {
       color: HEX.test(color) ? color : DEFAULTS.color,
+      launcherIcon: s.launcherIcon === 'custom' ? 'custom' : DEFAULTS.launcherIcon,
       position: s.position === 'left' ? 'left' : 'right',
       offsetX: Math.max(0, num(s.offsetX, DEFAULTS.offsetX)),
       offsetY: Math.max(0, num(s.offsetY, DEFAULTS.offsetY)),
@@ -73,31 +75,6 @@
     };
   }
 
-  function readableOn(hex) {
-    var r = parseInt(hex.slice(1, 3), 16) / 255;
-    var g = parseInt(hex.slice(3, 5), 16) / 255;
-    var b = parseInt(hex.slice(5, 7), 16) / 255;
-    function lin(c) {
-      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-    }
-    var lum = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
-    return lum > 0.5 ? '#111827' : '#ffffff';
-  }
-
-  function hexToRgba(hex, alpha) {
-    return (
-      'rgba(' +
-      parseInt(hex.slice(1, 3), 16) +
-      ',' +
-      parseInt(hex.slice(3, 5), 16) +
-      ',' +
-      parseInt(hex.slice(5, 7), 16) +
-      ',' +
-      alpha +
-      ')'
-    );
-  }
-
   function resolveIcon(url) {
     if (typeof url !== 'string' || !url) {
       return null;
@@ -105,14 +82,11 @@
     return /^https?:\/\//i.test(url) ? url : origin + url;
   }
 
-  var CHAT_SVG =
-    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm-2 12H6v-2h12zm0-3H6V9h12zm0-3H6V6h12z"/></svg>';
   var CLOSE_SVG =
     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19l5.6-5.6 5.6 5.6 1.4-1.4-5.6-5.6L19 6.4 17.6 5 12 10.6z"/></svg>';
 
   function buildCss(s) {
     var side = s.position;
-    var fg = readableOn(s.color);
     var id = '#hotshot-embed-widget';
     var w = 'min(' + s.width + 'px,calc(100vw - 24px))';
     var h = 'min(' + s.height + 'px,calc(100vh - 100px))';
@@ -142,25 +116,19 @@
       id +
       ' iframe{display:block;width:100%;height:100%;border:0;background:#fff;}' +
       id +
-      ' .hse-launcher{all:unset;box-sizing:border-box;position:relative;display:block;width:56px;height:56px;border-radius:999px;background:' +
-      s.color +
-      ';color:' +
-      fg +
-      ';cursor:pointer;overflow:hidden;box-shadow:0 8px 24px ' +
-      hexToRgba(s.color, 0.45) +
-      ';transition:transform .2s ease;}' +
+      ' .hse-launcher{all:unset;box-sizing:border-box;position:relative;display:block;width:56px;height:56px;border-radius:999px;background:#111827;color:#fff;cursor:pointer;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.28),0 0 0 1px rgba(255,255,255,.08);transition:transform .2s ease;}' +
       id +
       ' .hse-launcher:hover{transform:scale(1.05);}' +
       id +
-      ' .hse-launcher:focus-visible{outline:2px solid ' +
-      s.color +
-      ';outline-offset:3px;}' +
+      ' .hse-launcher:focus-visible{outline:2px solid #111827;outline-offset:3px;}' +
       id +
       ' .hse-ico{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;transition:opacity .2s ease,transform .2s ease;}' +
       id +
-      ' .hse-ico svg{width:26px;height:26px;fill:currentColor;}' +
+      ' .hse-ico svg{width:22px;height:22px;fill:currentColor;}' +
       id +
       ' .hse-ico img{width:100%;height:100%;object-fit:cover;display:block;}' +
+      id +
+      ' .hse-ico img.hse-orb{width:70%;height:70%;object-fit:contain;}' +
       id +
       ' .hse-ico-close{opacity:0;transform:rotate(-90deg) scale(.6);}' +
       id +
@@ -170,11 +138,7 @@
       id +
       ' .hse-teaser{position:absolute;' +
       side +
-      ':68px;bottom:8px;width:max-content;max-width:min(260px,calc(100vw - 120px));display:flex;align-items:flex-start;gap:6px;padding:10px 8px 10px 14px;border-radius:14px;background:#fff;color:#111827;border:1px solid ' +
-      hexToRgba(s.color, 0.35) +
-      ';border-left:3px solid ' +
-      s.color +
-      ';box-shadow:0 6px 24px rgba(15,23,42,.18);opacity:0;visibility:hidden;transform:translateY(6px);transition:opacity .2s ease,transform .2s ease,visibility 0s linear .2s;}' +
+      ':68px;bottom:8px;width:max-content;max-width:min(260px,calc(100vw - 120px));display:flex;align-items:flex-start;gap:6px;padding:10px 8px 10px 14px;border-radius:14px;background:#fff;color:#111827;border:1px solid #e5e7eb;box-shadow:0 4px 20px rgba(0,0,0,.12);opacity:0;visibility:hidden;transform:translateY(6px);transition:opacity .2s ease,transform .2s ease,visibility 0s linear .2s;}' +
       id +
       ' .hse-teaser.hse-show{opacity:1;visibility:visible;transform:none;transition:opacity .2s ease,transform .2s ease,visibility 0s;}' +
       id +
@@ -184,9 +148,7 @@
       id +
       ' .hse-teaser-text:focus-visible,' +
       id +
-      ' .hse-teaser-x:focus-visible{outline:2px solid ' +
-      s.color +
-      ';outline-offset:2px;border-radius:4px;}' +
+      ' .hse-teaser-x:focus-visible{outline:2px solid #111827;outline-offset:2px;border-radius:4px;}' +
       id +
       ' .hse-teaser-x{all:unset;cursor:pointer;flex:none;width:20px;height:20px;border-radius:999px;display:flex;align-items:center;justify-content:center;color:#6b7280;}' +
       id +
@@ -241,14 +203,15 @@
 
     var icoOpen = document.createElement('span');
     icoOpen.className = 'hse-ico hse-ico-open';
-    if (iconUrl) {
-      var img = document.createElement('img');
-      img.alt = '';
+    var img = document.createElement('img');
+    img.alt = '';
+    if (s.launcherIcon === 'custom' && iconUrl) {
       img.src = iconUrl;
-      icoOpen.appendChild(img);
     } else {
-      icoOpen.innerHTML = CHAT_SVG;
+      img.className = 'hse-orb';
+      img.src = origin + '/assets/hotshot-orb.svg';
     }
+    icoOpen.appendChild(img);
     var icoClose = document.createElement('span');
     icoClose.className = 'hse-ico hse-ico-close';
     icoClose.innerHTML = CLOSE_SVG;

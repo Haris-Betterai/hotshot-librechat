@@ -1,8 +1,13 @@
 import { useState } from 'react';
 import { ChevronDown, Plus, X } from 'lucide-react';
-import { MAX_EMBED_STARTERS } from 'librechat-data-provider';
+import { MAX_EMBED_STARTERS, MAX_EMBED_LEVELS } from 'librechat-data-provider';
 import type { ReactNode } from 'react';
-import type { TEmbedWidgetSettings, TEmbedWidgetTheme } from 'librechat-data-provider';
+import type {
+  TEmbedWidgetSettings,
+  TEmbedWidgetTheme,
+  TEmbedWidgetLauncherIcon,
+} from 'librechat-data-provider';
+import { useAgentLevels } from '~/components/Chat/Input/embed/levels';
 import { useLocalize } from '~/hooks';
 
 export const HEX_COLOR = /^#[0-9a-f]{6}$/i;
@@ -15,6 +20,7 @@ type SettingsProps = {
   onColorText: (value: string) => void;
   onChange: Patch;
   agentName?: string;
+  agentId?: string;
 };
 
 const inputClass =
@@ -151,8 +157,11 @@ export default function EmbedSettingsForm({
   onColorText,
   onChange,
   agentName,
+  agentId,
 }: SettingsProps) {
   const localize = useLocalize();
+  const { levels: agentLevels } = useAgentLevels(agentId);
+  const levelNames = agentLevels.map((level) => level.name);
   const colorValid = HEX_COLOR.test(colorText);
 
   const updateStarter = (index: number, value: string) =>
@@ -160,6 +169,11 @@ export default function EmbedSettingsForm({
 
   const removeStarter = (index: number) =>
     onChange({ starters: draft.starters.filter((_, i) => i !== index) });
+
+  const updateLevel = (index: number, value: string) => {
+    const slots = Array.from({ length: MAX_EMBED_LEVELS }, (_, i) => draft.levels[i] ?? '');
+    onChange({ levels: slots.map((slot, i) => (i === index ? value : slot)).filter(Boolean) });
+  };
 
   return (
     <div className="flex flex-col gap-2">
@@ -198,6 +212,15 @@ export default function EmbedSettingsForm({
             { value: 'auto', label: localize('com_ui_embed_theme_auto') },
           ]}
           onChange={(theme) => onChange({ theme })}
+        />
+        <Segmented<TEmbedWidgetLauncherIcon>
+          label={localize('com_ui_embed_launcher_icon')}
+          value={draft.launcherIcon}
+          options={[
+            { value: 'orb', label: localize('com_ui_embed_launcher_orb') },
+            { value: 'custom', label: localize('com_ui_embed_launcher_custom') },
+          ]}
+          onChange={(launcherIcon) => onChange({ launcherIcon })}
         />
         <Field label={localize('com_ui_embed_title')}>
           <input
@@ -337,6 +360,35 @@ export default function EmbedSettingsForm({
           checked={draft.showIntelligence}
           onChange={(showIntelligence) => onChange({ showIntelligence })}
         />
+        <div
+          className="flex flex-col gap-2"
+          role="group"
+          aria-label={localize('com_ui_embed_levels')}
+        >
+          <span className="text-xs text-text-secondary">{localize('com_ui_embed_levels')}</span>
+          {Array.from({ length: MAX_EMBED_LEVELS }, (_, index) => {
+            const value = draft.levels[index] ?? '';
+            const options =
+              value && !levelNames.includes(value) ? [value, ...levelNames] : levelNames;
+            return (
+              <Field key={index} label={`${localize('com_ui_embed_level')} ${index + 1}`}>
+                <select
+                  className={inputClass}
+                  value={value}
+                  disabled={index > 0 && !draft.levels[index - 1]}
+                  onChange={(event) => updateLevel(index, event.target.value)}
+                >
+                  {index > 0 && <option value="">{localize('com_ui_embed_level_none')}</option>}
+                  {options.map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            );
+          })}
+        </div>
         <Toggle
           label={localize('com_ui_embed_allow_voice')}
           checked={draft.allowVoice}

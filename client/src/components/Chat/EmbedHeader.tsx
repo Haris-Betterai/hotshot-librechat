@@ -2,19 +2,20 @@ import { memo, useCallback, useEffect, useState } from 'react';
 import { QueryKeys } from 'librechat-data-provider';
 import { useQueryClient } from '@tanstack/react-query';
 import { Maximize, Minimize, Plus, X } from 'lucide-react';
+import EmbedOrb from '~/components/Chat/EmbedOrb';
 import useEmbedWidgetSettings from '~/hooks/useEmbedWidgetSettings';
 import { useChatContext, useAgentsMapContext } from '~/Providers';
 import { useLocalize, useNewConvo } from '~/hooks';
 import { clearMessagesCache } from '~/utils';
 
 const buttonClass =
-  'flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-text-secondary hover:bg-surface-tertiary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-primary';
+  'flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100 dark:focus-visible:ring-neutral-100';
 
 const OPEN_OVERLAY =
   '[role="dialog"], [role="menu"], [role="listbox"], [role="alertdialog"], [aria-expanded="true"]';
 
 const closeClass =
-  'flex h-10 min-h-10 w-10 min-w-10 shrink-0 items-center justify-center rounded-md text-text-secondary hover:bg-surface-tertiary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-primary';
+  'flex h-10 min-h-10 w-10 min-w-10 shrink-0 items-center justify-center rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100 dark:focus-visible:ring-neutral-100';
 
 function postToParent(message: { type: string; expanded?: boolean }) {
   try {
@@ -35,7 +36,7 @@ function EmbedHeader() {
 
   const agent = conversation?.agent_id != null ? agentsMap?.[conversation.agent_id] : undefined;
   const title = settings.title || agent?.name || conversation?.title || localize('com_ui_chat');
-  const avatarUrl = iconUrl ?? agent?.avatar?.filepath;
+  const avatarUrl = settings.launcherIcon === 'custom' ? iconUrl : undefined;
   const expandLabel = localize(expanded ? 'com_ui_embed_minimize' : 'com_ui_embed_maximize');
 
   const toggleExpand = useCallback(() => {
@@ -74,10 +75,7 @@ function EmbedHeader() {
   }, [queryClient, newConversation, conversation]);
 
   return (
-    <header
-      className="flex h-[52px] w-full shrink-0 items-center gap-2 border-b border-border-light bg-surface-primary px-3"
-      style={{ borderBottomColor: 'var(--embed-brand)' }}
-    >
+    <header className="flex h-[52px] w-full shrink-0 items-center gap-2 border-b border-neutral-200 bg-white px-3 dark:border-neutral-800 dark:bg-neutral-900">
       {avatarUrl ? (
         <img
           src={avatarUrl}
@@ -86,16 +84,16 @@ function EmbedHeader() {
           data-testid="embed-header-avatar"
         />
       ) : (
-        <span
-          className="h-8 w-8 shrink-0 rounded-full"
-          style={{ backgroundColor: 'var(--embed-brand)' }}
-          aria-hidden="true"
-        />
+        <EmbedOrb size={32} className="shrink-0" />
       )}
       <div className="min-w-0 flex-1 leading-tight">
-        <p className="truncate text-sm font-semibold text-text-primary">{title}</p>
+        <p className="truncate text-sm font-semibold text-neutral-900 dark:text-neutral-50">
+          {title}
+        </p>
         {settings.subtitle && (
-          <p className="truncate text-xs text-text-secondary">{settings.subtitle}</p>
+          <p className="truncate text-xs text-neutral-500 dark:text-neutral-400">
+            {settings.subtitle}
+          </p>
         )}
       </div>
       <button

@@ -243,7 +243,12 @@ export default function EmbedWidget({
 
           {widget?.embedId && (
             <>
-              <EmbedSettingsEditor widget={widget} queryKey={queryKey} agentName={agentName} />
+              <EmbedSettingsEditor
+                widget={widget}
+                queryKey={queryKey}
+                agentName={agentName}
+                agentId={agentId}
+              />
               <label className="text-xs font-semibold text-text-secondary">
                 {localize('com_ui_embed_widget_url')}
               </label>

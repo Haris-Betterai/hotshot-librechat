@@ -41,10 +41,10 @@ import PromptsCommand from './PromptsCommand';
 import SkillsCommand from './SkillsCommand';
 import AudioRecorder from './AudioRecorder';
 import CollapseChat from './CollapseChat';
+import EmbedLevelControl from './embed';
 import Intelligence from './Intelligence';
 import QuoteButton from './QuoteButton';
 import StreamAudio from './StreamAudio';
-import TokenUsage from './TokenUsage';
 import StopButton from './StopButton';
 import SendButton from './SendButton';
 import EditBadges from './EditBadges';
@@ -383,6 +383,16 @@ const ChatForm = memo(function ChatForm({
     [isCollapsed, isMoreThanThreeRows],
   );
 
+  const isCenteredLanding =
+    centerFormOnLanding &&
+    (conversationId == null || conversationId === Constants.NEW_CONVO) &&
+    !isSubmitting &&
+    conversation?.messages?.length === 0;
+  const landingSpacingClass = isCenteredLanding
+    ? 'transition-all duration-200 sm:mb-28'
+    : 'sm:mb-10';
+  const formSpacingClass = isEmbed ? 'mb-0 px-2 pb-2' : landingSpacingClass;
+
   return (
     <form
       onSubmit={methods.handleSubmit((data) => {
@@ -405,14 +415,7 @@ const ChatForm = memo(function ChatForm({
       className={cn(
         'mx-auto flex w-full flex-row gap-3 transition-[max-width] duration-300 sm:px-2',
         maximizeChatSpace || isEmbed ? 'max-w-full' : 'md:max-w-3xl xl:max-w-4xl',
-        isEmbed
-          ? 'mb-0 px-2 pb-2'
-          : centerFormOnLanding &&
-              (conversationId == null || conversationId === Constants.NEW_CONVO) &&
-              !isSubmitting &&
-              conversation?.messages?.length === 0
-            ? 'transition-all duration-200 sm:mb-28'
-            : 'sm:mb-10',
+        formSpacingClass,
       )}
     >
       <div className="relative flex h-full flex-1 items-stretch md:flex-col">
@@ -575,7 +578,7 @@ const ChatForm = memo(function ChatForm({
                 />
                 <div className="mx-auto flex" />
                 {/* <TokenUsage index={index} conversation={conversation} isSubmitting={isSubmitting} /> */}
-                {controls.intelligence && <Intelligence />}
+                {controls.intelligence && (isEmbed ? <EmbedLevelControl /> : <Intelligence />)}
                 {SpeechToText && controls.voice && (
                   <AudioRecorder
                     methods={methods}

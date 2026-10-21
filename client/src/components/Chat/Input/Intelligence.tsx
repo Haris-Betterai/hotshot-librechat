@@ -24,7 +24,7 @@ const purposeLabels = {
   deepest: 'com_ui_intelligence_deepest_purpose',
 } as const;
 
-function resolveLabel(level: IntelligenceOption, localize: Localize): string {
+export function resolveLabel(level: IntelligenceOption, localize: Localize): string {
   if (level.auto) {
     return level.label || localize('com_ui_intelligence_auto');
   }

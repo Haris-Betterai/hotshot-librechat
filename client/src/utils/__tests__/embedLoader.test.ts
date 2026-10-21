@@ -59,8 +59,24 @@ describe('embed.js loader', () => {
     expect(root()).not.toBeNull();
     const styles = css();
     expect(styles).toContain('left:33px');
-    expect(styles).toContain('background:#ffee00');
-    expect(styles).toContain('color:#111827');
+    expect(styles).toContain('background:#111827');
+    expect(styles).not.toContain('#ffee00');
+  });
+
+  it('uses the orb by default and the custom icon only with launcherIcon custom', async () => {
+    const icon = '/uploads/icon.png';
+    const src = (): string | undefined =>
+      document.querySelector<HTMLImageElement>(`${WIDGET} .hse-ico-open img`)?.src;
+    mockFetch({ iconUrl: icon, settings: {} });
+    await load();
+    expect(src()).toBe(`${ORIGIN}/assets/hotshot-orb.svg`);
+
+    root()?.remove();
+    document.head.innerHTML = '';
+    delete (window as unknown as Record<string, unknown>).__hotshotEmbedLoaded;
+    mockFetch({ iconUrl: icon, settings: { launcherIcon: 'custom' } });
+    await load();
+    expect(src()).toBe(`${ORIGIN}${icon}`);
   });
 
   it('uses defaults when the launcher fetch fails', async () => {
@@ -69,7 +85,7 @@ describe('embed.js loader', () => {
     expect(root()).not.toBeNull();
     const styles = css();
     expect(styles).toContain('right:20px');
-    expect(styles).toContain('background:#2563eb');
+    expect(styles).toContain('background:#111827');
     expect(launcher().getAttribute('aria-expanded')).toBe('false');
   });
 

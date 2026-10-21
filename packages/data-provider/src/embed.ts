@@ -1,11 +1,14 @@
 export type TEmbedWidgetPosition = 'right' | 'left';
 export type TEmbedWidgetTheme = 'light' | 'dark' | 'auto';
+export type TEmbedWidgetLauncherIcon = 'orb' | 'custom';
 
 /** Staff-controlled look and behaviour of an embed widget, applied live by `embed.js` and the iframe chat. */
 export type TEmbedWidgetSettings = {
   /** Brand colour as `#rrggbb`; launcher, header accent, send button. */
   color: string;
   theme: TEmbedWidgetTheme;
+  /** `orb` shows the built-in animated AI orb; `custom` uses the uploaded icon when there is one. */
+  launcherIcon: TEmbedWidgetLauncherIcon;
   /** Header title; empty falls back to the agent name. */
   title: string;
   /** Short line under the header title. */
@@ -29,6 +32,12 @@ export type TEmbedWidgetSettings = {
   teaserDelay: number;
   /** Up to {@link MAX_EMBED_STARTERS} tappable starter questions. */
   starters: string[];
+  /**
+   * Agent intelligence level labels offered on the widget's slider, in order (up to
+   * {@link MAX_EMBED_LEVELS}). The first is the default; labels the agent doesn't have are
+   * ignored by the widget and fall back to the agent's default level on the server.
+   */
+  levels: string[];
   /** Open the panel automatically after N seconds; 0 disables. */
   autoOpenSeconds: number;
   showIntelligence: boolean;
@@ -38,12 +47,14 @@ export type TEmbedWidgetSettings = {
 };
 
 export const MAX_EMBED_STARTERS = 4;
+export const MAX_EMBED_LEVELS = 3;
 const MAX_TEXT = 200;
 const MAX_WELCOME = 600;
 
 export const DEFAULT_EMBED_WIDGET_SETTINGS: TEmbedWidgetSettings = {
-  color: '#2563eb',
+  color: '#3b6cf6',
   theme: 'light',
+  launcherIcon: 'orb',
   title: '',
   subtitle: '',
   position: 'right',
@@ -56,8 +67,9 @@ export const DEFAULT_EMBED_WIDGET_SETTINGS: TEmbedWidgetSettings = {
   teaserText: '',
   teaserDelay: 3,
   starters: [],
+  levels: ['Auto', 'Deep', 'Ultra'],
   autoOpenSeconds: 0,
-  showIntelligence: false,
+  showIntelligence: true,
   allowVoice: true,
   allowFileUpload: false,
   showPoweredBy: false,
@@ -99,9 +111,17 @@ export function normalizeEmbedWidgetSettings(
         .slice(0, MAX_EMBED_STARTERS)
     : d.starters;
 
+  const levels = Array.isArray(source.levels)
+    ? source.levels
+        .map((level) => cleanText(level, 40))
+        .filter((level, index, all) => level !== '' && all.indexOf(level) === index)
+        .slice(0, MAX_EMBED_LEVELS)
+    : d.levels;
+
   return {
     color: HEX_COLOR.test(color) ? color : d.color,
     theme: pickEnum(source.theme, ['light', 'dark', 'auto'] as const, d.theme),
+    launcherIcon: pickEnum(source.launcherIcon, ['orb', 'custom'] as const, d.launcherIcon),
     title: cleanText(source.title, 80),
     subtitle: cleanText(source.subtitle, 120),
     position: pickEnum(source.position, ['right', 'left'] as const, d.position),
@@ -114,6 +134,7 @@ export function normalizeEmbedWidgetSettings(
     teaserText: cleanText(source.teaserText, MAX_TEXT),
     teaserDelay: clampNumber(source.teaserDelay, 0, 120, d.teaserDelay),
     starters,
+    levels: levels.length > 0 ? levels : d.levels,
     autoOpenSeconds: clampNumber(source.autoOpenSeconds, 0, 600, d.autoOpenSeconds),
     showIntelligence: pickBoolean(source.showIntelligence, d.showIntelligence),
     allowVoice: pickBoolean(source.allowVoice, d.allowVoice),

@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <style>
+    .glow{transform-origin:50px 50px;animation:breathe 5s ease-in-out infinite}
+    .b1{animation:s1 7s ease-in-out infinite alternate}
+    .b2{animation:s2 9s ease-in-out infinite alternate}
+    .b3{animation:s3 6s ease-in-out infinite alternate}
+    .spin{transform-origin:50px 50px;animation:spin 14s linear infinite}
+    @keyframes breathe{0%,100%{transform:scale(.94);opacity:.55}50%{transform:scale(1.04);opacity:.95}}
+    @keyframes s1{from{transform:translate(-14px,-8px)}to{transform:translate(12px,10px)}}
+    @keyframes s2{from{transform:translate(12px,-10px)}to{transform:translate(-12px,12px)}}
+    @keyframes s3{from{transform:translate(-8px,14px)}to{transform:translate(10px,-12px)}}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @media (prefers-reduced-motion:reduce){.glow,.b1,.b2,.b3,.spin{animation:none}}
+  </style>
+  <defs>
+    <radialGradient id="halo" cx="50%" cy="50%" r="50%">
+      <stop offset=".6" stop-color="#6d7dff" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#6d7dff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="base" cx="38%" cy="30%" r="85%">
+      <stop offset="0" stop-color="#8fb4ff"/>
+      <stop offset=".45" stop-color="#4a5df0"/>
+      <stop offset="1" stop-color="#1e1b7a"/>
+    </radialGradient>
+    <radialGradient id="hi" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#fff" stop-opacity=".95"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="9"/></filter>
+    <clipPath id="clip"><circle cx="50" cy="50" r="38"/></clipPath>
+  </defs>
+  <circle class="glow" cx="50" cy="50" r="49" fill="url(#halo)"/>
+  <circle cx="50" cy="50" r="38" fill="url(#base)"/>
+  <g clip-path="url(#clip)">
+    <g class="spin">
+      <g filter="url(#blur)">
+        <circle class="b1" cx="36" cy="40" r="17" fill="#22d3ee" opacity=".85"/>
+        <circle class="b2" cx="64" cy="44" r="16" fill="#a78bfa" opacity=".8"/>
+        <circle class="b3" cx="50" cy="66" r="16" fill="#38bdf8" opacity=".75"/>
+      </g>
+    </g>
+    <ellipse cx="39" cy="31" rx="17" ry="10" fill="url(#hi)" transform="rotate(-25 39 31)"/>
+  </g>
+  <circle cx="50" cy="50" r="37.5" fill="none" stroke="#fff" stroke-opacity=".25"/>
+</svg>

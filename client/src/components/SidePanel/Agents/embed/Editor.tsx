@@ -12,6 +12,7 @@ type EditorProps = {
   widget: TEmbedWidget;
   queryKey: QueryKey;
   agentName?: string;
+  agentId?: string;
 };
 
 export function diffSettings(
@@ -28,7 +29,7 @@ export function diffSettings(
   }, {});
 }
 
-export default function EmbedSettingsEditor({ widget, queryKey, agentName }: EditorProps) {
+export default function EmbedSettingsEditor({ widget, queryKey, agentName, agentId }: EditorProps) {
   const localize = useLocalize();
   const { showToast } = useToastContext();
   const queryClient = useQueryClient();
@@ -86,6 +87,7 @@ export default function EmbedSettingsEditor({ widget, queryKey, agentName }: Edi
         onColorText={onColorText}
         onChange={onChange}
         agentName={agentName}
+        agentId={agentId}
       />
       <EmbedPreview settings={normalized} agentName={agentName} iconUrl={widget.iconUrl} />
       <div className="flex items-center gap-2">

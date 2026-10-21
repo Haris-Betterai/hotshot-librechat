@@ -13,9 +13,11 @@ type SendButtonProps = {
 const SubmitButton = React.memo(
   forwardRef((props: { disabled: boolean }, ref: React.ForwardedRef<HTMLButtonElement>) => {
     const localize = useLocalize();
-    const brandStyle = isEmbedWidget()
-      ? { backgroundColor: 'var(--embed-brand)', color: '#fff' }
-      : undefined;
+    const isEmbed = isEmbedWidget();
+    const accentStyle =
+      isEmbed && !props.disabled
+        ? { backgroundColor: 'var(--embed-brand, #3b6cf6)', color: '#fff' }
+        : undefined;
     return (
       <TooltipAnchor
         description={localize('com_nav_send_message')}
@@ -26,9 +28,12 @@ const SubmitButton = React.memo(
             id="send-button"
             disabled={props.disabled}
             className={cn(
-              'rounded-full bg-text-primary p-1.5 text-text-primary outline-offset-4 transition-all duration-200 disabled:cursor-not-allowed disabled:text-text-secondary disabled:opacity-10',
+              'rounded-full p-1.5 outline-offset-4 transition-all duration-200 disabled:cursor-not-allowed',
+              isEmbed
+                ? 'bg-neutral-200 text-neutral-400 dark:bg-neutral-700 dark:text-neutral-500'
+                : 'bg-text-primary text-text-primary disabled:text-text-secondary disabled:opacity-10',
             )}
-            style={brandStyle}
+            style={accentStyle}
             data-testid="send-button"
             type="submit"
           >
