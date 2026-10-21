@@ -85,6 +85,7 @@ export default function ProductCard({ block }: { block: TUiProductCard }) {
             rel="noopener noreferrer"
             className={primary.className}
             style={primary.style}
+            data-ui-button=""
           >
             {localize('com_ui_block_view_product')}
             <ExternalLink className="size-3.5" aria-hidden="true" />

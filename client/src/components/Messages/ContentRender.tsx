@@ -5,7 +5,13 @@ import type { TMessage, TMessageContentParts } from 'librechat-data-provider';
 import type { TMessageProps, TMessageIcon, TMessageChatContext } from '~/common';
 import { useGetStartupConfig } from '~/data-provider';
 import { useAttachments, useLocalize, useMessageActions, useContentMetadata } from '~/hooks';
-import { cn, getModelSpec, getMessageAriaLabel, getHeaderPrefixForScreenReader } from '~/utils';
+import {
+  cn,
+  getModelSpec,
+  isEmbedWidget,
+  getMessageAriaLabel,
+  getHeaderPrefixForScreenReader,
+} from '~/utils';
 import MessageModelBadge from '~/components/Chat/Messages/ui/MessageModelBadge';
 import MessageTimestamp from '~/components/Chat/Messages/ui/MessageTimestamp';
 import ContentParts from '~/components/Chat/Messages/Content/ContentParts';
@@ -177,6 +183,8 @@ const ContentRender = memo(function ContentRender({
   };
 
   const isUser = msg.isCreatedByUser === true;
+  /** The widget header already shows the assistant's orb and name. */
+  const isEmbed = isEmbedWidget();
   const assistantLabel = specLabel || messageLabel;
 
   const baseClasses = {
@@ -201,7 +209,7 @@ const ContentRender = memo(function ContentRender({
         isUser && !hasParallelContent && 'justify-end',
       )}
     >
-      {!hasParallelContent && !isUser && (
+      {!hasParallelContent && !isUser && !isEmbed && (
         <div className="relative flex flex-shrink-0 flex-col items-center">
           <div className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full">
             <MessageIcon iconData={iconData} assistant={assistant} agent={agent} />
@@ -222,7 +230,9 @@ const ContentRender = memo(function ContentRender({
           <h2
             className={cn(
               'select-none',
-              isUser ? 'sr-only' : cn('-mt-0.5 mb-1 font-semibold text-text-secondary', fontSize),
+              isUser || isEmbed
+                ? 'sr-only'
+                : cn('-mt-0.5 mb-1 font-semibold text-text-secondary', fontSize),
             )}
           >
             <span className="sr-only">{getHeaderPrefixForScreenReader(msg, localize)}</span>

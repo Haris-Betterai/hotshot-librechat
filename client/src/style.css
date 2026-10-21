@@ -2177,6 +2177,28 @@ html {
   content: none !important;
 }
 
+/* Interactive answer blocks sit inside the markdown body; undo its link and table styling. */
+.ui-block a {
+  text-decoration: none;
+}
+.ui-block a:not([data-ui-button]):hover {
+  text-decoration: underline;
+}
+.ui-block table,
+.ui-block th,
+.ui-block td {
+  border: 0;
+  background-color: transparent;
+}
+.ui-block tbody tr > * {
+  border-top: 1px solid var(--border-light);
+}
+.ui-block th:first-child,
+.ui-block td:first-child {
+  background-color: var(--surface-primary, #fff);
+  color: var(--text-secondary);
+}
+
 .result-streaming > :not(ol):not(ul):not(pre):last-child:after,
 .result-streaming > pre:last-child code:after {
   display: inline-block;

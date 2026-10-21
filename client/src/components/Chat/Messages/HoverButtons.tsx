@@ -121,7 +121,7 @@ const HoverButtons = ({
   isSubmitting,
   message,
   regenerate,
-  handleContinue,
+  handleContinue: _handleContinue,
   latestMessageId,
   isLast,
   handleFeedback,
@@ -156,6 +156,8 @@ const HoverButtons = ({
   }
 
   const { isCreatedByUser, error } = message;
+  /** Only the latest answer keeps its actions pinned; user turns reveal them on hover. */
+  const pinned = isLast && !isCreatedByUser;
 
   if (error === true) {
     return (
@@ -165,7 +167,7 @@ const HoverButtons = ({
             onClick={regenerate}
             title={localize('com_ui_regenerate')}
             icon={<RegenerateIcon size="19" />}
-            isLast={isLast}
+            isLast={pinned}
             dataTestId={isLast ? 'regenerate-generation-button' : undefined}
           />
         )}
@@ -188,7 +190,7 @@ const HoverButtons = ({
       {TextToSpeech && (
         <MessageAudio
           index={index}
-          isLast={isLast}
+          isLast={pinned}
           messageId={message.messageId}
           content={extractMessageContent(message)}
           renderButton={(props) => (
@@ -197,7 +199,7 @@ const HoverButtons = ({
               title={props.title}
               icon={props.icon}
               isActive={props.isActive}
-              isLast={isLast}
+              isLast={pinned}
               dataTestId={isLast && !isCreatedByUser ? 'read-aloud-button' : undefined}
             />
           )}
@@ -211,7 +213,7 @@ const HoverButtons = ({
           isCopied ? localize('com_ui_copied_to_clipboard') : localize('com_ui_copy_to_clipboard')
         }
         icon={isCopied ? <CheckMark className="h-[18px] w-[18px]" /> : <Clipboard size="19" />}
-        isLast={isLast}
+        isLast={pinned}
         className={cn(
           'ml-0 flex items-center gap-1.5 text-xs',
           isSubmitting && isCreatedByUser
@@ -231,14 +233,14 @@ const HoverButtons = ({
           isActive={isEditing}
           isVisible={!hideEditButton}
           isDisabled={hideEditButton}
-          isLast={isLast}
+          isLast={pinned}
           className={isCreatedByUser ? '' : 'active'}
         />
       )}
 
       {/* Feedback Buttons — answers only */}
       {!isCreatedByUser && handleFeedback != null && (
-        <Feedback handleFeedback={handleFeedback} feedback={message.feedback} isLast={isLast} />
+        <Feedback handleFeedback={handleFeedback} feedback={message.feedback} isLast={pinned} />
       )}
 
       {/* Regenerate Button — latest answer only */}
@@ -247,7 +249,7 @@ const HoverButtons = ({
           onClick={regenerate}
           title={localize('com_ui_regenerate')}
           icon={<RegenerateIcon size="19" />}
-          isLast={isLast}
+          isLast={pinned}
           dataTestId={isLast ? 'regenerate-generation-button' : undefined}
         />
       )}
