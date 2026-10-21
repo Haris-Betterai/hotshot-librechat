@@ -13,24 +13,26 @@ type EmbedOrbProps = {
 /** Smallest rendered size that uses the detailed 64px preset. */
 const DETAIL_MIN = 30;
 const ANIMATE_MIN = 40;
-/** The dotted globe sits inside a dark disc, like the widget launcher. */
-const INSET = 0.8;
+/** The globe is drawn slightly larger than its slot so it reads at avatar size. */
+const BLEED = 1.2;
 
+/** Black dots on light surfaces; the library's light ink takes over in dark mode. */
 function EmbedOrb({ size = 32, className, state = 'searching', paused }: EmbedOrbProps) {
-  const inner = Math.round(size * INSET);
+  const drawn = Math.round(size * BLEED);
+  const offset = (size - drawn) / 2;
   return (
     <span
-      className={`inline-flex shrink-0 items-center justify-center rounded-full ${className ?? ''}`}
-      style={{ width: size, height: size, background: '#111827' }}
+      className={`relative inline-block shrink-0 ${className ?? ''}`}
+      style={{ width: size, height: size }}
       data-testid="embed-orb"
     >
       <ThinkingOrb
         state={state}
-        theme="dark"
-        size={inner >= DETAIL_MIN ? 64 : 20}
+        size={drawn >= DETAIL_MIN ? 64 : 20}
         paused={paused ?? size < ANIMATE_MIN}
         aria-hidden="true"
-        style={{ width: inner, height: inner, filter: 'brightness(1.6)' }}
+        className="brightness-[0.2] dark:brightness-100"
+        style={{ position: 'absolute', top: offset, left: offset, width: drawn, height: drawn }}
       />
     </span>
   );
