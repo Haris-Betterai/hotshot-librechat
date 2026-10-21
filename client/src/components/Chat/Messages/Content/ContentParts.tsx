@@ -12,6 +12,7 @@ import { mapAttachments, groupSequentialToolCalls } from '~/utils';
 import { MessageContext, SearchContext } from '~/Providers';
 import PendingSkillCall from './Parts/PendingSkillCall';
 import { EditTextPart, EmptyText } from './Parts';
+import StatusLine from './Parts/Status';
 import ApprovalProvider from './ApprovalContext';
 import MemoryArtifacts from './MemoryArtifacts';
 import ToolCallGroup from './ToolCallGroup';
@@ -421,6 +422,7 @@ const ContentParts = memo(function ContentParts({
             />
           );
         })}
+        {!showEmptyCursor && <StatusLine content={content} isSubmitting={effectiveIsSubmitting} />}
       </SearchContext.Provider>
     </ApprovalProvider>
   );

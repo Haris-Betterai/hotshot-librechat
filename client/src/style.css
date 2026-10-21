@@ -3060,24 +3060,10 @@ html.embed-widget #root {
   --ring-primary: var(--hs-green);
 }
 
-/* Soft brand wash behind the chat column. Two very low-alpha radials — lime
-   from the top-left, amber from the top-right — so the surface has depth
-   without reading as a coloured panel. */
+/* The chat surface is plain white/neutral (ChatGPT style); the old lime and
+   amber wash is intentionally gone so the single accent stays the send button. */
 .hs-brand-wash::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  background:
-    radial-gradient(60rem 32rem at 12% -12%, rgb(141 198 63 / 7%), transparent 60%),
-    radial-gradient(48rem 28rem at 88% -8%, rgb(255 153 0 / 5%), transparent 62%);
-}
-
-.dark .hs-brand-wash::before {
-  background:
-    radial-gradient(60rem 32rem at 12% -12%, rgb(141 198 63 / 11%), transparent 60%),
-    radial-gradient(48rem 28rem at 88% -8%, rgb(255 153 0 / 7%), transparent 62%);
+  content: none;
 }
 
 /* Keep chat content above the wash. */
@@ -3125,6 +3111,62 @@ html.embed-widget #root {
 
 @media (prefers-reduced-motion: reduce) {
   .message-content.result-streaming .stream-glyph {
+    animation: none;
+  }
+}
+
+
+/* ==========================================================================
+   Modern customer chat: type scale + message entrance
+   Scoped to `.message-render` (the live chat rows) so staff pages, the embed
+   widget's own tuning and share views keep their current typography.
+   ========================================================================== */
+.message-render .markdown {
+  line-height: 1.65;
+}
+
+.message-render .markdown h1,
+.message-render .markdown h2,
+.message-render .markdown h3,
+.message-render .markdown h4 {
+  font-size: calc(var(--markdown-font-size, 1rem) * 1.125);
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  margin-top: 1.1rem;
+  margin-bottom: 0.4rem;
+}
+
+.message-render .markdown h1 {
+  font-size: calc(var(--markdown-font-size, 1rem) * 1.25);
+}
+
+.message-render .markdown p {
+  margin-bottom: 0.75rem;
+}
+
+.message-render .user-bubble .markdown p:last-child,
+.message-render .user-bubble p:last-child {
+  margin-bottom: 0;
+}
+
+@keyframes message-appear {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-appear {
+  animation: message-appear 0.24s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .message-appear {
     animation: none;
   }
 }

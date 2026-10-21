@@ -35,6 +35,12 @@ jest.mock('~/hooks', () => ({
   scheduleMessageContentLayoutReconcile: jest.fn(() => jest.fn()),
 }));
 
+let mockShowDetail = true;
+jest.mock('~/hooks/useReasoningDetail', () => ({
+  __esModule: true,
+  default: () => mockShowDetail,
+}));
+
 jest.mock('~/hooks/MCP', () => ({
   useMCPIconMap: () => new Map(),
 }));
@@ -47,6 +53,7 @@ jest.mock('../ToolOutput', () => ({
 }));
 
 jest.mock('lucide-react', () => ({
+  Check: () => <span>{'check'}</span>,
   ChevronDown: () => <span>{'chevron'}</span>,
   Users: () => <span>{'users'}</span>,
   MessageCircleQuestion: () => <span data-testid="question-icon">{'question'}</span>,
@@ -311,5 +318,73 @@ describe('ToolCallGroup image hoisting', () => {
 
     expect(screen.getByRole('button', { name: 'Tools' })).toBeInTheDocument();
     expect(screen.getByTestId('stacked-icons')).toBeInTheDocument();
+  });
+});
+
+describe('ToolCallGroup customer view', () => {
+  const SUFFIX = '_mcp_hotshot-secret-mcp';
+  const mcp = (id: string, name: string, args: Record<string, unknown>, output = 'ok') =>
+    makePart(id, output, `${name}${SUFFIX}`, args);
+  const props = {
+    parts: [
+      { part: mcp('a', 'search_products_by_name', { partial_name: 'Diesel Extreme' }), idx: 0 },
+      {
+        part: mcp('b', 'search_products_by_name', { partial_name: 'Everyday Diesel Treatment' }),
+        idx: 1,
+      },
+      { part: mcp('c', 'search_faqs', {}), idx: 2 },
+    ],
+    isSubmitting: false,
+    isLast: false,
+    lastContentIdx: 2,
+    renderPart: (_p: TMessageContentParts, idx: number) => (
+      <div data-testid={`inner-${idx}`} key={idx} />
+    ),
+  } satisfies React.ComponentProps<typeof ToolCallGroup>;
+
+  beforeEach(() => {
+    mockShowDetail = false;
+  });
+  afterEach(() => {
+    mockShowDetail = true;
+  });
+
+  it('collapses to one calm chip with no stray glyph', () => {
+    const { container } = renderGroup(props);
+    const chip = screen.getByRole('button', { name: 'Checked 3 sources' });
+    expect(chip).toHaveAttribute('aria-expanded', 'false');
+    expect(container.textContent).not.toMatch(/[└⌐┌┐┘⬤●]/);
+    expect(screen.queryByText(/hotshot-secret-mcp/)).not.toBeInTheDocument();
+  });
+
+  it('expands to a deduped, friendly step list instead of raw rows', () => {
+    const { container } = renderGroup(props);
+    fireEvent.click(screen.getByRole('button', { name: 'Checked 3 sources' }));
+    const items = screen.getAllByRole('listitem').map((li) => li.textContent);
+    expect(items).toEqual([
+      'checkLooked up Diesel Extreme and Everyday Diesel Treatment',
+      'checkChecked FAQs',
+    ]);
+    expect(screen.queryByTestId('inner-0')).not.toBeInTheDocument();
+    expect(container.querySelector('.border-l')).toBeNull();
+  });
+
+  it('stays collapsed while tools run', () => {
+    renderGroup({
+      ...props,
+      isSubmitting: true,
+      parts: [...props.parts.slice(0, 2), { part: mcp('c', 'search_faqs', {}, ''), idx: 2 }],
+    });
+    expect(screen.getByRole('button', { name: 'com_ui_using_n_tools' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+  });
+
+  it('keeps raw per-call rows for staff', () => {
+    mockShowDetail = true;
+    renderGroup(props);
+    fireEvent.click(screen.getByRole('button', { name: 'Checked 3 sources' }));
+    expect(screen.getByTestId('inner-0')).toBeInTheDocument();
   });
 });

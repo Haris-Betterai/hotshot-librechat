@@ -658,7 +658,7 @@ modelSpecs:
       description: 'Find the right product, sort out a problem with your vehicle, or check what fits before you buy.'
       default: true
       showOnLanding: true
-      iconURL: '/assets/hotshot-secret-ai.webp'
+      iconURL: '/assets/hotshot-orb.svg'
       conversation_starters:
         - 'Which product fits my vehicle?'
         - 'My engine is running rough'
@@ -667,7 +667,7 @@ modelSpecs:
       preset:
         endpoint: 'agents'
         agent_id: 'agent_nKWTo2vBXJZCNFl57pA6K'
-        iconURL: '/assets/hotshot-secret-ai.webp'
+        iconURL: '/assets/hotshot-orb.svg'
         # endpoint: "DeepSeek"
         # model: "deepseek-v4-flash"
         # endpoint: "agents"
@@ -683,7 +683,7 @@ modelSpecs:
       description: 'Find the right product, sort out a problem with your vehicle, or check what fits before you buy.'
       showOnLanding: true
       showInMenu: false
-      iconURL: '/assets/hotshot-secret-ai.webp'
+      iconURL: '/assets/hotshot-orb.svg'
       conversation_starters:
         - 'Which product fits my vehicle?'
         - 'My engine is running rough'
@@ -692,7 +692,7 @@ modelSpecs:
       preset:
         endpoint: 'agents'
         agent_id: 'agent_nKWTo2vBXJZCNFl57pA6K'
-        iconURL: '/assets/hotshot-secret-ai.webp'
+        iconURL: '/assets/hotshot-orb.svg'
         promptPrefix: |
           You are answering inside a narrow embedded chat widget on a web page,
           not a full-screen chat. Format for that space:

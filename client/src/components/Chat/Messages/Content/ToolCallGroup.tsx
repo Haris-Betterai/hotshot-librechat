@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import { useRecoilValue } from 'recoil';
-import { ChevronDown, MessageCircleQuestion, Users } from 'lucide-react';
+import { Check, ChevronDown, MessageCircleQuestion, Users } from 'lucide-react';
 import { Tools, Constants, ContentTypes, ToolCallTypes } from 'librechat-data-provider';
 import type {
   TAttachment,
@@ -8,11 +8,13 @@ import type {
   Agents,
   FunctionToolCall,
 } from 'librechat-data-provider';
+import type { TranslationKeys } from '~/hooks';
 import type { PartWithIndex } from './ParallelContent';
 import { useLocalize, useExpandCollapse, scheduleMessageContentLayoutReconcile } from '~/hooks';
 import { isBashProgrammaticToolCall } from './routing';
 import { ASK_USER_QUESTION } from '~/utils/approval';
-import { parseToolName } from '~/utils/toolLabels';
+import { describeSteps, isFriendlyTool, type ToolStep } from '~/utils/steps';
+import useReasoningDetail from '~/hooks/useReasoningDetail';
 import { cn, getToolDisplayLabel } from '~/utils';
 import { StackedToolIcons } from './ToolOutput';
 import { useMCPIconMap } from '~/hooks/MCP';
@@ -21,6 +23,7 @@ import store from '~/store';
 
 interface ToolMeta {
   name: string;
+  args?: string | Record<string, unknown>;
   iconName: string;
   hasOutput: boolean;
 }
@@ -45,7 +48,7 @@ function getToolMeta(part: TMessageContentParts): ToolMeta | null {
     const completed = !!tc.output || tc.progress === 1;
     const name = tc.name ?? '';
     const iconName = isBashProgrammaticToolCall(name, tc.args) ? Tools.bash_tool : name;
-    return { name, iconName, hasOutput: completed };
+    return { name, args: tc.args, iconName, hasOutput: completed };
   }
 
   if (toolCall.type === ToolCallTypes.CODE_INTERPRETER) {
@@ -170,15 +173,16 @@ export default function ToolCallGroup({
    *  ("hotshot-secret-mcp"), which tells a customer nothing. Mixed and native
    *  groups keep it, where the tool names are meaningful. */
   const allMcpTools = useMemo(
-    () => toolNames.length > 0 && toolNames.every((name) => parseToolName(name).mcpServer !== ''),
+    () => toolNames.length > 0 && toolNames.every(isFriendlyTool),
     [toolNames],
   );
 
+  const showDetail = useReasoningDetail();
   const autoExpand = useRecoilValue(store.autoExpandTools);
   const autoCollapse = !autoExpand && count >= 2 && allCompleted;
   const initialState = initialExpansionState?.userOverride === true ? initialExpansionState : null;
   const [isExpanded, setIsExpanded] = useState(
-    initialState?.isExpanded ?? (autoExpand || !autoCollapse),
+    initialState?.isExpanded ?? (autoExpand || (showDetail && !autoCollapse)),
   );
   const [userOverride, setUserOverride] = useState(initialState != null);
   const [shouldRenderBody, setShouldRenderBody] = useState(isExpanded);
@@ -257,6 +261,11 @@ export default function ToolCallGroup({
     if (!allCompleted && isSubmitting) {
       return localize('com_ui_using_n_tools', { 0: String(count) });
     }
+    if (allMcpTools) {
+      const key = 'com_ui_checked_n_sources' as TranslationKeys;
+      const out = localize(key, { 0: String(count) });
+      return out === key ? `Checked ${count} sources` : out;
+    }
     return localize('com_ui_tools');
   };
   const groupLabel = resolveGroupLabel();
@@ -271,19 +280,34 @@ export default function ToolCallGroup({
     [toolMetadata, isSubmitting],
   );
 
+  /** Customers see a friendly step list instead of per-call rows; staff keep
+   *  the raw rows (inputs and outputs) behind the expand. */
+  const steps = useMemo(
+    () =>
+      toolMetadata.map(
+        (m): ToolStep => ({ name: m?.name ?? '', args: m?.args, done: !!m?.hasOutput }),
+      ),
+    [toolMetadata],
+  );
+  const showStepList = !showDetail && allMcpTools;
+  const stepLabels = useMemo(
+    () => (showStepList ? describeSteps(steps, localize) : []),
+    [showStepList, steps, localize],
+  );
+
   useEffect(() => {
-    if (hasActiveToolCall && !userOverride) {
+    if (showDetail && hasActiveToolCall && !userOverride) {
       setShouldRenderBody(true);
       setIsExpanded(true);
     }
-  }, [hasActiveToolCall, userOverride]);
+  }, [showDetail, hasActiveToolCall, userOverride]);
 
   return (
     <div
       className={cn(
         'mt-1 overflow-hidden rounded-xl transition-colors duration-150',
         showCardChrome
-          ? 'mb-3 border border-border-light bg-surface-secondary/50'
+          ? 'bg-surface-secondary/50 mb-3 border border-border-light'
           : 'mb-2 w-fit border border-transparent',
       )}
       ref={rootRef}
@@ -293,8 +317,8 @@ export default function ToolCallGroup({
         className={cn(
           'inline-flex items-center gap-2 text-text-secondary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-heavy',
           showCardChrome
-            ? 'w-full px-3 py-2 hover:bg-surface-tertiary/60'
-            : 'rounded-lg px-2 py-1 text-xs opacity-70 hover:bg-surface-tertiary/60 hover:opacity-100',
+            ? 'hover:bg-surface-tertiary/60 w-full px-3 py-2'
+            : 'hover:bg-surface-tertiary/60 rounded-lg px-2 py-1 text-xs opacity-70 hover:opacity-100',
         )}
         onClick={handleToggle}
         aria-expanded={isExpanded}
@@ -341,13 +365,27 @@ export default function ToolCallGroup({
       <div style={expandStyle} onTransitionEnd={handleTransitionEnd} aria-hidden={!isExpanded}>
         {shouldRenderBody && (
           <div className="overflow-hidden" ref={expandRef}>
-            <div className="border-t border-border-light px-3 pb-2 pt-1.5">
-              <div className="ml-2 border-l border-border-medium pl-3.5">
-                {parts.map(({ part, idx }) =>
-                  renderPart(part, idx, isLast && idx === lastContentIdx, handleToolExpand),
-                )}
+            {showStepList ? (
+              <ul className="m-0 list-none space-y-1.5 px-3 pb-2 pt-1.5 text-sm text-text-secondary">
+                {stepLabels.map(({ id, label, done }, i) => (
+                  <li key={`${id}-${i}`} className="flex items-center gap-2">
+                    <Check
+                      className={cn('size-3.5 shrink-0', done ? 'opacity-80' : 'opacity-0')}
+                      aria-hidden="true"
+                    />
+                    <span className={cn(!done && 'shimmer')}>{label}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="border-t border-border-light px-3 pb-2 pt-1.5">
+                <div className="ml-2 border-l border-border-medium pl-3.5">
+                  {parts.map(({ part, idx }) =>
+                    renderPart(part, idx, isLast && idx === lastContentIdx, handleToolExpand),
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
       </div>

@@ -12,7 +12,6 @@ import {
   ImageGen,
   ExecuteCode,
   AgentUpdate,
-  EmptyText,
   Reasoning,
   Summary,
   Text,
@@ -98,16 +97,7 @@ const Part = memo(function Part({
       />
     );
   } else if (part.type === ContentTypes.AGENT_UPDATE) {
-    return (
-      <>
-        <AgentUpdate currentAgentId={part[ContentTypes.AGENT_UPDATE]?.agentId} />
-        {isLast && showCursor && (
-          <Container>
-            <EmptyText />
-          </Container>
-        )}
-      </>
-    );
+    return <AgentUpdate currentAgentId={part[ContentTypes.AGENT_UPDATE]?.agentId} />;
   } else if (part.type === ContentTypes.TEXT) {
     const text = typeof part.text === 'string' ? part.text : part.text?.value;
 
@@ -117,15 +107,15 @@ const Part = memo(function Part({
     if (part.tool_call_ids != null && !text) {
       return null;
     }
+    /** An empty trailing text part is covered by the status line, not a lone dot */
+    if (text.length === 0 && isLast && showCursor) {
+      return null;
+    }
     /** Handle whitespace-only text to avoid layout shift */
     if (text.length > 0 && /^\s*$/.test(text)) {
-      /** Show placeholder for whitespace-only last part during streaming */
+      /** The status line stands in for the last whitespace-only part during streaming */
       if (isLast && showCursor) {
-        return (
-          <Container>
-            <EmptyText />
-          </Container>
-        );
+        return null;
       }
       /** Skip rendering non-last whitespace-only parts to avoid empty Container */
       if (!isLast) {

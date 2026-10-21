@@ -97,7 +97,6 @@ const ChatForm = memo(function ChatForm({
   const automaticPlayback = useRecoilValue(store.automaticPlayback);
   const maximizeChatSpace = useRecoilValue(store.maximizeChatSpace);
   const centerFormOnLanding = useRecoilValue(store.centerFormOnLanding);
-  const isTemporary = useRecoilValue(store.isTemporary);
   const { settings: embedSettings, isEmbed } = useEmbedWidgetSettings();
   const controls = getEmbedComposerControls(embedSettings, isEmbed);
 
@@ -391,7 +390,9 @@ const ChatForm = memo(function ChatForm({
   const landingSpacingClass = isCenteredLanding
     ? 'transition-all duration-200 sm:mb-28'
     : 'sm:mb-10';
-  const formSpacingClass = isEmbed ? 'mb-0 px-2 pb-2' : landingSpacingClass;
+  const formSpacingClass = isEmbed
+    ? 'mb-0 px-2 pb-2'
+    : cn(landingSpacingClass, 'px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-0');
 
   return (
     <form
@@ -414,7 +415,7 @@ const ChatForm = memo(function ChatForm({
       })}
       className={cn(
         'mx-auto flex w-full flex-row gap-3 transition-[max-width] duration-300 sm:px-2',
-        maximizeChatSpace ? 'max-w-full' : 'md:max-w-3xl xl:max-w-4xl',
+        maximizeChatSpace ? 'max-w-full' : 'md:max-w-3xl xl:max-w-3xl',
         formSpacingClass,
       )}
     >
@@ -454,11 +455,16 @@ const ChatForm = memo(function ChatForm({
             <div
               onClick={handleContainerClick}
               className={cn(
-                'relative flex w-full flex-grow flex-col overflow-hidden rounded-t-3xl border pb-4 text-text-primary transition-all duration-200 sm:rounded-3xl sm:pb-0',
-                isTextAreaFocused ? 'shadow-lg' : 'shadow-md',
-                isTemporary
-                  ? 'border-violet-800/60 bg-violet-950/10'
-                  : 'border-border-light bg-surface-chat',
+                'relative flex w-full flex-grow flex-col overflow-hidden border text-text-primary transition-all duration-200',
+                isEmbed
+                  ? 'rounded-t-3xl pb-4 sm:rounded-3xl sm:pb-0'
+                  : 'rounded-3xl border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900',
+                !isEmbed &&
+                  (isTextAreaFocused
+                    ? 'border-neutral-300 shadow-[0_2px_12px_rgba(0,0,0,0.08)] dark:border-neutral-600'
+                    : 'shadow-[0_1px_6px_rgba(0,0,0,0.05)]'),
+                isEmbed && (isTextAreaFocused ? 'shadow-lg' : 'shadow-md'),
+                isEmbed && 'border-border-light bg-surface-chat',
               )}
             >
               <TextareaHeader addedConvo={addedConvo} setAddedConvo={setAddedConvo} />

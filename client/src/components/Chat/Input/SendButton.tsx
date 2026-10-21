@@ -31,14 +31,19 @@ const SubmitButton = React.memo(
               'rounded-full p-1.5 outline-offset-4 transition-all duration-200 disabled:cursor-not-allowed',
               isEmbed
                 ? 'bg-neutral-200 text-neutral-400 dark:bg-neutral-700 dark:text-neutral-500'
-                : 'bg-text-primary text-text-primary disabled:text-text-secondary disabled:opacity-10',
+                : 'bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 disabled:hover:bg-neutral-200 dark:bg-white dark:hover:bg-neutral-200 dark:disabled:bg-neutral-700 dark:disabled:hover:bg-neutral-700',
             )}
             style={accentStyle}
             data-testid="send-button"
             type="submit"
           >
             <span className="" data-state="closed">
-              <SendIcon size={24} />
+              <SendIcon
+                size={24}
+                className={
+                  !isEmbed && props.disabled ? 'text-neutral-400 dark:text-neutral-500' : undefined
+                }
+              />
             </span>
           </button>
         }

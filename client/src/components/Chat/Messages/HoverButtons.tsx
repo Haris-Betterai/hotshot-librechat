@@ -4,6 +4,7 @@ import { EditIcon, Clipboard, CheckMark, RegenerateIcon } from '@librechat/clien
 import type { TConversation, TMessage, TFeedback } from 'librechat-data-provider';
 import { useGenerationsByLatest, useLocalize } from '~/hooks';
 import MessageAudio from './MessageAudio';
+import Feedback from './Feedback';
 import { cn } from '~/utils';
 import store from '~/store';
 
@@ -82,7 +83,7 @@ const HoverButton = memo(
     dataTestId,
   }: HoverButtonProps) => {
     const buttonStyle = cn(
-      'hover-button rounded-lg p-1.5 text-text-secondary-alt',
+      'hover-button rounded-lg p-1.5 text-neutral-500 dark:text-neutral-400',
       'hover:text-text-primary hover:bg-surface-hover',
       'group-hover:visible group-focus-within:visible group-[.final-completion]:visible',
       !isLast &&
@@ -148,11 +149,7 @@ const HoverButtons = ({
     latestMessageId: latestMessageId,
   });
 
-  const {
-    hideEditButton,
-    regenerateEnabled,
-    isEditableEndpoint,
-  } = generationCapabilities;
+  const { hideEditButton, regenerateEnabled, isEditableEndpoint } = generationCapabilities;
 
   if (!conversation) {
     return null;
@@ -239,9 +236,21 @@ const HoverButtons = ({
         />
       )}
 
-      {/* Feedback Buttons — removed: like/dislike hidden for agent responses */}
+      {/* Feedback Buttons — answers only */}
+      {!isCreatedByUser && handleFeedback != null && (
+        <Feedback handleFeedback={handleFeedback} feedback={message.feedback} isLast={isLast} />
+      )}
 
-      {/* Regenerate Button — removed */}
+      {/* Regenerate Button — latest answer only */}
+      {!isCreatedByUser && regenerateEnabled && (
+        <HoverButton
+          onClick={regenerate}
+          title={localize('com_ui_regenerate')}
+          icon={<RegenerateIcon size="19" />}
+          isLast={isLast}
+          dataTestId={isLast ? 'regenerate-generation-button' : undefined}
+        />
+      )}
 
       {/* Continue Button — removed */}
     </div>

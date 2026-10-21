@@ -1,18 +1,9 @@
 import { memo } from 'react';
+import StatusLine from './Status';
 
-/** Streaming cursor placeholder — no bottom margin to match Container's structure and prevent CLS */
+/** Placeholder before any content arrives: the same calm status line, in its "thinking" state. */
 const EmptyTextPart = memo(() => {
-  return (
-    <div className="text-message flex min-h-[20px] flex-col items-start gap-3 overflow-visible">
-      <div className="markdown prose dark:prose-invert light w-full break-words dark:text-gray-100">
-        <div className="absolute">
-          <p className="submitting relative">
-            <span className="result-thinking" />
-          </p>
-        </div>
-      </div>
-    </div>
-  );
+  return <StatusLine content={undefined} isSubmitting={true} />;
 });
 
 export default EmptyTextPart;

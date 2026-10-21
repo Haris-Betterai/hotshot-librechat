@@ -216,7 +216,7 @@ function FeedbackButtons({
 
 function buttonClasses(isActive: boolean, isLast: boolean) {
   return cn(
-    'hover-button rounded-lg p-1.5 text-text-secondary-alt',
+    'hover-button rounded-lg p-1.5 text-neutral-500 dark:text-neutral-400',
     'hover:text-text-primary hover:bg-surface-hover',
     'group-hover:visible group-focus-within:visible group-[.final-completion]:visible',
     !isLast &&

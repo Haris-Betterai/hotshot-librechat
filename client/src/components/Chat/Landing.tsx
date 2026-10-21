@@ -27,7 +27,7 @@ function getTextSizeClass(text: string | undefined | null) {
   }
 
   if (text.length < 40) {
-    return 'text-2xl sm:text-4xl';
+    return 'text-2xl sm:text-3xl';
   }
 
   if (text.length < 70) {
@@ -77,8 +77,7 @@ export default function Landing({ centerFormOnLanding }: { centerFormOnLanding: 
   );
 
   const brandedSpecLabel = modelSpec?.showOnLanding === true ? modelSpec.label : '';
-  const brandedSpecDescription =
-    (modelSpec?.showOnLanding === true && modelSpec.description) || '';
+  const brandedSpecDescription = (modelSpec?.showOnLanding === true && modelSpec.description) || '';
   const name = brandedSpecLabel || entity?.name || '';
   const description =
     (brandedSpecDescription || entity?.description || conversation?.greeting) ?? '';
@@ -177,10 +176,8 @@ export default function Landing({ centerFormOnLanding }: { centerFormOnLanding: 
       className={`flex h-full transform-gpu flex-col items-center justify-center pb-16 transition-all duration-200 ${centerFormOnLanding ? 'max-h-full sm:max-h-0' : 'max-h-full'} ${getDynamicMargin}`}
     >
       <div ref={contentRef} className="flex flex-col items-center gap-0 p-2">
-        <div
-          className={`flex ${textHasMultipleLines ? 'flex-col' : 'flex-col md:flex-row'} items-center justify-center gap-2`}
-        >
-          <div className={`relative size-10 justify-center ${textHasMultipleLines ? 'mb-2' : ''}`}>
+        <div className="flex flex-col items-center justify-center gap-3">
+          <div className="relative size-16 justify-center">
             <ConvoIcon
               agentsMap={agentsMap}
               assistantMap={assistantMap}
@@ -206,7 +203,7 @@ export default function Landing({ centerFormOnLanding }: { centerFormOnLanding: 
               <SplitText
                 key={`split-text-${name}`}
                 text={name}
-                className={`${getTextSizeClass(name)} font-medium text-text-primary`}
+                className={`${getTextSizeClass(name)} font-semibold tracking-tight text-text-primary`}
                 delay={50}
                 textAlign="center"
                 animationFrom={{ opacity: 0, transform: 'translate3d(0,50px,0)' }}
@@ -221,7 +218,7 @@ export default function Landing({ centerFormOnLanding }: { centerFormOnLanding: 
             <SplitText
               key={`split-text-${greetingText}${user?.name ? '-user' : ''}`}
               text={greetingText}
-              className={`${getTextSizeClass(greetingText)} font-medium text-text-primary`}
+              className={`${getTextSizeClass(greetingText)} font-semibold tracking-tight text-text-primary`}
               delay={50}
               textAlign="center"
               animationFrom={{ opacity: 0, transform: 'translate3d(0,50px,0)' }}
@@ -236,11 +233,11 @@ export default function Landing({ centerFormOnLanding }: { centerFormOnLanding: 
         {description &&
           (descriptionIsHTML ? (
             <div
-              className="animate-fadeIn mt-4 flex max-w-md items-center justify-center gap-2 text-center text-sm font-normal text-text-primary [&_img]:inline-block [&_img]:h-4 [&_img]:w-4"
+              className="animate-fadeIn mt-3 flex max-w-md items-center justify-center gap-2 text-center text-base font-normal text-text-secondary [&_img]:inline-block [&_img]:h-4 [&_img]:w-4"
               dangerouslySetInnerHTML={{ __html: sanitizeDescription(description) }}
             />
           ) : (
-            <div className="animate-fadeIn mt-4 max-w-md text-center text-sm font-normal text-text-primary">
+            <div className="animate-fadeIn mt-3 max-w-md text-balance text-center text-base font-normal text-text-secondary">
               {description}
             </div>
           ))}

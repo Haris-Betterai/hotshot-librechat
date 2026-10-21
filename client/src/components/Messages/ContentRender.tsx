@@ -3,8 +3,9 @@ import { useAtomValue } from 'jotai';
 import { useRecoilValue } from 'recoil';
 import type { TMessage, TMessageContentParts } from 'librechat-data-provider';
 import type { TMessageProps, TMessageIcon, TMessageChatContext } from '~/common';
+import { useGetStartupConfig } from '~/data-provider';
 import { useAttachments, useLocalize, useMessageActions, useContentMetadata } from '~/hooks';
-import { cn, getHeaderPrefixForScreenReader, getMessageAriaLabel } from '~/utils';
+import { cn, getModelSpec, getMessageAriaLabel, getHeaderPrefixForScreenReader } from '~/utils';
 import MessageModelBadge from '~/components/Chat/Messages/ui/MessageModelBadge';
 import MessageTimestamp from '~/components/Chat/Messages/ui/MessageTimestamp';
 import ContentParts from '~/components/Chat/Messages/Content/ContentParts';
@@ -125,6 +126,11 @@ const ContentRender = memo(function ContentRender({
     chatContext,
   });
   const fontSize = useAtomValue(fontSizeAtom);
+  const { data: startupConfig } = useGetStartupConfig();
+  const specLabel = useMemo(
+    () => getModelSpec({ specName: conversation?.spec, startupConfig })?.label,
+    [conversation?.spec, startupConfig],
+  );
   const maximizeChatSpace = useRecoilValue(store.maximizeChatSpace);
 
   const handleRegenerateMessage = useCallback(() => regenerateMessage(), [regenerateMessage]);
@@ -167,11 +173,15 @@ const ContentRender = memo(function ContentRender({
     if (hasParallelContent) {
       return 'md:max-w-[58rem] xl:max-w-[70rem]';
     }
-    return 'md:max-w-[47rem] xl:max-w-[55rem]';
+    return 'md:max-w-[47.5rem] xl:max-w-[47.5rem]';
   };
 
+  const isUser = msg.isCreatedByUser === true;
+  const assistantLabel = specLabel || messageLabel;
+
   const baseClasses = {
-    common: 'group mx-auto flex flex-1 gap-3 transition-all duration-300 transform-gpu ',
+    common:
+      'message-appear group mx-auto flex flex-1 gap-3 px-3 transition-all duration-300 transform-gpu md:px-0',
     chat: getChatWidthClass(),
   };
 
@@ -188,9 +198,10 @@ const ContentRender = memo(function ContentRender({
         baseClasses.chat,
         conditionalClasses.focus,
         'message-render',
+        isUser && !hasParallelContent && 'justify-end',
       )}
     >
-      {!hasParallelContent && (
+      {!hasParallelContent && !isUser && (
         <div className="relative flex flex-shrink-0 flex-col items-center">
           <div className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full">
             <MessageIcon iconData={iconData} assistant={assistant} agent={agent} />
@@ -201,21 +212,36 @@ const ContentRender = memo(function ContentRender({
       <div
         className={cn(
           'relative flex flex-col',
-          hasParallelContent ? 'w-full' : 'w-11/12',
-          msg.isCreatedByUser ? 'user-turn' : 'agent-turn',
+          hasParallelContent && 'w-full',
+          !hasParallelContent && isUser && (edit ? 'w-full' : 'max-w-[85%] items-end'),
+          !hasParallelContent && !isUser && 'min-w-0 flex-1',
+          isUser ? 'user-turn' : 'agent-turn',
         )}
       >
         {!hasParallelContent && (
-          <h2 className={cn('select-none font-semibold', fontSize)}>
+          <h2
+            className={cn(
+              'select-none',
+              isUser ? 'sr-only' : cn('-mt-0.5 mb-1 font-semibold text-text-secondary', fontSize),
+            )}
+          >
             <span className="sr-only">{getHeaderPrefixForScreenReader(msg, localize)}</span>
-            {messageLabel}
-            <MessageTimestamp value={msg.createdAt ?? msg.clientTimestamp} />
-            {msg.isCreatedByUser !== true && <MessageModelBadge message={msg} />}
+            {isUser ? messageLabel : assistantLabel}
+            {!isUser && <MessageTimestamp value={msg.createdAt ?? msg.clientTimestamp} />}
+            {!isUser && <MessageModelBadge message={msg} />}
           </h2>
         )}
 
-        <div className="flex flex-col gap-1">
-          <div className="flex min-h-[20px] max-w-full flex-grow flex-col gap-0">
+        <div className={cn('flex flex-col gap-1', isUser && !edit && 'items-end')}>
+          <div
+            className={cn(
+              'flex min-h-[20px] max-w-full flex-grow flex-col gap-0',
+              isUser &&
+                !edit &&
+                !hasParallelContent &&
+                'user-bubble rounded-3xl bg-neutral-100 px-4 py-2.5 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-50',
+            )}
+          >
             <ContentParts
               edit={edit}
               isLast={isLast}
@@ -237,7 +263,7 @@ const ContentRender = memo(function ContentRender({
           {hasNoChildren && isSubmitting ? (
             <PlaceholderRow />
           ) : (
-            <SubRow classes="text-xs">
+            <SubRow classes={cn('text-xs', isUser && 'justify-end')}>
               <SiblingSwitch
                 siblingIdx={siblingIdx}
                 siblingCount={siblingCount}

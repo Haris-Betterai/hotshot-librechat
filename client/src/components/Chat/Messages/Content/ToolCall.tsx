@@ -11,7 +11,7 @@ import {
 import type { TAttachment } from 'librechat-data-provider';
 import { useLocalize, useProgress, useExpandCollapse } from '~/hooks';
 import { ToolIcon, getToolIconType, isError } from './ToolOutput';
-import { humanizeMcpToolName } from '~/utils/toolLabels';
+import { describeStep } from '~/utils/steps';
 import { useMCPIconMap } from '~/hooks/MCP';
 import { AttachmentGroup } from './Parts';
 import ToolCallInfo from './ToolCallInfo';
@@ -116,10 +116,13 @@ export default function ToolCall({
   }, [name, parsedAuthUrl]);
 
   /** MCP tool ids are server-defined snake_case (`get_all_fluid_capacities`);
-   *  show a readable noun phrase instead of the raw id. */
-  const mcpDisplayName = useMemo(
-    () => (isNamedMcpTool ? humanizeMcpToolName(function_name) : ''),
-    [isNamedMcpTool, function_name],
+   *  show a friendly, specific sentence ("Checked fluid capacity for 2021 F-250"). */
+  const stepLabels = useMemo(
+    () => ({
+      active: isNamedMcpTool ? describeStep({ name, args: _args, done: false }, localize) : '',
+      done: isNamedMcpTool ? describeStep({ name, args: _args, done: true }, localize) : '',
+    }),
+    [isNamedMcpTool, name, _args, localize],
   );
 
   const toolIconType = useMemo(() => getToolIconType(name), [name]);
@@ -211,22 +214,22 @@ export default function ToolCall({
   }, [isNamedMcpTool, isMCPToolCall, mcpServerName, domain, localize]);
 
   const inProgressText = useMemo(() => {
-    if (mcpDisplayName) {
-      return localize('com_ui_tool_looking_up', { 0: mcpDisplayName });
+    if (stepLabels.active) {
+      return stepLabels.active;
     }
     if (function_name) {
       return localize('com_assistants_running_var', { 0: function_name });
     }
     return localize('com_assistants_running_action');
-  }, [mcpDisplayName, function_name, localize]);
+  }, [stepLabels, function_name, localize]);
 
   const getFinishedText = () => {
     if (cancelled) {
       return localize('com_ui_cancelled');
     }
     if (isMCPToolCall === true) {
-      if (mcpDisplayName) {
-        return localize('com_ui_tool_checked', { 0: mcpDisplayName });
+      if (stepLabels.done) {
+        return stepLabels.done;
       }
       return localize('com_assistants_completed_function', { 0: function_name });
     }
@@ -280,7 +283,7 @@ export default function ToolCall({
       <div style={expandStyle}>
         <div className="overflow-hidden" ref={expandRef}>
           {hasInfo && (
-            <div className="my-1.5 overflow-hidden rounded-lg bg-surface-tertiary/60">
+            <div className="bg-surface-tertiary/60 my-1.5 overflow-hidden rounded-lg">
               <ToolCallInfo input={args ?? ''} output={output} attachments={attachments} />
             </div>
           )}

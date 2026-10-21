@@ -1,0 +1,93 @@
+import React from 'react';
+import { Check } from 'lucide-react';
+import type { TUiComparison } from 'librechat-data-provider';
+import { CARD_CLASS, LINK_CLASS } from './shared';
+import { useLocalize } from '~/hooks';
+import { cn } from '~/utils';
+
+const STICKY_CELL = 'sticky left-0 z-10 bg-white dark:bg-neutral-900';
+
+export default function Comparison({ block }: { block: TUiComparison }) {
+  const localize = useLocalize();
+
+  return (
+    <div className={cn(CARD_CLASS, 'overflow-hidden p-0 sm:p-0')}>
+      {block.title && (
+        <h3 className="px-3 pb-1 pt-3 text-base font-semibold sm:px-4">{block.title}</h3>
+      )}
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[420px] border-collapse text-left">
+          <thead>
+            <tr className="border-b border-neutral-200 dark:border-neutral-700">
+              <th scope="col" className={cn(STICKY_CELL, 'w-28 px-3 py-3 sm:px-4')}>
+                <span className="sr-only">{localize('com_ui_block_compare_feature')}</span>
+              </th>
+              {block.products.map((product) => (
+                <th key={product.name} scope="col" className="px-3 py-3 align-top font-medium">
+                  <div className="flex items-start gap-2">
+                    {product.image && (
+                      <img
+                        src={product.image}
+                        alt=""
+                        loading="lazy"
+                        className="size-10 shrink-0 rounded-lg bg-white object-contain"
+                      />
+                    )}
+                    <div className="min-w-0">
+                      {product.url ? (
+                        <a
+                          href={product.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={LINK_CLASS}
+                        >
+                          {product.name}
+                        </a>
+                      ) : (
+                        <span>{product.name}</span>
+                      )}
+                      {product.price && (
+                        <div className="text-xs font-normal text-neutral-500 dark:text-neutral-400">
+                          {product.price}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {block.rows.map((row) => (
+              <tr
+                key={row.label}
+                className="border-b border-neutral-200 last:border-b-0 dark:border-neutral-700"
+              >
+                <th
+                  scope="row"
+                  className={cn(
+                    STICKY_CELL,
+                    'px-3 py-2.5 text-xs font-medium text-neutral-500 dark:text-neutral-400 sm:px-4',
+                  )}
+                >
+                  {row.label}
+                </th>
+                {row.values.map((value, index) => (
+                  <td key={`${row.label}-${index}`} className="px-3 py-2.5 align-top">
+                    {value}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {block.verdict && (
+        <p className="flex items-start gap-2 border-t border-neutral-200 bg-neutral-50 px-3 py-3 font-medium dark:border-neutral-700 dark:bg-neutral-800 sm:px-4">
+          <Check className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <span>{block.verdict}</span>
+        </p>
+      )}
+    </div>
+  );
+}

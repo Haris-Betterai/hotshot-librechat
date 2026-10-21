@@ -14,8 +14,10 @@ import {
 import { Citation, CompositeCitation, HighlightedText } from '~/components/Web/Citation';
 import { Artifact, artifactPlugin } from '~/components/Artifacts/Artifact';
 import { code, a, p, img, table } from './MarkdownComponents';
+import { UiAwarePre } from './UiBlocks/pre';
 import { langSubset, remarkApproxTilde } from '~/utils';
 import { unicodeCitation } from '~/components/Web';
+import { remarkSources } from './sources';
 
 /**
  * Single source of truth for the markdown rendering pipeline, shared by the
@@ -45,6 +47,7 @@ export const getRemarkPlugins = (): PluggableList => {
       [remarkMath, { singleDollarTextMath: false }],
       unicodeCitation,
       mcpUIResourcePlugin,
+      remarkSources,
     ];
   }
   return remarkPluginsCache;
@@ -64,6 +67,7 @@ export const getMarkdownComponents = (): { [nodeType: string]: ElementType } => 
   if (markdownComponentsCache === null) {
     markdownComponentsCache = {
       code,
+      pre: UiAwarePre,
       a,
       p,
       img,

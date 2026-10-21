@@ -1,4 +1,5 @@
 import React, { memo, useMemo, useRef, useEffect } from 'react';
+import { Link2 } from 'lucide-react';
 import { useRecoilValue } from 'recoil';
 import { useToastContext } from '@librechat/client';
 import { PermissionTypes, Permissions, apiBaseUrl } from 'librechat-data-provider';
@@ -7,8 +8,11 @@ import { handleDoubleClick, triggerDownload, cn } from '~/utils';
 import CodeBlock from '~/components/Messages/Content/CodeBlock';
 import useHasAccess from '~/hooks/Roles/useHasAccess';
 import { useFileDownload } from '~/data-provider';
-import { useCodeBlockContext } from '~/Providers';
+import { useCodeBlockContext, useMessageContext } from '~/Providers';
+import { hasUiBlockClass, nodeText } from './UiBlocks/pre';
+import UiBlock from './UiBlocks';
 import { useLocalize } from '~/hooks';
+import { getSourceHost, stripTrackingParams } from './sources';
 import store from '~/store';
 
 type TCodeProps = {
@@ -39,16 +43,20 @@ export const code: React.ElementType = memo(function MarkdownCode({
   const lang = match && match[1];
   const isMath = lang === 'math';
   const isMermaid = lang === 'mermaid';
+  const isUiBlock = hasUiBlockClass(className);
   const isSingleLine = isSingleLineCode(children);
+  const { isSubmitting = false } = useMessageContext();
 
   const { getNextIndex, resetCounter } = useCodeBlockContext();
-  const blockIndex = useRef(getNextIndex(isMath || isMermaid || isSingleLine)).current;
+  const blockIndex = useRef(getNextIndex(isMath || isMermaid || isSingleLine || isUiBlock)).current;
 
   useEffect(() => {
     resetCounter();
   }, [children, resetCounter]);
 
-  if (isMath) {
+  if (isUiBlock) {
+    return <UiBlock source={nodeText(children)} isStreaming={isSubmitting} />;
+  } else if (isMath) {
     return <>{children}</>;
   } else if (isMermaid) {
     const content = typeof children === 'string' ? children : String(children);
@@ -105,6 +113,19 @@ type TAnchorProps = {
   children: React.ReactNode;
 };
 
+const getPlainText = (children: React.ReactNode): string => {
+  if (typeof children === 'string') {
+    return children;
+  }
+  if (Array.isArray(children) && children.length === 1 && typeof children[0] === 'string') {
+    return children[0];
+  }
+  return '';
+};
+
+const SOURCE_PILL_CLASS =
+  'mx-0.5 inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5 align-baseline text-xs font-normal leading-4 text-neutral-600 !no-underline transition-colors hover:bg-neutral-200 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-primary dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700 dark:hover:text-neutral-50';
+
 export const a: React.ElementType = memo(function MarkdownAnchor({ href, children }: TAnchorProps) {
   const user = useRecoilValue(store.user);
   const { showToast } = useToastContext();
@@ -131,8 +152,24 @@ export const a: React.ElementType = memo(function MarkdownAnchor({ href, childre
   const props: { target?: string; onClick?: React.MouseEventHandler } = { target: '_blank' };
 
   if (!file_id || !filename) {
+    const cleanHref = stripTrackingParams(href);
+    const sourceHost = getSourceHost(cleanHref, getPlainText(children));
+    if (sourceHost != null) {
+      return (
+        <a
+          href={cleanHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          data-source-pill=""
+          className={SOURCE_PILL_CLASS}
+        >
+          <Link2 className="size-3 shrink-0" aria-hidden="true" />
+          {sourceHost}
+        </a>
+      );
+    }
     return (
-      <a href={href} {...props}>
+      <a href={cleanHref} {...props}>
         {children}
       </a>
     );
@@ -240,7 +277,7 @@ export const img: React.ElementType = memo(function MarkdownImage({
       title={title}
       loading="lazy"
       className={cn(
-        'block h-auto max-h-64 w-auto max-w-full rounded-lg border border-border-light bg-surface-secondary object-contain',
+        '!m-0 block h-auto max-h-40 w-auto max-w-full rounded-xl border border-black/10 bg-white dark:border-white/10',
         className,
       )}
       style={style}
@@ -248,7 +285,7 @@ export const img: React.ElementType = memo(function MarkdownImage({
   );
 
   if (!fixedSrc || fixedSrc.startsWith('data:')) {
-    return <span className="my-1 block">{image}</span>;
+    return <span className="m-1 inline-block align-top leading-none">{image}</span>;
   }
 
   return (
@@ -258,7 +295,7 @@ export const img: React.ElementType = memo(function MarkdownImage({
       rel="noopener noreferrer"
       title={title || alt}
       aria-label={alt ? `${alt} (opens full size)` : 'Open image full size'}
-      className="my-1 inline-block rounded-lg align-top leading-none transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-primary"
+      className="my-1 mr-2 inline-block rounded-xl align-top leading-none transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-primary"
     >
       {image}
     </a>

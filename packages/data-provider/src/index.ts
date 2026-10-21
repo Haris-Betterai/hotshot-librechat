@@ -16,6 +16,7 @@ export * from './models';
 export * from './intelligence';
 export * from './websearch';
 export * from './embed';
+export * from './uiblocks';
 /* mcp */
 export * from './mcp';
 /* RBAC */
