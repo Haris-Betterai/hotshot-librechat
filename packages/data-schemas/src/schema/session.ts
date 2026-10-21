@@ -6,6 +6,13 @@ const sessionSchema: Schema<ISession> = new Schema({
     type: String,
     required: true,
   },
+  /** Hash of the token this session issued before the latest rotation, accepted for a short grace window. */
+  previousRefreshTokenHash: {
+    type: String,
+  },
+  rotatedAt: {
+    type: Date,
+  },
   expiration: {
     type: Date,
     required: true,

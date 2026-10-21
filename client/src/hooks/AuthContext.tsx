@@ -55,6 +55,17 @@ if (import.meta.hot) {
 const SESSION_CONFLICT_STATUS = 409;
 const MAX_CONFLICT_RETRIES = 3;
 const CONFLICT_RETRY_DELAY_MS = 400;
+/** Backoff for refreshes that failed because the server was unreachable (deploys, restarts). */
+const TRANSIENT_RETRY_DELAYS_MS = [2000, 5000, 10000, 20000, 30000];
+
+/** No response, a timeout, or a 5xx: the session may be fine, the server just didn't answer. */
+export function isTransientAuthError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) {
+    return false;
+  }
+  const status = (error as { response?: { status?: number } }).response?.status;
+  return status == null || status >= 500;
+}
 
 /** Axios-style errors carry the HTTP status on `response`. */
 export function isSessionConflict(error: unknown): boolean {
@@ -99,6 +110,7 @@ const AuthContextProvider = ({
   const currentEmbedIdRef = useRef<string | null>(null);
   const refreshHaltedRef = useRef(false);
   const conflictRetriesRef = useRef(0);
+  const transientRetriesRef = useRef(0);
   const silentRefreshRef = useRef<() => void>(() => undefined);
   const userRef = useRef<t.TUser | undefined>(undefined);
 
@@ -132,6 +144,7 @@ const AuthContextProvider = ({
           refreshInFlightRef.current = false;
           guestInFlightRef.current = false;
           conflictRetriesRef.current = 0;
+          transientRetriesRef.current = 0;
         }
 
         const isGuest = user?.provider === 'anonymous';
@@ -382,6 +395,16 @@ const AuthContextProvider = ({
     return true;
   }, []);
 
+  /** Retry a refresh the server never answered instead of falling back to a guest session. */
+  const retryRefreshAfterTransientError = useCallback(() => {
+    const attempt = transientRetriesRef.current;
+    const delay =
+      TRANSIENT_RETRY_DELAYS_MS[Math.min(attempt, TRANSIENT_RETRY_DELAYS_MS.length - 1)];
+    transientRetriesRef.current = attempt + 1;
+    refreshHaltedRef.current = false;
+    window.setTimeout(() => silentRefreshRef.current(), delay);
+  }, []);
+
   const startGuestSession = useCallback(() => {
     /** Never replace a signed-in (non-guest) session with a guest one. */
     const currentUser = userRef.current;
@@ -527,6 +550,10 @@ const AuthContextProvider = ({
         if (isSessionConflict(error) && retryRefreshAfterConflict()) {
           return;
         }
+        if (isTransientAuthError(error)) {
+          retryRefreshAfterTransientError();
+          return;
+        }
         refreshHaltedRef.current = true;
         startGuestSession();
       },
@@ -537,6 +564,7 @@ const AuthContextProvider = ({
     setUserContext,
     startGuestSession,
     retryRefreshAfterConflict,
+    retryRefreshAfterTransientError,
   ]);
   silentRefreshRef.current = silentRefresh;
 

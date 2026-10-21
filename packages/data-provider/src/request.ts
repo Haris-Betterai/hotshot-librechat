@@ -249,6 +249,15 @@ const startAuthRecovery = (retryRefresh?: boolean) => {
   return state.refreshPromise;
 };
 
+/** Refresh failures that say nothing about the session itself. */
+export const isRecoverableRefreshError = (error: unknown): boolean => {
+  if (typeof error !== 'object' || error === null) {
+    return false;
+  }
+  const status = (error as { response?: { status?: number } }).response?.status;
+  return status == null || status === 409 || status >= 500;
+};
+
 const redirectToLoginOnce = () => {
   if (isAuthRedirectInProgress()) {
     return;
@@ -386,11 +395,13 @@ if (typeof window !== 'undefined') {
 
           redirectToLoginOnce();
           return Promise.reject(error);
-        } catch {
-          /** A rejected refresh (stale/invalid session → 401/403) must route to
-           *  login just like an empty-token refresh, otherwise the original 401
-           *  surfaces to the caller (e.g. the share fork button) with no redirect. */
-          redirectToLoginOnce();
+        } catch (refreshError) {
+          /** Only a refresh the server actually rejected (stale/invalid session → 401/403)
+           *  routes to login; a 409 rotation race, a 5xx or no response (deploys, restarts)
+           *  leaves the session in place so the next refresh can recover it. */
+          if (!isRecoverableRefreshError(refreshError)) {
+            redirectToLoginOnce();
+          }
           return Promise.reject(error);
         }
       }

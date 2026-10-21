@@ -15,6 +15,13 @@ export class SessionError extends Error {
 /** Default refresh token expiry: 7 days in milliseconds */
 export const DEFAULT_REFRESH_TOKEN_EXPIRY: number = 1000 * 60 * 60 * 24 * 7;
 
+/**
+ * How long the token issued before the latest rotation stays valid. Rotation happens on every
+ * refresh, so a response lost to a restart or a concurrent refresh would otherwise leave the
+ * browser holding a token the server no longer accepts, and the user is signed out.
+ */
+export const REFRESH_TOKEN_ROTATION_GRACE_MS: number = 1000 * 60 * 10;
+
 // Factory function that takes mongoose instance and returns the methods
 export function createSessionMethods(mongoose: typeof import('mongoose')): {
   findSession: (
@@ -84,7 +91,13 @@ export function createSessionMethods(mongoose: typeof import('mongoose')): {
 
       if (params.refreshToken) {
         const tokenHash = await hashToken(params.refreshToken);
-        query.refreshTokenHash = tokenHash;
+        query.$or = [
+          { refreshTokenHash: tokenHash },
+          {
+            previousRefreshTokenHash: tokenHash,
+            rotatedAt: { $gt: new Date(Date.now() - REFRESH_TOKEN_ROTATION_GRACE_MS) },
+          },
+        ];
       }
 
       if (params.userId) {
@@ -249,6 +262,10 @@ export function createSessionMethods(mongoose: typeof import('mongoose')): {
         expirationTime: Math.floor((expiresIn - Date.now()) / 1000),
       });
 
+      if (session.refreshTokenHash) {
+        session.previousRefreshTokenHash = session.refreshTokenHash;
+        session.rotatedAt = new Date();
+      }
       session.refreshTokenHash = await hashToken(refreshToken);
       await session.save();
 

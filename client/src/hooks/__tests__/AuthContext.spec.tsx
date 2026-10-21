@@ -554,11 +554,11 @@ describe('AuthContextProvider — silentRefresh subdirectory deployment', () => 
 
     const [, refreshOptions] = mockRefreshMutate.mock.calls[0] as [
       unknown,
-      { onError: (error: Error) => void },
+      { onError: (error: unknown) => void },
     ];
 
     act(() => {
-      refreshOptions.onError(new Error('no token'));
+      refreshOptions.onError({ message: 'no token', response: { status: 401 } });
     });
 
     expect(mockGuestMutate).toHaveBeenCalled();
@@ -572,16 +572,64 @@ describe('AuthContextProvider — silentRefresh subdirectory deployment', () => 
     expect(mockRefreshMutate).toHaveBeenCalledTimes(1);
     const [, refreshOptions] = mockRefreshMutate.mock.calls[0] as [
       unknown,
-      { onError: (error: Error) => void },
+      { onError: (error: unknown) => void },
     ];
     mockRefreshMutate.mockClear();
 
     act(() => {
-      refreshOptions.onError(new Error('Request failed with status code 401'));
+      refreshOptions.onError({ message: 'Request failed', response: { status: 401 } });
     });
 
     expect(mockGuestMutate).toHaveBeenCalledTimes(1);
     expect(mockRefreshMutate).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['a 502 while the server restarts', { response: { status: 502 } }],
+    ['no response at all', { message: 'Network Error' }],
+  ])('keeps retrying instead of starting a guest when refresh fails with %s', (_, failure) => {
+    jest.useFakeTimers();
+    try {
+      window.history.replaceState({}, '', '/c/new');
+      renderProviderLive();
+
+      const [, refreshOptions] = mockRefreshMutate.mock.calls[0] as [
+        unknown,
+        { onError: (error: unknown) => void },
+      ];
+      mockRefreshMutate.mockClear();
+      mockGuestMutate.mockClear();
+
+      act(() => {
+        refreshOptions.onError(failure);
+      });
+      expect(mockGuestMutate).not.toHaveBeenCalled();
+
+      act(() => {
+        jest.advanceTimersByTime(2100);
+      });
+      expect(mockRefreshMutate).toHaveBeenCalledTimes(1);
+
+      const [, retryOptions] = mockRefreshMutate.mock.calls[0] as [
+        unknown,
+        { onError: (error: unknown) => void },
+      ];
+      mockRefreshMutate.mockClear();
+      act(() => {
+        retryOptions.onError(failure);
+      });
+      act(() => {
+        jest.advanceTimersByTime(4000);
+      });
+      expect(mockRefreshMutate).not.toHaveBeenCalled();
+      act(() => {
+        jest.advanceTimersByTime(1100);
+      });
+      expect(mockRefreshMutate).toHaveBeenCalledTimes(1);
+      expect(mockGuestMutate).not.toHaveBeenCalled();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('retries the refresh instead of starting a guest when refresh hits a rotation conflict', () => {
@@ -620,10 +668,10 @@ describe('AuthContextProvider — silentRefresh subdirectory deployment', () => 
 
       const [, refreshOptions] = mockRefreshMutate.mock.calls[0] as [
         unknown,
-        { onError: (error: Error) => void },
+        { onError: (error: unknown) => void },
       ];
       act(() => {
-        refreshOptions.onError(new Error('Request failed with status code 401'));
+        refreshOptions.onError({ message: 'Request failed', response: { status: 401 } });
       });
       const [, guestOptions] = mockGuestMutate.mock.calls[0] as [
         unknown,
@@ -654,11 +702,11 @@ describe('AuthContextProvider — silentRefresh subdirectory deployment', () => 
 
     const [, refreshOptions] = mockRefreshMutate.mock.calls[0] as [
       unknown,
-      { onError: (error: Error) => void },
+      { onError: (error: unknown) => void },
     ];
 
     act(() => {
-      refreshOptions.onError(new Error('Request failed with status code 401'));
+      refreshOptions.onError({ message: 'Request failed', response: { status: 401 } });
     });
 
     const [, guestOptions] = mockGuestMutate.mock.calls[0] as [unknown, { onError: () => void }];

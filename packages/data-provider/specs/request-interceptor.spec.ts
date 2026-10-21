@@ -422,6 +422,40 @@ describe('axios 401 interceptor — Authorization header guard', () => {
     expect(window.location.href).toBe('/login?redirect_to=%2Fshare%2Fabc123');
   });
 
+  it.each([
+    ['a 409 rotation race', { response: { status: 409 } }],
+    ['a 502 during a deploy', { response: { status: 502 } }],
+    ['no response at all', { message: 'Network Error' }],
+  ])('keeps the session and does not redirect when refresh fails with %s', async (_, failure) => {
+    expect.assertions(1);
+    setTokenHeader('some-token');
+
+    setWindowLocation({
+      href: 'http://localhost/c/some-conversation',
+      pathname: '/c/some-conversation',
+      search: '',
+      hash: '',
+    } as Partial<Location>);
+
+    mockAdapter.mockRejectedValueOnce({
+      response: { status: 401 },
+      config: { url: '/api/messages', headers: {} },
+    });
+
+    mockAdapter.mockRejectedValueOnce({
+      ...failure,
+      config: { url: '/api/auth/refresh', method: 'post', headers: {} },
+    });
+
+    try {
+      await axios.get('/api/messages');
+    } catch {
+      // expected rejection
+    }
+
+    expect(window.location.href).toBe('http://localhost/c/some-conversation');
+  });
+
   it('redirects to login with redirect_to when refresh returns no token on regular page', async () => {
     expect.assertions(1);
     setTokenHeader('some-token');
