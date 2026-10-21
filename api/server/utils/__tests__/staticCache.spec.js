@@ -117,6 +117,21 @@ describe('staticCache', () => {
       expect(response.headers['cache-control']).toBe('no-store, no-cache, must-revalidate');
     });
 
+    it.each(['embed.js', 'widget-demo.html', 'hotshot-orb.svg'])(
+      'should make browsers revalidate the unhashed widget file %s',
+      async (fileName) => {
+        const widgetFile = path.join(testDir, fileName);
+        fs.writeFileSync(widgetFile, 'widget');
+        try {
+          app.use(staticCache(testDir));
+          const response = await request(app).get(`/${fileName}`).expect(200);
+          expect(response.headers['cache-control']).toBe('public, no-cache');
+        } finally {
+          fs.unlinkSync(widgetFile);
+        }
+      },
+    );
+
     it('should not set cache headers for /dist/images/ files', async () => {
       app.use(staticCache(testDir));
 

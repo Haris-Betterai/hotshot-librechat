@@ -8,6 +8,10 @@ const sMaxAge = process.env.STATIC_CACHE_S_MAX_AGE || oneDayInSeconds;
 const maxAge = process.env.STATIC_CACHE_MAX_AGE || oneDayInSeconds * 2;
 const isEnabled = (value) => value === true || String(value).toLowerCase() === 'true';
 
+/** Files with stable, unhashed names that third-party sites load directly (the embed widget):
+ *  cache them, but revalidate on every use so an update reaches visitors at once. */
+const REVALIDATE_FILES = new Set(['embed.js', 'widget-demo.html', 'hotshot-orb.svg']);
+
 /**
  * Creates an Express static middleware with optional precompressed asset serving and configurable caching
  *
@@ -42,6 +46,8 @@ function staticCache(staticPath, options = {}) {
       fileName === 'sw-heal.js'
     ) {
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    } else if (REVALIDATE_FILES.has(fileName)) {
+      res.setHeader('Cache-Control', 'public, no-cache');
     } else {
       res.setHeader('Cache-Control', `public, max-age=${maxAge}, s-maxage=${sMaxAge}`);
     }
