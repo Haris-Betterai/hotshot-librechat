@@ -7,6 +7,7 @@ const { nanoid } = require('nanoid');
 const { requireJwtAuth } = require('~/server/middleware');
 const checkAdmin = require('~/server/middleware/roles/admin');
 const { logger, runAsSystem, activeExpirationFilter } = require('@librechat/data-schemas');
+const { normalizeEmbedWidgetSettings } = require('librechat-data-provider');
 const { getAppConfig } = require('~/server/services/Config');
 
 const router = express.Router();
@@ -47,6 +48,17 @@ const normalizeOrigins = (origins) => {
   return [...new Set(normalizedOrigins)];
 };
 
+const isPlainObject = (value) =>
+  value != null && typeof value === 'object' && !Array.isArray(value);
+
+const mergeSettings = (stored, patch) =>
+  normalizeEmbedWidgetSettings({ ...normalizeEmbedWidgetSettings(stored), ...patch });
+
+const buildFrameAncestors = (allowedOrigins) =>
+  Array.isArray(allowedOrigins) && allowedOrigins.length > 0
+    ? `'self' ${allowedOrigins.join(' ')}`
+    : `'self'`;
+
 const isSafeEmbedId = (embedId) => typeof embedId === 'string' && /^[A-Za-z0-9_-]+$/.test(embedId);
 
 const embedDir = (uploadsRoot, embedId) => path.join(uploadsRoot, 'embeds', embedId);
@@ -73,15 +85,14 @@ const serializeWidget = (req, doc) => {
     agentId: doc.agentId,
     allowedOrigins: Array.isArray(doc.allowedOrigins) ? doc.allowedOrigins : [],
     iconUrl: publicIconUrl(embedId, doc.iconExt),
+    settings: normalizeEmbedWidgetSettings(doc.settings),
     embedUrl: baseUrl ? `${baseUrl}/embed/${embedId}` : undefined,
   };
 };
 
 const findEmbed = async (embedId) => {
   const EmbedWidgetLink = mongoose.models.EmbedWidgetLink;
-  return (
-    (await EmbedWidgetLink.findOne({ embedId, ...activeExpirationFilter() }).lean()) ?? null
-  );
+  return (await EmbedWidgetLink.findOne({ embedId, ...activeExpirationFilter() }).lean()) ?? null;
 };
 
 /**
@@ -104,9 +115,11 @@ const serveEmbedConfig = async (req, res) => {
     return res.status(404).json({ message: 'Embed not found' });
   }
 
+  res.set('Cache-Control', 'no-cache');
   return res.json({
     agentId: embed.agentId,
     iconUrl: publicIconUrl(embedId, embed.iconExt) ?? null,
+    settings: normalizeEmbedWidgetSettings(embed.settings),
   });
 };
 
@@ -121,8 +134,10 @@ const serveLauncher = async (req, res) => {
     return res.status(404).json({ message: 'Embed not found' });
   }
 
+  res.set('Cache-Control', 'no-cache');
   return res.json({
     iconUrl: publicIconUrl(embedId, embed.iconExt) ?? null,
+    settings: normalizeEmbedWidgetSettings(embed.settings),
   });
 };
 
@@ -178,7 +193,7 @@ const listEmbeds = async (req, res) => {
 
 const createEmbedWidgetLinkController = async (req, res) => {
   try {
-    const { agent_id: agentId, allowedOrigins, expiresAt } = req.body ?? {};
+    const { agent_id: agentId, allowedOrigins, expiresAt, settings } = req.body ?? {};
 
     if (!agentId || typeof agentId !== 'string') {
       return res.status(400).json({ message: 'agent_id is required' });
@@ -193,6 +208,10 @@ const createEmbedWidgetLinkController = async (req, res) => {
 
     if (normalizedOrigins.length === 0) {
       return res.status(400).json({ message: 'allowedOrigins is required' });
+    }
+
+    if (settings != null && !isPlainObject(settings)) {
+      return res.status(400).json({ message: 'settings must be an object' });
     }
 
     let expiredDate = null;
@@ -212,6 +231,7 @@ const createEmbedWidgetLinkController = async (req, res) => {
     if (existing) {
       const merged = [...new Set([...(existing.allowedOrigins ?? []), ...normalizedOrigins])];
       existing.allowedOrigins = merged;
+      existing.settings = mergeSettings(existing.settings, settings);
       await existing.save();
       return res.status(200).json(serializeWidget(req, existing));
     }
@@ -220,6 +240,7 @@ const createEmbedWidgetLinkController = async (req, res) => {
       embedId: nanoid(),
       agentId,
       allowedOrigins: normalizedOrigins,
+      settings: normalizeEmbedWidgetSettings(settings),
       user: req.user?.id ?? req.user?._id?.toString?.(),
       expiredAt: expiredDate ?? undefined,
     });
@@ -238,23 +259,35 @@ const updateEmbedWidgetLinkController = async (req, res) => {
       return res.status(400).json({ message: 'Invalid embedId' });
     }
 
+    const { allowedOrigins, settings } = req.body ?? {};
+    if (allowedOrigins === undefined && settings === undefined) {
+      return res.status(400).json({ message: 'allowedOrigins or settings is required' });
+    }
+    if (settings !== undefined && !isPlainObject(settings)) {
+      return res.status(400).json({ message: 'settings must be an object' });
+    }
+
     let normalizedOrigins;
     try {
-      normalizedOrigins = normalizeOrigins(parseOrigins(req.body?.allowedOrigins));
+      normalizedOrigins =
+        allowedOrigins === undefined ? undefined : normalizeOrigins(parseOrigins(allowedOrigins));
     } catch {
       return res.status(400).json({ message: 'Invalid allowed origin' });
     }
 
     const EmbedWidgetLink = mongoose.models.EmbedWidgetLink;
-    const updated = await EmbedWidgetLink.findOneAndUpdate(
-      { embedId, ...activeExpirationFilter() },
-      { $set: { allowedOrigins: normalizedOrigins } },
-      { new: true },
-    );
-
-    if (!updated) {
+    const embed = await EmbedWidgetLink.findOne({ embedId, ...activeExpirationFilter() });
+    if (!embed) {
       return res.status(404).json({ message: 'Embed not found' });
     }
+
+    if (normalizedOrigins !== undefined) {
+      embed.allowedOrigins = normalizedOrigins;
+    }
+    if (settings !== undefined) {
+      embed.settings = mergeSettings(embed.settings, settings);
+    }
+    const updated = await embed.save();
 
     return res.json(serializeWidget(req, updated));
   } catch (error) {
@@ -314,13 +347,19 @@ router.use(checkAdmin);
 router.get('/', listEmbeds);
 router.post('/', createEmbedWidgetLinkController);
 router.patch('/:embedId', updateEmbedWidgetLinkController);
-router.post('/:embedId/icon', (req, res, next) => {
-  iconUpload.single('file')(req, res, (err) => {
-    if (err) {
-      return res.status(400).json({ message: err.message });
-    }
-    return next();
-  });
-}, uploadEmbedIconController);
+router.post(
+  '/:embedId/icon',
+  (req, res, next) => {
+    iconUpload.single('file')(req, res, (err) => {
+      if (err) {
+        return res.status(400).json({ message: err.message });
+      }
+      return next();
+    });
+  },
+  uploadEmbedIconController,
+);
+
+router.buildFrameAncestors = buildFrameAncestors;
 
 module.exports = router;

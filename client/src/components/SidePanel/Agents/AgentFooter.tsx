@@ -135,7 +135,9 @@ export default function AgentFooter({
     </button>
   );
 
-  const embedWidget = isAdmin && !!agent_id && <EmbedWidget agentId={agent_id} />;
+  const embedWidget = isAdmin && !!agent_id && (
+    <EmbedWidget agentId={agent_id} agentName={agent?.name ?? ''} />
+  );
 
   /** Full page has room for a single action row; the sidebar keeps its stacked layout. */
   if (fullPage) {

@@ -3,7 +3,7 @@ import { useWatch } from 'react-hook-form';
 import { SendIcon, TooltipAnchor } from '@librechat/client';
 import type { Control } from 'react-hook-form';
 import { useLocalize } from '~/hooks';
-import { cn } from '~/utils';
+import { cn, isEmbedWidget } from '~/utils';
 
 type SendButtonProps = {
   disabled: boolean;
@@ -13,6 +13,9 @@ type SendButtonProps = {
 const SubmitButton = React.memo(
   forwardRef((props: { disabled: boolean }, ref: React.ForwardedRef<HTMLButtonElement>) => {
     const localize = useLocalize();
+    const brandStyle = isEmbedWidget()
+      ? { backgroundColor: 'var(--embed-brand)', color: '#fff' }
+      : undefined;
     return (
       <TooltipAnchor
         description={localize('com_nav_send_message')}
@@ -25,6 +28,7 @@ const SubmitButton = React.memo(
             className={cn(
               'rounded-full bg-text-primary p-1.5 text-text-primary outline-offset-4 transition-all duration-200 disabled:cursor-not-allowed disabled:text-text-secondary disabled:opacity-10',
             )}
+            style={brandStyle}
             data-testid="send-button"
             type="submit"
           >

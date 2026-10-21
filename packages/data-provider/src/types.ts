@@ -10,6 +10,7 @@ import type {
   ReasoningResponseKey,
   ReasoningParameterFormat,
 } from './schemas';
+import type { TEmbedWidgetSettings } from './embed';
 import type { RefillIntervalUnit } from './balance';
 import type { SettingDefinition } from './generate';
 import type { TMinimalFeedback } from './feedback';
@@ -628,6 +629,7 @@ export type TEmbedWidget = {
   allowedOrigins: string[];
   iconUrl?: string;
   embedUrl?: string;
+  settings: TEmbedWidgetSettings;
 };
 
 export type TEmbedWidgetListResponse = {
@@ -636,10 +638,14 @@ export type TEmbedWidgetListResponse = {
 
 /** Public config the chat page mounted inside the embed iframe needs to pick
  *  its agent — a subset of {@link TEmbedWidget}, no allowedOrigins/embedUrl. */
-export type TEmbedWidgetConfig = Pick<TEmbedWidget, 'agentId' | 'iconUrl'>;
+export type TEmbedWidgetConfig = Pick<TEmbedWidget, 'agentId' | 'iconUrl' | 'settings'>;
+
+/** Public payload `embed.js` reads to draw the launcher, teaser and panel. */
+export type TEmbedWidgetLauncher = Pick<TEmbedWidget, 'iconUrl' | 'settings'>;
 
 export type TUpdateEmbedWidgetLinkRequest = {
-  allowedOrigins: string[];
+  allowedOrigins?: string[];
+  settings?: Partial<TEmbedWidgetSettings>;
 };
 
 export type TCreateEmbedWidgetLinkResponse = TEmbedWidget;

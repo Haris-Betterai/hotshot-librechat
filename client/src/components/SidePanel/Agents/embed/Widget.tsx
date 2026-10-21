@@ -4,6 +4,7 @@ import { Spinner, useToastContext } from '@librechat/client';
 import { QueryKeys, dataService } from 'librechat-data-provider';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { TEmbedWidget } from 'librechat-data-provider';
+import EmbedSettingsEditor from './Editor';
 import { useLocalize } from '~/hooks';
 
 function widgetSnippet(embedId: string) {
@@ -18,7 +19,13 @@ function parseOrigin(raw: string): string | null {
   }
 }
 
-export default function EmbedWidget({ agentId }: { agentId?: string }) {
+export default function EmbedWidget({
+  agentId,
+  agentName,
+}: {
+  agentId?: string;
+  agentName?: string;
+}) {
   const localize = useLocalize();
   const { showToast } = useToastContext();
   const queryClient = useQueryClient();
@@ -26,10 +33,7 @@ export default function EmbedWidget({ agentId }: { agentId?: string }) {
   const [open, setOpen] = useState(false);
   const [originDraft, setOriginDraft] = useState('');
 
-  const queryKey = useMemo(
-    () => [QueryKeys.embedWidgets, agentId] as const,
-    [agentId],
-  );
+  const queryKey = useMemo(() => [QueryKeys.embedWidgets, agentId] as const, [agentId]);
 
   const widgetsQuery = useQuery({
     queryKey,
@@ -123,8 +127,7 @@ export default function EmbedWidget({ agentId }: { agentId?: string }) {
     updateMutation.mutate(widget.allowedOrigins.filter((item) => item !== origin));
   };
 
-  const busy =
-    createMutation.isLoading || updateMutation.isLoading || iconMutation.isLoading;
+  const busy = createMutation.isLoading || updateMutation.isLoading || iconMutation.isLoading;
 
   return (
     <div className="flex w-full flex-col gap-2">
@@ -147,11 +150,7 @@ export default function EmbedWidget({ agentId }: { agentId?: string }) {
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-blue-600 text-white">
                 {widget?.iconUrl ? (
-                  <img
-                    src={widget.iconUrl}
-                    alt=""
-                    className="h-full w-full object-cover"
-                  />
+                  <img src={widget.iconUrl} alt="" className="h-full w-full object-cover" />
                 ) : (
                   <span className="text-lg" aria-hidden="true">
                     💬
@@ -244,6 +243,7 @@ export default function EmbedWidget({ agentId }: { agentId?: string }) {
 
           {widget?.embedId && (
             <>
+              <EmbedSettingsEditor widget={widget} queryKey={queryKey} agentName={agentName} />
               <label className="text-xs font-semibold text-text-secondary">
                 {localize('com_ui_embed_widget_url')}
               </label>
@@ -262,6 +262,15 @@ export default function EmbedWidget({ agentId }: { agentId?: string }) {
                 readOnly
                 aria-label={localize('com_ui_embed_widget_snippet')}
               />
+              <p className="text-xs text-text-secondary">{localize('com_ui_embed_live_note')}</p>
+              <a
+                className="text-sm text-blue-600 underline"
+                href={`${window.location.origin}/widget-demo.html?id=${encodeURIComponent(widget.embedId)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {localize('com_ui_embed_open_demo')}
+              </a>
               <p className="text-xs text-text-secondary">{localize('com_ui_embed_mic_hint')}</p>
             </>
           )}

@@ -32,9 +32,9 @@ export default function EmbedRoute() {
     if (!data?.agentId) {
       return;
     }
-    markEmbedWidget();
+    markEmbedWidget(embedId);
     navigate(`/c/new?agent_id=${encodeURIComponent(data.agentId)}&embed=1`, { replace: true });
-  }, [data, navigate]);
+  }, [data, embedId, navigate]);
 
   if (isError) {
     return (

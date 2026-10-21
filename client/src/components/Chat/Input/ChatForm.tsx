@@ -22,7 +22,8 @@ import {
   useAddedChatContext,
   useAssistantsMapContext,
 } from '~/Providers';
-import { cn, getModelSpec, removeFocusRings, isEmbedWidget } from '~/utils';
+import { cn, getModelSpec, removeFocusRings } from '~/utils';
+import useEmbedWidgetSettings, { getEmbedComposerControls } from '~/hooks/useEmbedWidgetSettings';
 import PendingManualSkillsChips from './PendingManualSkillsChips';
 import useAskAnswerMode from '~/hooks/Input/useAskAnswerMode';
 import AskUserQuestionPopover from './AskUserQuestionPopover';
@@ -97,7 +98,8 @@ const ChatForm = memo(function ChatForm({
   const maximizeChatSpace = useRecoilValue(store.maximizeChatSpace);
   const centerFormOnLanding = useRecoilValue(store.centerFormOnLanding);
   const isTemporary = useRecoilValue(store.isTemporary);
-  const isEmbed = isEmbedWidget();
+  const { settings: embedSettings, isEmbed } = useEmbedWidgetSettings();
+  const controls = getEmbedComposerControls(embedSettings, isEmbed);
 
   const [badges, setBadges] = useRecoilState(store.chatBadges);
   const [isEditingBadges, setIsEditingBadges] = useRecoilState(store.isEditingBadges);
@@ -545,15 +547,17 @@ const ChatForm = memo(function ChatForm({
                   isRTL ? 'flex-row-reverse' : 'flex-row',
                 )}
               >
-                <div className={`${isRTL ? 'mr-2' : 'ml-2'}`}>
-                  <AttachFileChat
-                    conversation={conversation}
-                    disableInputs={disableInputs}
-                    files={files}
-                    setFiles={setFiles}
-                    setFilesLoading={setFilesLoading}
-                  />
-                </div>
+                {controls.attach && (
+                  <div className={`${isRTL ? 'mr-2' : 'ml-2'}`}>
+                    <AttachFileChat
+                      conversation={conversation}
+                      disableInputs={disableInputs}
+                      files={files}
+                      setFiles={setFiles}
+                      setFilesLoading={setFilesLoading}
+                    />
+                  </div>
+                )}
                 <BadgeRow
                   showEphemeralBadges={
                     !!endpoint &&
@@ -571,8 +575,8 @@ const ChatForm = memo(function ChatForm({
                 />
                 <div className="mx-auto flex" />
                 {/* <TokenUsage index={index} conversation={conversation} isSubmitting={isSubmitting} /> */}
-                <Intelligence />
-                {SpeechToText && (
+                {controls.intelligence && <Intelligence />}
+                {SpeechToText && controls.voice && (
                   <AudioRecorder
                     methods={methods}
                     ask={submitMessage}
@@ -600,12 +604,37 @@ const ChatForm = memo(function ChatForm({
               {TextToSpeech && automaticPlayback && <StreamAudio index={index} />}
             </div>
           </div>
+          {controls.poweredBy && (
+            <p className="pt-1.5 text-center text-xs text-text-tertiary">
+              {localize('com_ui_embed_powered_by')}
+            </p>
+          )}
         </div>
       </div>
     </form>
   );
 });
 ChatForm.displayName = 'ChatForm';
+
+/**
+ * Embed with the selector hidden: drop any stale `modelLabel` so no level is sent and the server
+ * applies the agent's default (Auto). The Intelligence control, which would otherwise stamp the
+ * default label, is not mounted in that case.
+ */
+function useOmitEmbedIntelligence(
+  modelLabel: string | null | undefined,
+  setConversation: ReturnType<typeof useChatContext>['setConversation'],
+) {
+  const { settings, isEmbed } = useEmbedWidgetSettings();
+  const omit = isEmbed && !settings.showIntelligence;
+
+  useEffect(() => {
+    if (!omit || !modelLabel) {
+      return;
+    }
+    setConversation((prev) => (prev?.modelLabel ? { ...prev, modelLabel: undefined } : prev));
+  }, [omit, modelLabel, setConversation]);
+}
 
 /**
  * Wrapper that subscribes to ChatContext and passes stable individual values
@@ -616,6 +645,7 @@ function ChatFormWrapper({ index = 0, placeholder }: { index?: number; placehold
   const {
     files,
     setFiles,
+    setConversation,
     conversation,
     isSubmitting,
     filesLoading,
@@ -624,6 +654,8 @@ function ChatFormWrapper({ index = 0, placeholder }: { index?: number; placehold
     handleStopGenerating,
     stopGenerating,
   } = useChatContext();
+
+  useOmitEmbedIntelligence(conversation?.modelLabel, setConversation);
 
   /**
    * Stabilize conversation reference: only update when rendering-relevant fields change,

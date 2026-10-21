@@ -1,15 +1,14 @@
-import { memo, useMemo, useCallback, useState } from 'react';
+import { memo, useMemo, useCallback } from 'react';
 import { useRecoilValue } from 'recoil';
-import { Maximize, Minimize } from 'lucide-react';
 import { useMediaQuery, Button } from '@librechat/client';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getConfigDefaults, PermissionTypes, Permissions } from 'librechat-data-provider';
 import { cn, SESSION_KEY, isEmbedWidget, isStaffPath, markStaffLoginIntent, publicHomePath, staffHomePath } from '~/utils';
 import { useAuthContext, useHasAccess, useLocalize } from '~/hooks';
-import { useChatContext, useAgentsMapContext } from '~/Providers';
 import ModelSelector from './Menus/Endpoints/ModelSelector';
 import { useGetStartupConfig } from '~/data-provider';
 import ExportAndShareMenu from './ExportAndShareMenu';
+import EmbedHeader from './EmbedHeader';
 import { OpenSidebar, PresetsMenu } from './Menus';
 import BookmarkMenu from './Menus/BookmarkMenu';
 import { TemporaryChat } from './TemporaryChat';
@@ -28,8 +27,6 @@ function Header() {
   const isEmbed = isEmbedWidget();
   const isStaffView = isStaffPath(location.pathname);
   const isPublicChrome = !isEmbed && !isStaffView;
-  const { conversation } = useChatContext();
-  const agentsMap = useAgentsMapContext();
   const { data: startupConfig } = useGetStartupConfig();
   const navVisible = useRecoilValue(store.sidebarExpanded);
 
@@ -54,20 +51,6 @@ function Header() {
   });
 
   const isSmallScreen = useMediaQuery('(max-width: 768px)');
-
-  const [embedExpanded, setEmbedExpanded] = useState(false);
-
-  const toggleEmbedExpand = useCallback(() => {
-    setEmbedExpanded((prev) => {
-      const next = !prev;
-      try {
-        window.parent.postMessage({ type: 'hotshot-embed-resize', expanded: next }, '*');
-      } catch {
-        /* ignore cross-frame errors */
-      }
-      return next;
-    });
-  }, []);
 
   const openStaffLogin = useCallback(() => {
     markStaffLoginIntent();
@@ -137,35 +120,7 @@ function Header() {
   );
 
   if (isEmbed) {
-    const agentName =
-      (conversation?.agent_id != null ? agentsMap?.[conversation.agent_id]?.name : undefined) ??
-      conversation?.title ??
-      localize('com_ui_chat');
-
-    return (
-      <div className="flex h-[52px] w-full shrink-0 items-center gap-2 border-b border-border-light bg-surface-primary px-3">
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-text-primary">{agentName}</p>
-        </div>
-        <span
-          className="inline-block h-2 w-2 shrink-0 rounded-full bg-green-500"
-          aria-hidden="true"
-        />
-        <button
-          type="button"
-          aria-label={embedExpanded ? 'Minimize chat' : 'Maximize chat'}
-          title={embedExpanded ? 'Minimize chat' : 'Maximize chat'}
-          onClick={toggleEmbedExpand}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-text-secondary hover:bg-surface-tertiary hover:text-text-primary"
-        >
-          {embedExpanded ? (
-            <Minimize className="h-4 w-4" aria-hidden="true" />
-          ) : (
-            <Maximize className="h-4 w-4" aria-hidden="true" />
-          )}
-        </button>
-      </div>
-    );
+    return <EmbedHeader />;
   }
 
   return (

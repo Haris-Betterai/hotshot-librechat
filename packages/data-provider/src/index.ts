@@ -15,6 +15,7 @@ export * from './generate';
 export * from './models';
 export * from './intelligence';
 export * from './websearch';
+export * from './embed';
 /* mcp */
 export * from './mcp';
 /* RBAC */

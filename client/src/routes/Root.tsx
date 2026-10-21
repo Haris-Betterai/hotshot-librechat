@@ -24,6 +24,7 @@ import useKeyboardShortcuts from '~/hooks/useKeyboardShortcuts';
 import { UnifiedSidebar } from '~/components/UnifiedSidebar';
 import { TermsAndConditionsModal } from '~/components/ui';
 import { useHealthCheck } from '~/data-provider';
+import { useEmbedAppearance } from '~/hooks/useEmbedWidgetSettings';
 import { Banner } from '~/components/Banners';
 import store from '~/store';
 
@@ -43,6 +44,7 @@ export default function Root() {
   const [bannerHeight, setBannerHeight] = useState(0);
   const sidebarExpanded = useRecoilValue(store.sidebarExpanded);
   const setSpeechToText = useSetRecoilState(store.speechToText);
+  useEmbedAppearance();
   const isSmallScreen = useMediaQuery('(max-width: 768px)');
 
   const location = useLocation();

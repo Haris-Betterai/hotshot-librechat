@@ -260,11 +260,10 @@ const startServer = async () => {
         return res.status(404).end();
       }
 
-      const allowedOrigins = Array.isArray(embed.allowedOrigins) ? embed.allowedOrigins : [];
-      const frameAncestors =
-        allowedOrigins.length > 0 ? `'self' ${allowedOrigins.join(' ')}` : `'self'`;
-
-      res.set('Content-Security-Policy', `frame-ancestors ${frameAncestors}`);
+      res.set(
+        'Content-Security-Policy',
+        `frame-ancestors ${routes.embeds.buildFrameAncestors(embed.allowedOrigins)}`,
+      );
       res.set('Permissions-Policy', 'microphone=(self), camera=()');
       return sendIndexHtml(req, res);
     } catch (err) {

@@ -1,4 +1,5 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import { Schema, Document } from 'mongoose';
+import type { TEmbedWidgetSettings } from 'librechat-data-provider';
 
 export interface IEmbedWidgetLink extends Document {
   embedId: string;
@@ -10,6 +11,8 @@ export interface IEmbedWidgetLink extends Document {
   allowedOrigins: string[];
   /** File extension of the uploaded launcher icon, e.g. `png`. */
   iconExt?: string;
+  /** Staff-editable widget look and behaviour; normalised on every read and write. */
+  settings?: Partial<TEmbedWidgetSettings>;
   user?: string;
   tenantId?: string;
   expiredAt?: Date;
@@ -37,6 +40,10 @@ const embedWidgetLinkSchema: Schema<IEmbedWidgetLink> = new Schema(
     iconExt: {
       type: String,
     },
+    settings: {
+      type: Schema.Types.Mixed,
+      default: {},
+    },
     user: {
       type: String,
       index: true,
@@ -57,4 +64,3 @@ embedWidgetLinkSchema.index({ expiredAt: 1 }, { expireAfterSeconds: 0 });
 embedWidgetLinkSchema.index({ updatedAt: -1 });
 
 export default embedWidgetLinkSchema;
-
