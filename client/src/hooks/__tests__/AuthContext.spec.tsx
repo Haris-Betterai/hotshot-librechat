@@ -37,6 +37,7 @@ let mockCapturedLogoutOptions: {
 
 const mockRefreshMutate = jest.fn();
 const mockGuestMutate = jest.fn();
+const mockEmbedGuestMutate = jest.fn();
 
 jest.mock('~/data-provider', () => ({
   useLoginUserMutation: jest.fn(
@@ -58,7 +59,7 @@ jest.mock('~/data-provider', () => ({
     },
   ),
   useGuestSessionMutation: jest.fn(() => ({ mutate: mockGuestMutate })),
-  useGuestEmbedSessionMutation: jest.fn(() => ({ mutate: jest.fn() })),
+  useGuestEmbedSessionMutation: jest.fn(() => ({ mutate: mockEmbedGuestMutate })),
   useRefreshTokenMutation: jest.fn(() => ({ mutate: mockRefreshMutate })),
   useGetStartupConfig: jest.fn(() => ({ data: { publicGuestMode: true } })),
   useGetUserQuery: jest.fn(() => ({
@@ -563,6 +564,36 @@ describe('AuthContextProvider — silentRefresh subdirectory deployment', () => 
 
     expect(mockGuestMutate).toHaveBeenCalled();
     expect(mockNavigate).not.toHaveBeenCalledWith('/login?staff=1', { replace: true });
+  });
+
+  it('remembers the embed id when a first-time widget visitor gets a guest session', () => {
+    sessionStorage.clear();
+    window.history.replaceState({}, '', '/embed/emb_42');
+    renderProviderLive();
+
+    const [, refreshOptions] = mockRefreshMutate.mock.calls[0] as [
+      unknown,
+      { onError: (error: unknown) => void },
+    ];
+    act(() => {
+      refreshOptions.onError({ message: 'Request failed', response: { status: 401 } });
+    });
+
+    expect(mockEmbedGuestMutate).toHaveBeenCalledWith('emb_42', expect.any(Object));
+    const [, embedOptions] = mockEmbedGuestMutate.mock.calls[0] as [
+      string,
+      { onSuccess: (data: { user: unknown; token: string; agent_id: string }) => void },
+    ];
+    act(() => {
+      embedOptions.onSuccess({
+        user: { id: 'g1', provider: 'anonymous' },
+        token: 't',
+        agent_id: 'agent_1',
+      });
+    });
+
+    expect(sessionStorage.getItem('lc-embed-widget-id')).toBe('emb_42');
+    window.history.replaceState({}, '', '/');
   });
 
   it('creates a guest session once when refresh fails', () => {

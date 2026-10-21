@@ -340,7 +340,7 @@ const AuthContextProvider = ({
         if (generation !== authGenerationRef.current) {
           return;
         }
-        markEmbedWidget();
+        markEmbedWidget(embedId);
         setUserContext({
           user,
           token,
