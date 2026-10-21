@@ -8,7 +8,7 @@ type LevelSliderProps = {
   onChange: (index: number) => void;
 };
 
-const THUMB = 36;
+const THUMB = 24;
 
 const position = (fraction: number): string =>
   `calc(${THUMB / 2}px + (100% - ${THUMB}px) * ${fraction})`;
@@ -71,9 +71,9 @@ export default function LevelSlider({ names, selectedIndex, onChange }: LevelSli
     : 'transition-[left,width] duration-150 ease-out motion-reduce:transition-none';
 
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-2.5">
       <div
-        className="text-3xl font-bold leading-tight text-text-primary"
+        className="text-lg font-semibold leading-tight text-text-primary"
         aria-live="polite"
         aria-atomic="true"
       >
@@ -81,7 +81,7 @@ export default function LevelSlider({ names, selectedIndex, onChange }: LevelSli
       </div>
       <div
         ref={trackRef}
-        className="relative h-9 w-full touch-none select-none rounded-full bg-neutral-200 dark:bg-neutral-800"
+        className="relative h-[24px] w-full touch-none select-none rounded-full bg-neutral-200 dark:bg-neutral-800"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={endDrag}
@@ -112,7 +112,7 @@ export default function LevelSlider({ names, selectedIndex, onChange }: LevelSli
           aria-valuetext={names[selectedIndex]}
           aria-orientation="horizontal"
           onKeyDown={onKeyDown}
-          className={`absolute top-0 size-9 -translate-x-1/2 cursor-grab rounded-full bg-white shadow-md ring-1 ring-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--embed-brand,#3b6cf6)] active:cursor-grabbing ${motion}`}
+          className={`absolute top-0 size-[24px] -translate-x-1/2 cursor-grab rounded-full bg-white shadow-md ring-1 ring-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--embed-brand,#3b6cf6)] active:cursor-grabbing ${motion}`}
           style={{ left: position(fraction) }}
         />
       </div>
