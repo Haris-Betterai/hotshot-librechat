@@ -95,7 +95,7 @@ describe('UiBlock', () => {
     fireEvent.change(input, { target: { value: '-3' } });
     expect(screen.getByText('Enter a capacity greater than 0')).toBeInTheDocument();
     fireEvent.change(input, { target: { value: '' } });
-    expect(screen.getByText('Enter a capacity greater than 0')).toBeInTheDocument();
+    expect(screen.getByText('Enter your capacity to see the dose')).toBeInTheDocument();
   });
 
   it('submits a quick reply once and then disables the options', () => {

@@ -74,6 +74,17 @@ describe('parseUiBlock', () => {
     ).toBeNull();
   });
 
+  it('accepts name as the dose calculator product', () => {
+    const block = parseUiBlock(
+      json({
+        type: 'dose_calculator',
+        name: 'Diesel Extreme',
+        ratio: { amount: 16, unit: 'oz', per: 40, perUnit: 'gallon' },
+      }),
+    );
+    expect(block).toMatchObject({ type: 'dose_calculator', product: 'Diesel Extreme' });
+  });
+
   it('dedupes and caps quick replies', () => {
     const options = ['Yes', 'Yes', ...Array.from({ length: 10 }, (_, i) => `Option ${i}`)];
     const block = parseUiBlock(json({ type: 'quick_replies', options }));

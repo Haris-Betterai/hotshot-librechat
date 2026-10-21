@@ -195,7 +195,8 @@ const VOLUME_UNITS: readonly TUiVolumeUnit[] = ['oz', 'ml'];
 const CAPACITY_UNITS: readonly TUiCapacityUnit[] = ['quart', 'gallon', 'liter'];
 
 function doseCalculator(raw: JsonObject): TUiDoseCalculator | null {
-  const product = text(raw.product, 120);
+  /** Models sometimes reuse the product card's `name` key here. */
+  const product = text(raw.product ?? raw.name, 120);
   const ratio = isObject(raw.ratio) ? raw.ratio : null;
   if (!product || !ratio) {
     return null;

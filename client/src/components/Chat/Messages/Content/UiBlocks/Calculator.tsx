@@ -54,7 +54,7 @@ export default function Calculator({ block }: { block: TUiDoseCalculator }) {
           step="any"
           value={value}
           onChange={(event) => setValue(event.target.value)}
-          aria-invalid={capacity === null}
+          aria-invalid={capacity === null && value.trim() !== ''}
           className={cn(FIELD_CLASS, 'max-w-[8rem]')}
         />
         <span className="text-neutral-600 dark:text-neutral-400">{unit}</span>
@@ -62,7 +62,11 @@ export default function Calculator({ block }: { block: TUiDoseCalculator }) {
       <div className="mt-3 rounded-xl bg-neutral-50 p-3 dark:bg-neutral-800" aria-live="polite">
         {capacity === null ? (
           <p className="text-neutral-500 dark:text-neutral-400">
-            {localize('com_ui_block_capacity_invalid')}
+            {localize(
+              value.trim() === ''
+                ? 'com_ui_block_capacity_prompt'
+                : 'com_ui_block_capacity_invalid',
+            )}
           </p>
         ) : (
           <>

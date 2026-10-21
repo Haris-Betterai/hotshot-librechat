@@ -2286,5 +2286,6 @@
   "com_ui_step_web_done": "Searched {{0}}",
   "com_ui_step_web_active": "Searching {{0}}…",
   "com_ui_step_web_done_bare": "Searched the web",
-  "com_ui_step_web_active_bare": "Searching the web…"
+  "com_ui_step_web_active_bare": "Searching the web…",
+  "com_ui_block_capacity_prompt": "Enter your capacity to see the dose"
 }

@@ -3,6 +3,7 @@ export const ENGLISH: Record<string, string> = {
   com_ui_block_size: 'Size',
   com_ui_block_capacity: 'Capacity',
   com_ui_block_capacity_invalid: 'Enter a capacity greater than 0',
+  com_ui_block_capacity_prompt: 'Enter your capacity to see the dose',
   com_ui_block_dose_result: 'Recommended dose',
   com_ui_block_dose_math: '{{0}} × {{1}} per {{2}}',
   com_ui_block_unit_quart: 'qt',
