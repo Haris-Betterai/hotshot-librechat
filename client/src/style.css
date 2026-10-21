@@ -2173,6 +2173,10 @@ html {
   --tw-shadow-colored: inset 0 0 0 0 1px var(--tw-shadow-color);
 }
 
+.result-streaming > .ui-block:last-child:after {
+  content: none !important;
+}
+
 .result-streaming > :not(ol):not(ul):not(pre):last-child:after,
 .result-streaming > pre:last-child code:after {
   display: inline-block;

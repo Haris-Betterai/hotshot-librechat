@@ -5,7 +5,7 @@ import { useSubmitMessage } from '~/hooks';
 import { cn, isEmbedWidget } from '~/utils';
 
 export const CARD_CLASS =
-  'my-3 w-full max-w-xl rounded-2xl border border-neutral-200 bg-white p-3 text-sm text-neutral-900 shadow-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 sm:p-4';
+  'ui-block not-prose my-3 w-full max-w-xl rounded-2xl border border-neutral-200 bg-white p-3 text-sm text-neutral-900 shadow-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 sm:p-4';
 
 export const FIELD_CLASS =
   'w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 disabled:cursor-not-allowed disabled:opacity-60 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100 dark:focus-visible:ring-neutral-500';

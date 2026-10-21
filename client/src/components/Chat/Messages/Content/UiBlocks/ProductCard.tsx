@@ -41,7 +41,7 @@ export default function ProductCard({ block }: { block: TUiProductCard }) {
             <span>{block.dose}</span>
           </p>
         )}
-        {sizes.length > 0 && (
+        {sizes.length > 1 && (
           <div
             role="radiogroup"
             aria-label={localize('com_ui_block_size')}
@@ -70,6 +70,11 @@ export default function ProductCard({ block }: { block: TUiProductCard }) {
           {price ? (
             <span aria-live="polite" className="text-lg font-semibold">
               {price}
+              {sizes.length === 1 && (
+                <span className="ml-1.5 text-sm font-normal text-neutral-500 dark:text-neutral-400">
+                  {sizes[0].label}
+                </span>
+              )}
             </span>
           ) : (
             <span />
