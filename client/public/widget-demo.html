@@ -4,51 +4,89 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Hot Shot's Secret - demo store</title>
+<title>Hot Shot's Secret - widget demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+:root{--green:#8dc63f;--orange:#ff9900;--ink:#1c1d1f;--muted:#5b5e63;--line:#e3e5e8;--soft:#eff0f1}
 *{box-sizing:border-box}
-body{margin:0;font-family:Georgia,'Times New Roman',serif;color:#2b2118;background:#faf6f0;line-height:1.6}
-header{background:#2b2118;color:#faf6f0;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
-header h1{margin:0;font-size:22px;letter-spacing:.04em}
-nav a{color:#e9d9c3;margin-left:18px;text-decoration:none;font-family:system-ui,sans-serif;font-size:14px}
-.note{background:#fff3cd;color:#664d03;font-family:system-ui,sans-serif;padding:12px 24px;border-bottom:1px solid #ecd58a}
-main{max-width:1000px;margin:0 auto;padding:32px 24px 120px}
-.hero{padding:28px 0}
-.hero h2{font-size:34px;margin:0 0 8px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:20px;margin:28px 0}
-.tile{background:#fff;border:1px solid #e6dccd;border-radius:10px;overflow:hidden}
-.ph{height:150px;background:linear-gradient(135deg,#d9b88a,#a0673a)}
-.tile:nth-child(2) .ph{background:linear-gradient(135deg,#c9a0a0,#7a3b3b)}
-.tile:nth-child(3) .ph{background:linear-gradient(135deg,#a8b89a,#4d6340)}
-.tile:nth-child(4) .ph{background:linear-gradient(135deg,#a6b3c9,#3f4f73)}
-.tile div.b{padding:12px 14px;font-family:system-ui,sans-serif}
-.tile h3{margin:0 0 4px;font-size:16px}
-.tile p{margin:0;color:#6b5a48;font-size:14px}
-footer{text-align:center;color:#8a7761;font-family:system-ui,sans-serif;font-size:13px;padding:24px}
+body{margin:0;font-family:'Open Sans',Helvetica,Arial,sans-serif;color:var(--ink);background:var(--soft);line-height:1.5}
+a{color:inherit;text-decoration:none}
+.note{background:#fff3cd;color:#664d03;padding:12px 24px;border-bottom:1px solid #ecd58a;font-size:14px}
+.promo{background:var(--green);color:#fff;text-align:center;font-family:Oswald,sans-serif;font-weight:500;letter-spacing:.06em;text-transform:uppercase;font-size:15px;padding:9px 16px}
+header{background:#fff;border-bottom:1px solid var(--line)}
+.bar{max-width:1440px;margin:0 auto;display:flex;align-items:center;gap:32px;padding:12px 32px}
+.bar img{height:52px;width:auto;display:block}
+nav{display:flex;gap:26px;font-family:Oswald,sans-serif;text-transform:uppercase;letter-spacing:.04em;font-size:15px;color:#2c2e31}
+.tools{margin-left:auto;display:flex;gap:22px;align-items:center;font-size:14px;color:var(--muted)}
+.tools b{color:var(--ink)}
+.hero{position:relative;background:#0b0c0d url("https://www.hotshotsecret.com/wp-content/uploads/2026/03/Spring26-homepage-bgV3.jpg") center/cover no-repeat;color:#fff}
+.hero:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,0) 35%,rgba(0,0,0,.55) 70%)}
+.hero .in{position:relative;max-width:1440px;margin:0 auto;min-height:420px;padding:48px 32px;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;text-align:right}
+.hero small{font-family:Oswald,sans-serif;font-weight:400;font-size:26px;text-transform:uppercase;letter-spacing:.02em;line-height:1.2}
+.hero h1{margin:6px 0 22px;font-family:Oswald,sans-serif;font-weight:600;font-size:64px;line-height:1.02;text-transform:uppercase}
+.cta{display:flex;gap:12px}
+.btn{font-family:Oswald,sans-serif;text-transform:uppercase;letter-spacing:.06em;font-size:16px;padding:12px 26px;border-radius:2px}
+.btn.o{background:var(--orange);color:#111}
+.btn.w{background:#fff;color:#111}
+main{max-width:1440px;margin:0 auto;padding:40px 32px 120px}
+.head{display:flex;align-items:baseline;gap:16px;margin-bottom:20px}
+.head h2{margin:0;font-family:Oswald,sans-serif;font-weight:600;font-size:30px;text-transform:uppercase}
+.head span{color:var(--muted);font-size:15px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px;max-width:1080px}
+.card{background:#fff;border:1px solid var(--line);border-radius:4px;padding:16px;display:flex;flex-direction:column}
+.card img{width:100%;aspect-ratio:1;object-fit:contain;background:#fff}
+.card h3{margin:10px 0 2px;font-family:Oswald,sans-serif;font-weight:500;font-size:19px;text-transform:uppercase;line-height:1.2}
+.card p{margin:0 0 4px;color:var(--muted);font-size:13px}
+.card .price{font-weight:700;font-size:16px;margin:6px 0 12px}
+.card .btn{text-align:center;font-size:14px;padding:9px 0;margin-top:auto}
+.trust{display:flex;gap:28px;margin-top:28px;max-width:1080px;font-family:Oswald,sans-serif;text-transform:uppercase;letter-spacing:.04em;font-size:15px;color:#3b3e42}
+.trust div:before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--green);margin-right:8px;vertical-align:1px}
+footer{text-align:center;color:#8a8d92;font-size:12px;padding:20px}
+@media (max-width:900px){
+  nav,.tools span{display:none}
+  .bar{padding:10px 16px;gap:12px}
+  .bar img{height:40px}
+  .hero .in{min-height:300px;padding:28px 18px}
+  .hero small{font-size:18px}
+  .hero h1{font-size:40px}
+  .btn{font-size:13px;padding:10px 14px}
+  main{padding:24px 16px 120px}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .card h3{font-size:16px}
+  .trust{flex-wrap:wrap;gap:12px}
+}
 </style>
 </head>
 <body>
 <div class="note" id="note" hidden>Add <code>?id=&lt;embedId&gt;</code> to the URL to load the chat widget on this page.</div>
+<div class="promo">Protective fuel &amp; oil additives &middot; Shop by vehicle</div>
 <header>
-<h1>Hot Shot's Secret</h1>
-<nav><a href="#">Shop</a><a href="#">Our story</a><a href="#">Shipping</a><a href="#">Contact</a></nav>
+<div class="bar">
+<img src="https://www.hotshotsecret.com/wp-content/uploads/2023/08/logo-03.png" alt="Hot Shot's Secret">
+<nav><a href="#">Shop by vehicle</a><a href="#">Diesel</a><a href="#">Gasoline</a><a href="#">Oil additives</a><a href="#">Learn</a></nav>
+<div class="tools"><span>800-341-6516</span><b>Cart (0)</b></div>
+</div>
 </header>
-<main>
 <section class="hero">
-<h2>Small-batch finds, shipped fast</h2>
-<p>This is a demo storefront used to preview the chat widget exactly as a customer would see it on a real site. Nothing here is for sale.</p>
+<div class="in">
+<small>Protective fuel &amp; oil additives from</small>
+<h1>Your diesel<br>experts</h1>
+<div class="cta"><a class="btn o" href="#">Shop by vehicle</a><a class="btn w" href="#">Shop all products</a></div>
+</div>
 </section>
+<main>
+<div class="head"><h2>Best sellers</h2><span>Not sure which one? Ask the assistant in the corner.</span></div>
 <section class="grid" aria-label="Products">
-<article class="tile"><div class="ph"></div><div class="b"><h3>Signature Blend</h3><p>$24.00</p></div></article>
-<article class="tile"><div class="ph"></div><div class="b"><h3>Ember Reserve</h3><p>$32.00</p></div></article>
-<article class="tile"><div class="ph"></div><div class="b"><h3>Garden Mix</h3><p>$18.50</p></div></article>
-<article class="tile"><div class="ph"></div><div class="b"><h3>Gift Box</h3><p>$48.00</p></div></article>
+<article class="card"><img src="https://www.hotshotsecret.com/wp-content/uploads/2019/09/HSS32Z_01-300x300.jpg" alt=""><h3>Stiction Eliminator</h3><p>Oil additive for sticky injectors</p><div class="price">From $20.49</div><a class="btn o" href="#">View product</a></article>
+<article class="card"><img src="https://www.hotshotsecret.com/wp-content/uploads/2019/09/P040432Z_01-300x300.jpg" alt=""><h3>Diesel Extreme</h3><p>Deep-cleaning fuel additive</p><div class="price">From $17.99</div><a class="btn o" href="#">View product</a></article>
+<article class="card"><img src="https://www.hotshotsecret.com/wp-content/uploads/2019/09/HSSFR332Z-1-300x300.jpg" alt=""><h3>FR3 Friction Reducer</h3><p>Every-oil-change protection</p><div class="price">From $13.49</div><a class="btn o" href="#">View product</a></article>
+<article class="card"><img src="https://www.hotshotsecret.com/wp-content/uploads/2019/09/HSSEDT16ZSP-300x300.jpg" alt=""><h3>Everyday Diesel Treatment</h3><p>Every-fill-up maintenance</p><div class="price">From $6.99</div><a class="btn o" href="#">View product</a></article>
 </section>
-<p>Orders placed before 2pm ship the same day. Questions about sizing, ingredients or delivery? Use the chat bubble in the corner and we will help you out.</p>
-<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus posuere velit aliquet. Donec ullamcorper nulla non metus auctor fringilla.</p>
-<p>Cras mattis consectetur purus sit amet fermentum. Vestibulum id ligula porta felis euismod semper. Maecenas faucibus mollis interdum.</p>
+<div class="trust"><div>Diesel</div><div>Gasoline</div><div>Semis &amp; fleets</div><div>Agriculture</div><div>Marine &amp; RV</div></div>
 </main>
-<footer>&copy; Hot Shot's Secret demo store</footer>
+<footer>Widget demo page &middot; product names and prices from hotshotsecret.com</footer>
 <script>
 (function () {
   var id = new URLSearchParams(window.location.search).get('id');
