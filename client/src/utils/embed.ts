@@ -3,6 +3,15 @@ export const EMBED_WIDGET_ID_STORAGE_KEY = 'lc-embed-widget-id';
 export const EMBED_WIDGET_SEARCH_PARAM = 'embed';
 const EMBED_PATH_ID = /(?:^|\/)embed\/([^/?#]+)/;
 
+/** True when the app runs inside another page's frame; a cross-origin parent throws on access. */
+function isFramed(): boolean {
+  try {
+    return window.self !== window.top;
+  } catch {
+    return true;
+  }
+}
+
 export function isEmbedWidget(): boolean {
   if (typeof window === 'undefined') {
     return false;
@@ -11,6 +20,11 @@ export function isEmbedWidget(): boolean {
   try {
     if (/(?:^|\/)embed\/[^/]+/.test(window.location.pathname)) {
       return true;
+    }
+    /** Same-origin frames share the tab's sessionStorage, so the widget's mark would otherwise
+     *  leak into the full app when the same tab later opens it directly. */
+    if (!isFramed()) {
+      return false;
     }
     if (new URLSearchParams(window.location.search).get(EMBED_WIDGET_SEARCH_PARAM) === '1') {
       return true;
