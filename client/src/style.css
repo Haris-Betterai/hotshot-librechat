@@ -3036,12 +3036,6 @@ html.embed-widget #root {
   overflow: hidden;
 }
 
-/* The widget panel is ~380px wide: scale the rem-based UI to a 14px base so text,
-   spacing and controls match a compact chat widget instead of the full-page app. */
-html.embed-widget {
-  font-size: 87.5%;
-}
-
 /* ==========================================================================
    Hot Shot's Secret brand
    Palette sampled from hotshotsecret.com: near-black #141414, signature lime
