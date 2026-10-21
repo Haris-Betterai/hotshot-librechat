@@ -15,7 +15,7 @@ function EmbedLanding() {
   const sendStarter = useCallback((text: string) => submitMessage({ text }), [submitMessage]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col justify-end gap-3 overflow-y-auto px-3 pb-3 pt-4">
+    <div className="mx-auto flex h-full min-h-0 w-full flex-col justify-end gap-3 overflow-y-auto px-3 pb-3 pt-4 md:max-w-3xl">
       {welcomeMessage ? (
         <div className="flex items-end gap-2" data-testid="embed-welcome">
           {avatarUrl ? (
