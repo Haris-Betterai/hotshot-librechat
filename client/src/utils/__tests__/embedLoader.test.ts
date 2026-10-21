@@ -79,6 +79,8 @@ describe('embed.js loader', () => {
     expect(teaser()?.classList.contains('hse-show')).toBe(false);
     jest.advanceTimersByTime(2100);
     expect(teaser()?.classList.contains('hse-show')).toBe(true);
+    const css = [...document.head.querySelectorAll('style')].map((el) => el.textContent).join('');
+    expect(css).toMatch(/\.hse-teaser\{[^}]*width:max-content/);
     (document.querySelector(`${WIDGET} .hse-teaser-x`) as HTMLElement).click();
     expect(teaser()?.classList.contains('hse-show')).toBe(false);
 

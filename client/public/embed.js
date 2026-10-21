@@ -170,7 +170,7 @@
       id +
       ' .hse-teaser{position:absolute;' +
       side +
-      ':68px;bottom:8px;max-width:min(260px,calc(100vw - 120px));display:flex;align-items:flex-start;gap:6px;padding:10px 8px 10px 14px;border-radius:14px;background:#fff;color:#111827;border:1px solid ' +
+      ':68px;bottom:8px;width:max-content;max-width:min(260px,calc(100vw - 120px));display:flex;align-items:flex-start;gap:6px;padding:10px 8px 10px 14px;border-radius:14px;background:#fff;color:#111827;border:1px solid ' +
       hexToRgba(s.color, 0.35) +
       ';border-left:3px solid ' +
       s.color +
