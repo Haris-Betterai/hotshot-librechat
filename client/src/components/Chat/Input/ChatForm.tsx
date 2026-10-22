@@ -7,6 +7,7 @@ import type { TMessage, TConversation } from 'librechat-data-provider';
 import type { ExtendedFile, FileSetter, ConvoGenerator } from '~/common';
 import type { QueuedMessageContext } from '~/hooks/Chat/useSteering';
 import {
+  useBeam,
   useTextarea,
   useAutoSave,
   useLocalize,
@@ -55,7 +56,7 @@ import store from '~/store';
 interface ChatFormProps {
   index: number;
   placeholder?: string;
-  /** Run the border beam on the composer (the landing screen); it also runs while a reply streams. */
+  /** Show the composer beam at full strength (the landing screen); elsewhere it returns dimmed once the composer is idle. */
   beam?: boolean;
   /** From ChatContext — individual values so memo can compare them */
   files: Map<string, ExtendedFile>;
@@ -328,6 +329,12 @@ const ChatForm = memo(function ChatForm({
   });
 
   const textValue = useWatch({ control: methods.control, name: 'text' });
+  const beamState = useBeam({
+    enabled: !isEmbed,
+    landing: beam,
+    busy: isSubmitting,
+    activity: textValue ?? '',
+  });
 
   useEffect(() => {
     if (textAreaRef.current) {
@@ -456,7 +463,8 @@ const ChatForm = memo(function ChatForm({
               agentId={conversation?.agent_id}
             />
             <div
-              className={cn('w-full rounded-3xl', !isEmbed && (beam || isSubmitting) && 'hs-beam')}
+              data-beam={beamState.mode}
+              className={cn('w-full rounded-3xl', beamState.mounted && 'hs-beam')}
             >
               <div
                 onClick={handleContainerClick}

@@ -3268,9 +3268,63 @@ html.embed-widget #root {
   opacity: 0.45;
 }
 
-@media (prefers-reduced-motion: reduce) {
+/* Strength by state: full on the landing screen, dimmed when idle, and a brief flare as it leaves. */
+.hs-beam::before,
+.hs-beam::after {
+  transition: opacity 0.7s ease;
+}
+
+@starting-style {
   .hs-beam::before,
   .hs-beam::after {
+    opacity: 0;
+  }
+}
+
+.hs-beam[data-beam='dim']::before {
+  opacity: 0.5;
+}
+
+.hs-beam[data-beam='dim']::after {
+  opacity: 0.2;
+}
+
+.hs-beam[data-beam='off']::before {
+  opacity: 0;
+  transition-duration: 0.45s;
+}
+
+.hs-beam[data-beam='off']::after {
+  animation:
+    hs-beam-spin 3.6s linear infinite,
+    hs-beam-out 0.7s ease-out forwards;
+}
+
+@keyframes hs-beam-out {
+  0% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+
+  30% {
+    opacity: 0.85;
+    transform: scale(1.02);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hs-beam::before,
+  .hs-beam::after,
+  .hs-beam[data-beam='off']::after {
     animation: none;
+  }
+
+  .hs-beam[data-beam='off']::after {
+    opacity: 0;
   }
 }
