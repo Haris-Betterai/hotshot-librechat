@@ -38,6 +38,15 @@ describe('describeStep', () => {
       'Browsed Fuel additives',
     ],
     [done(`recommend_youtube_video${SUFFIX}`), 'Found related videos'],
+    [
+      active(`get_product_document${SUFFIX}`, { product: 'Gasoline Extreme', document: 'sds' }),
+      'Reading the Gasoline Extreme safety data sheet…',
+    ],
+    [
+      done(`get_product_document${SUFFIX}`, { product: 'FR3', question: 'specs' }),
+      'Read the FR3 product sheets',
+    ],
+    [done(`get_product_document${SUFFIX}`), 'Read the product sheets'],
     [done('web_search', { url: 'https://www.hotshotsecret.com/x' }), 'Searched hotshotsecret.com'],
     [done('web_search'), 'Searched the web'],
     [done(`get_order_status${SUFFIX}`), 'Get order status'],

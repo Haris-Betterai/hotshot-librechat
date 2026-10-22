@@ -59,6 +59,21 @@ const webDomain: Detail = (args) => {
   return candidate ? hostOf(candidate) : undefined;
 };
 
+const DOCUMENT_KINDS: Record<string, string> = {
+  sds: 'safety data sheet',
+  tech: 'tech data sheet',
+};
+
+/** "Gasoline Extreme safety data sheet"; a missing or "any" kind reads as "product sheets". */
+const documentDetail: Detail = (args) => {
+  const product = text(args.product);
+  if (!product) {
+    return undefined;
+  }
+  const kind = typeof args.document === 'string' ? DOCUMENT_KINDS[args.document] : undefined;
+  return `${product} ${kind ?? 'product sheets'}`;
+};
+
 /** English copy is the fallback until the keys exist in translation.json. */
 const SPECS: Record<string, StepSpec> = {
   products: {
@@ -96,6 +111,13 @@ const SPECS: Record<string, StepSpec> = {
     activeBare: 'Browsing products…',
   },
   videos: { done: 'Found related videos', active: 'Finding related videos…' },
+  documents: {
+    detail: documentDetail,
+    done: 'Read the {{0}}',
+    active: 'Reading the {{0}}…',
+    doneBare: 'Read the product sheets',
+    activeBare: 'Reading the product sheets…',
+  },
   web: {
     detail: webDomain,
     done: 'Searched {{0}}',
@@ -114,6 +136,7 @@ const TOOL_SPEC_IDS: Record<string, string> = {
   get_product_by_url: 'product_page',
   list_products_by_category: 'category',
   recommend_youtube_video: 'videos',
+  get_product_document: 'documents',
 };
 
 const keyFor = (id: string, variant: string): TranslationKeys =>
