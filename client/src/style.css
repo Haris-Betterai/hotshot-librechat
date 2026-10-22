@@ -3281,12 +3281,17 @@ html.embed-widget #root {
   }
 }
 
+.hs-beam[data-beam='dim']::before,
+.hs-beam[data-beam='dim']::after {
+  animation-duration: 7s;
+}
+
 .hs-beam[data-beam='dim']::before {
-  opacity: 0.5;
+  opacity: 0.3;
 }
 
 .hs-beam[data-beam='dim']::after {
-  opacity: 0.2;
+  opacity: 0.06;
 }
 
 .hs-beam[data-beam='off']::before {
