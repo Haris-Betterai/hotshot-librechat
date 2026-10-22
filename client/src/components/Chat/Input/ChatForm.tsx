@@ -1,5 +1,4 @@
 import { memo, useRef, useMemo, useEffect, useState, useCallback } from 'react';
-import { BorderBeam } from 'border-beam';
 import { useWatch } from 'react-hook-form';
 import { TextareaAutosize } from '@librechat/client';
 import { useRecoilState, useRecoilValue, useRecoilCallback } from 'recoil';
@@ -456,12 +455,8 @@ const ChatForm = memo(function ChatForm({
               conversationId={conversationId}
               agentId={conversation?.agent_id}
             />
-            <BorderBeam
-              className="w-full"
-              size="md"
-              colorVariant="colorful"
-              theme="auto"
-              active={!isEmbed && (beam || isSubmitting)}
+            <div
+              className={cn('w-full rounded-3xl', !isEmbed && (beam || isSubmitting) && 'hs-beam')}
             >
               <div
                 onClick={handleContainerClick}
@@ -623,7 +618,7 @@ const ChatForm = memo(function ChatForm({
                 </div>
                 {TextToSpeech && automaticPlayback && <StreamAudio index={index} />}
               </div>
-            </BorderBeam>
+            </div>
           </div>
           {controls.poweredBy && (
             <p className="pt-1.5 text-center text-xs text-text-tertiary">
