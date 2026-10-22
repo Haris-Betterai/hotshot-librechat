@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Check } from 'lucide-react';
 import { Spinner, useToastContext } from '@librechat/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { dataService, normalizeEmbedWidgetSettings } from 'librechat-data-provider';
+import type { ReactNode } from 'react';
 import type { QueryKey } from '@tanstack/react-query';
 import type { TEmbedWidget, TEmbedWidgetSettings } from 'librechat-data-provider';
 import EmbedSettingsForm, { HEX_COLOR } from './Settings';
@@ -13,6 +15,11 @@ type EditorProps = {
   queryKey: QueryKey;
   agentName?: string;
   agentId?: string;
+  /** Custom launcher icon upload, rendered inside the Look section. */
+  launcherUpload?: ReactNode;
+  /** Install and access card, rendered below the settings sections. */
+  install?: ReactNode;
+  wide?: boolean;
 };
 
 export function diffSettings(
@@ -29,7 +36,15 @@ export function diffSettings(
   }, {});
 }
 
-export default function EmbedSettingsEditor({ widget, queryKey, agentName, agentId }: EditorProps) {
+export default function EmbedSettingsEditor({
+  widget,
+  queryKey,
+  agentName,
+  agentId,
+  launcherUpload,
+  install,
+  wide = false,
+}: EditorProps) {
   const localize = useLocalize();
   const { showToast } = useToastContext();
   const queryClient = useQueryClient();
@@ -80,43 +95,62 @@ export default function EmbedSettingsEditor({ widget, queryKey, agentName, agent
   };
 
   return (
-    <div className="flex flex-col gap-3">
-      <EmbedSettingsForm
-        draft={draft}
-        colorText={colorText}
-        onColorText={onColorText}
-        onChange={onChange}
-        agentName={agentName}
-        agentId={agentId}
-      />
-      <EmbedPreview settings={normalized} agentName={agentName} iconUrl={widget.iconUrl} />
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          className="btn btn-primary h-9 px-3 text-sm"
-          disabled={!dirty || !colorValid || saveMutation.isLoading}
-          onClick={() => saveMutation.mutate(changes)}
-        >
-          {saveMutation.isLoading ? (
-            <Spinner className="icon-md" aria-hidden="true" />
-          ) : (
-            localize('com_ui_embed_settings_save')
-          )}
-        </button>
-        <button
-          type="button"
-          className="btn btn-neutral h-9 px-3 text-sm"
-          disabled={!dirty && colorValid}
-          onClick={reset}
-        >
-          {localize('com_ui_embed_settings_reset')}
-        </button>
-        {dirty && (
-          <span className="text-xs text-text-secondary" role="status">
-            {localize('com_ui_embed_unsaved')}
-          </span>
-        )}
+    <div
+      className={
+        wide ? 'grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_400px]' : 'flex flex-col gap-4'
+      }
+    >
+      <div className="flex min-w-0 flex-col gap-4">
+        <EmbedSettingsForm
+          draft={draft}
+          colorText={colorText}
+          onColorText={onColorText}
+          onChange={onChange}
+          agentName={agentName}
+          agentId={agentId}
+          launcherUpload={launcherUpload}
+          wide={wide}
+        />
+        {install}
       </div>
+      <aside className={`flex min-w-0 flex-col gap-4 ${wide ? 'lg:sticky lg:top-4' : ''}`}>
+        <EmbedPreview settings={normalized} agentName={agentName} iconUrl={widget.iconUrl} />
+        <div className="flex items-center gap-2 rounded-xl border border-border-light bg-surface-primary p-3 shadow-sm">
+          {dirty ? (
+            <span className="flex items-center gap-2 text-xs text-text-primary" role="status">
+              <span className="h-2 w-2 rounded-full bg-amber-500" aria-hidden="true" />
+              {localize('com_ui_embed_unsaved')}
+            </span>
+          ) : (
+            <span className="flex items-center gap-1.5 text-xs text-text-secondary">
+              <Check className="h-3.5 w-3.5" aria-hidden="true" />
+              {localize('com_ui_embed_all_saved')}
+            </span>
+          )}
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              type="button"
+              className="btn btn-neutral h-9 rounded-lg px-3 text-sm"
+              disabled={!dirty && colorValid}
+              onClick={reset}
+            >
+              {localize('com_ui_embed_settings_reset')}
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary h-9 rounded-lg px-4 text-sm"
+              disabled={!dirty || !colorValid || saveMutation.isLoading}
+              onClick={() => saveMutation.mutate(changes)}
+            >
+              {saveMutation.isLoading ? (
+                <Spinner className="icon-md" aria-hidden="true" />
+              ) : (
+                localize('com_ui_embed_settings_save')
+              )}
+            </button>
+          </div>
+        </div>
+      </aside>
     </div>
   );
 }

@@ -98,7 +98,6 @@ describe('EmbedWidget settings', () => {
 
   it('caps starters at four', async () => {
     await openWidget();
-    fireEvent.click(screen.getByRole('button', { name: 'com_ui_embed_group_greeting' }));
     const add = screen.getByText('com_ui_embed_starter_add').closest('button') as HTMLElement;
     [1, 2, 3].forEach(() => fireEvent.click(add));
     expect(add).toBeDisabled();

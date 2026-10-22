@@ -32,7 +32,6 @@ const setup = (levels: string[]) => {
       agentId="agent_1"
     />,
   );
-  fireEvent.click(screen.getByRole('button', { name: 'com_ui_embed_group_behaviour' }));
   return onChange;
 };
 
