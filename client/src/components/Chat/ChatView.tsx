@@ -37,6 +37,16 @@ function LoadingSpinner() {
   );
 }
 
+/** Message column layout: landing vs conversation, full page vs embedded widget. */
+function columnLayout(isLandingPage: boolean, isEmbed: boolean): string {
+  if (isLandingPage) {
+    return isEmbed
+      ? 'flex-1 items-stretch justify-end'
+      : 'flex-1 items-center justify-end sm:justify-center';
+  }
+  return isEmbed ? 'min-h-0 flex-1 overflow-hidden' : 'h-full overflow-y-auto';
+}
+
 function ChatView({ index = 0, project }: { index?: number; project?: TChatProject }) {
   const { conversationId } = useParams();
   const localize = useLocalize();
@@ -105,21 +115,15 @@ function ChatView({ index = 0, project }: { index?: number; project?: TChatProje
       <ChatContext.Provider value={chatHelpers}>
         <AddedChatContext.Provider value={addedChatHelpers}>
           <Presentation>
-            <div className="hs-brand-wash relative flex h-full w-full flex-col">
+            <div
+              className={cn(
+                'hs-brand-wash relative flex h-full w-full flex-col',
+                isLandingPage && !isEmbed && 'hs-landing-wash',
+              )}
+            >
               <Header />
               <>
-                <div
-                  className={cn(
-                    'flex flex-col',
-                    isLandingPage
-                      ? isEmbed
-                        ? 'flex-1 items-stretch justify-end'
-                        : 'flex-1 items-center justify-end sm:justify-center'
-                      : isEmbed
-                        ? 'min-h-0 flex-1 overflow-hidden'
-                        : 'h-full overflow-y-auto',
-                  )}
-                >
+                <div className={cn('flex flex-col', columnLayout(isLandingPage, isEmbed))}>
                   {content}
                   <div
                     className={cn(
@@ -131,7 +135,11 @@ function ChatView({ index = 0, project }: { index?: number; project?: TChatProje
                   >
                     {isProjectLandingPage && project && <ProjectLandingChip project={project} />}
                     {isLandingPage && !isEmbed && <ConversationStarters />}
-                    <ChatForm index={index} placeholder={chatFormPlaceholder} />
+                    <ChatForm
+                      index={index}
+                      placeholder={chatFormPlaceholder}
+                      beam={isLandingPage && !isEmbed}
+                    />
                     {!isLandingPage && !isEmbed && <Footer />}
                   </div>
                 </div>

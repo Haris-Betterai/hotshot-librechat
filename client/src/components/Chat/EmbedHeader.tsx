@@ -84,7 +84,7 @@ function EmbedHeader() {
           data-testid="embed-header-avatar"
         />
       ) : (
-        <EmbedOrb size={32} className="shrink-0" />
+        <EmbedOrb size={32} paused={false} className="shrink-0" />
       )}
       <div className="min-w-0 flex-1 leading-tight">
         <p className="truncate text-sm font-semibold text-neutral-900 dark:text-neutral-50">

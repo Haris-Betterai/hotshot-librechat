@@ -15,6 +15,8 @@ const REVALIDATE_FILES = new Set([
   'widget-demo.html',
   'hotshot-orb.svg',
   'hotshot-orb-launcher.svg',
+  'launcher.js',
+  'engine.js',
 ]);
 
 /**

@@ -21,7 +21,7 @@ function EmbedLanding() {
           {avatarUrl ? (
             <img src={avatarUrl} alt="" className="h-7 w-7 shrink-0 rounded-full object-cover" />
           ) : (
-            <EmbedOrb size={28} className="shrink-0" />
+            <EmbedOrb size={28} paused={false} className="shrink-0" />
           )}
           <p className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-bl-md bg-neutral-100 px-3.5 py-2.5 text-sm text-neutral-900 dark:bg-neutral-800 dark:text-neutral-50">
             {welcomeMessage}

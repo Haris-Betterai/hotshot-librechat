@@ -69,7 +69,13 @@ describe('embed.js loader', () => {
       document.querySelector<HTMLImageElement>(`${WIDGET} .hse-ico-open img`)?.src;
     mockFetch({ iconUrl: icon, settings: {} });
     await load();
-    expect(src()).toBe(`${ORIGIN}/assets/hotshot-orb-launcher.svg`);
+    expect(src()).toBe(`${ORIGIN}/assets/hotshot-orb.svg`);
+    expect(document.querySelector(`${WIDGET} .hse-launcher`)?.classList.contains('hse-bare')).toBe(
+      true,
+    );
+    expect(document.querySelector('script[type="module"]')?.getAttribute('src')).toBe(
+      `${ORIGIN}/assets/orb/launcher.js`,
+    );
 
     root()?.remove();
     document.head.innerHTML = '';

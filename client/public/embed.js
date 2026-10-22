@@ -130,6 +130,14 @@
       id +
       ' .hse-ico img.hse-orb{width:70%;height:70%;object-fit:contain;}' +
       id +
+      ' .hse-launcher.hse-bare{background:transparent;box-shadow:none;overflow:visible;}' +
+      id +
+      '.hse-open .hse-launcher.hse-bare{background:#111827;box-shadow:0 4px 16px rgba(0,0,0,.28);}' +
+      id +
+      ' .hse-bare .hse-ico img.hse-orb,' +
+      id +
+      ' .hse-bare .hse-ico canvas{width:100%;height:100%;display:block;}' +
+      id +
       ' .hse-ico-close{opacity:0;transform:rotate(-90deg) scale(.6);}' +
       id +
       '.hse-open .hse-ico-open{opacity:0;transform:rotate(90deg) scale(.6);}' +
@@ -175,6 +183,23 @@
     );
   }
 
+  /** Swaps the static orb for the animated one; keeps the SVG if the module never loads. */
+  function animateOrb(holder, fallback) {
+    var mod = document.createElement('script');
+    mod.type = 'module';
+    mod.src = origin + '/assets/orb/launcher.js';
+    mod.onload = function () {
+      if (typeof window.__hotshotMountOrb !== 'function' || !fallback.parentNode) {
+        return;
+      }
+      var canvas = document.createElement('canvas');
+      canvas.setAttribute('aria-hidden', 'true');
+      fallback.parentNode.replaceChild(canvas, fallback);
+      window.__hotshotMountOrb(canvas, 56);
+    };
+    document.head.appendChild(mod);
+  }
+
   function mount(raw) {
     var cfg = raw && typeof raw === 'object' ? raw : {};
     var s = resolveSettings(cfg.settings);
@@ -208,8 +233,11 @@
     if (s.launcherIcon === 'custom' && iconUrl) {
       img.src = iconUrl;
     } else {
+      /* Bare black-dot orb, like the main site: static SVG first, animated once the module loads. */
       img.className = 'hse-orb';
-      img.src = origin + '/assets/hotshot-orb-launcher.svg';
+      img.src = origin + '/assets/hotshot-orb.svg';
+      launcher.classList.add('hse-bare');
+      animateOrb(icoOpen, img);
     }
     icoOpen.appendChild(img);
     var icoClose = document.createElement('span');

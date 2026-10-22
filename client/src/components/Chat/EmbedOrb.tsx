@@ -56,9 +56,10 @@ function EmbedOrb({ size = 32, className, state, paused }: EmbedOrbProps) {
   };
   const ink = 'brightness-[0.2] transition-opacity duration-500 dark:brightness-100';
 
+  /** Small orbs are drawn twice: their translucent dots wash out at avatar size. */
+  const copies = size < ANIMATE_MIN ? [0, 1] : [0];
+
   if (!cycling) {
-    /** Small orbs are drawn twice: their translucent dots wash out at avatar size. */
-    const copies = size < ANIMATE_MIN ? [0, 1] : [0];
     return (
       <span
         className={`relative inline-block shrink-0 ${className ?? ''}`}
@@ -90,20 +91,26 @@ function EmbedOrb({ size = 32, className, state, paused }: EmbedOrbProps) {
       style={{ width: size, height: size }}
       data-testid="embed-orb"
     >
-      <ThinkingOrb
-        state={even}
-        size={preset}
-        aria-hidden="true"
-        className={ink}
-        style={{ ...layer, opacity: evenActive ? 1 : 0 }}
-      />
-      <ThinkingOrb
-        state={odd}
-        size={preset}
-        aria-hidden="true"
-        className={ink}
-        style={{ ...layer, opacity: evenActive ? 0 : 1 }}
-      />
+      {copies.map((copy) => (
+        <ThinkingOrb
+          key={`even-${copy}`}
+          state={even}
+          size={preset}
+          aria-hidden="true"
+          className={ink}
+          style={{ ...layer, opacity: evenActive ? 1 : 0 }}
+        />
+      ))}
+      {copies.map((copy) => (
+        <ThinkingOrb
+          key={`odd-${copy}`}
+          state={odd}
+          size={preset}
+          aria-hidden="true"
+          className={ink}
+          style={{ ...layer, opacity: evenActive ? 0 : 1 }}
+        />
+      ))}
     </span>
   );
 }

@@ -3092,6 +3092,22 @@ html.embed-widget #root {
   content: none;
 }
 
+/* Landing screen: a soft, cool wash instead of flat white. */
+.hs-landing-wash {
+  background:
+    radial-gradient(1200px 560px at 50% -10%, rgba(59, 108, 246, 0.1), transparent 62%),
+    radial-gradient(900px 480px at 88% 108%, rgba(139, 120, 255, 0.07), transparent 62%),
+    radial-gradient(820px 440px at 8% 106%, rgba(56, 189, 248, 0.06), transparent 62%),
+    linear-gradient(180deg, #f7f8fb 0%, #f1f3f8 100%);
+}
+
+.dark .hs-landing-wash {
+  background:
+    radial-gradient(1200px 560px at 50% -10%, rgba(120, 150, 255, 0.14), transparent 62%),
+    radial-gradient(900px 480px at 88% 108%, rgba(139, 120, 255, 0.08), transparent 62%),
+    linear-gradient(180deg, #111318 0%, #0c0d10 100%);
+}
+
 /* Keep chat content above the wash. */
 .hs-brand-wash > * {
   position: relative;
