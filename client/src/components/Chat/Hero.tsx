@@ -27,7 +27,9 @@ export const HeroOrb = memo(function HeroOrb() {
         className="absolute inset-[8px] rounded-full border border-neutral-900/[0.05] dark:border-white/[0.08]"
       />
       {/** Drawn twice: one layer of translucent dots reads pale at this size. */}
-      <EmbedOrb size={ORB_SIZE} className="absolute" />
+      <div className="absolute inset-0 flex items-center justify-center">
+        <EmbedOrb size={ORB_SIZE} />
+      </div>
       <EmbedOrb size={ORB_SIZE} className="relative" />
     </div>
   );
