@@ -54,6 +54,12 @@ export default function EmbedPreview({ settings, agentName, iconUrl }: PreviewPr
   const offsetY = Math.round(settings.offsetY * SCALE);
   const customIcon = settings.launcherIcon === 'custom' ? iconUrl : undefined;
   const border = dark ? 'border-neutral-700' : 'border-neutral-200';
+  /** The orb inks itself for the surrounding theme; a dark panel needs its light dots. */
+  const orb = (size: number) => (
+    <span className={dark ? 'dark' : undefined}>
+      <EmbedOrb size={size} />
+    </span>
+  );
   const panelBottom = offsetY + LAUNCHER + 10;
   const launcher = (
     <div
@@ -64,7 +70,9 @@ export default function EmbedPreview({ settings, agentName, iconUrl }: PreviewPr
       {customIcon ? (
         <img src={customIcon} alt="" className="h-full w-full object-cover" />
       ) : (
-        <EmbedOrb size={28} />
+        <span className="dark">
+          <EmbedOrb size={28} />
+        </span>
       )}
     </div>
   );
@@ -127,7 +135,7 @@ export default function EmbedPreview({ settings, agentName, iconUrl }: PreviewPr
               {customIcon ? (
                 <img src={customIcon} alt="" className="h-5 w-5 rounded-full object-cover" />
               ) : (
-                <EmbedOrb size={20} />
+                orb(20)
               )}
               <div className="min-w-0">
                 <div className="truncate text-xs font-semibold">
@@ -144,7 +152,7 @@ export default function EmbedPreview({ settings, agentName, iconUrl }: PreviewPr
                   {customIcon ? (
                     <img src={customIcon} alt="" className="h-4 w-4 rounded-full object-cover" />
                   ) : (
-                    <EmbedOrb size={16} />
+                    orb(16)
                   )}
                   <div
                     data-testid="embed-preview-welcome"

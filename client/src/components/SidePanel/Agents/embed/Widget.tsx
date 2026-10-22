@@ -279,7 +279,7 @@ export default function EmbedWidget({
           </div>
         </div>
         <pre
-          className="overflow-x-auto whitespace-pre-wrap break-all px-3 py-3 font-mono text-xs leading-relaxed"
+          className="overflow-x-auto whitespace-pre-wrap px-3 py-3 font-mono text-xs leading-relaxed [overflow-wrap:normal]"
           aria-label={localize('com_ui_embed_widget_snippet')}
         >
           {widgetSnippet(widget.embedId)}

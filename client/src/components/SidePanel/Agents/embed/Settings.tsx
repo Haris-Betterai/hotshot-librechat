@@ -99,14 +99,21 @@ function SwitchRow({
   description,
   checked,
   onChange,
+  plain = false,
 }: {
   label: string;
   description?: string;
   checked: boolean;
   onChange: (value: boolean) => void;
+  /** Drops the row's own border when it sits inside a divided list. */
+  plain?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-lg border border-border-light px-4 py-3">
+    <div
+      className={`flex items-center justify-between gap-4 px-4 py-3 ${
+        plain ? '' : 'rounded-lg border border-border-light'
+      }`}
+    >
       <div className="min-w-0">
         <div className="text-sm font-medium text-text-primary">{label}</div>
         {description && <div className="mt-0.5 text-xs text-text-secondary">{description}</div>}
@@ -484,18 +491,21 @@ export default function EmbedSettingsForm({
             );
           })}
         </div>
-        <div className={wide ? 'grid gap-3 sm:grid-cols-3' : 'grid gap-3'}>
+        <div className="divide-y divide-border-light rounded-lg border border-border-light">
           <SwitchRow
+            plain
             label={localize('com_ui_embed_allow_voice')}
             checked={draft.allowVoice}
             onChange={(allowVoice) => onChange({ allowVoice })}
           />
           <SwitchRow
+            plain
             label={localize('com_ui_embed_allow_upload')}
             checked={draft.allowFileUpload}
             onChange={(allowFileUpload) => onChange({ allowFileUpload })}
           />
           <SwitchRow
+            plain
             label={localize('com_ui_embed_show_powered_by')}
             checked={draft.showPoweredBy}
             onChange={(showPoweredBy) => onChange({ showPoweredBy })}
