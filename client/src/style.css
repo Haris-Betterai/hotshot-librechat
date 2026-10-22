@@ -3241,11 +3241,10 @@ html.embed-widget #root {
     from var(--hs-beam-angle),
     transparent 0deg,
     transparent 200deg,
-    #3b82f6 240deg,
-    #8b5cf6 270deg,
-    #ec4899 300deg,
-    #f59e0b 325deg,
-    #22c55e 345deg,
+    #1d4ed8 240deg,
+    #3b6cf6 275deg,
+    #38bdf8 315deg,
+    #14b8a6 345deg,
     transparent 360deg
   );
   animation: hs-beam-spin 3.6s linear infinite;
