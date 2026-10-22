@@ -1,4 +1,10 @@
-import { safeUiUrl, parseUiBlock, calculateDose, MAX_UI_QUICK_REPLIES } from './uiblocks';
+import {
+  safeUiUrl,
+  parseUiBlock,
+  calculateDose,
+  parseYouTubeUrl,
+  MAX_UI_QUICK_REPLIES,
+} from './uiblocks';
 
 const json = (value: unknown) => JSON.stringify(value);
 
@@ -116,5 +122,43 @@ describe('helpers', () => {
     expect(safeUiUrl('https://a.com/x')).toBe('https://a.com/x');
     expect(safeUiUrl('http://a.com')).toBeUndefined();
     expect(safeUiUrl('data:image/png;base64,xx')).toBeUndefined();
+  });
+});
+
+describe('video block', () => {
+  const block = (url: string, extra: Record<string, unknown> = {}) =>
+    parseUiBlock(JSON.stringify({ type: 'video', url, ...extra }));
+
+  it.each([
+    ['https://www.youtube.com/watch?v=MIPTS5BN62c', 'MIPTS5BN62c', undefined],
+    ['https://youtu.be/MIPTS5BN62c?t=95', 'MIPTS5BN62c', 95],
+    ['https://www.youtube.com/shorts/MIPTS5BN62c', 'MIPTS5BN62c', undefined],
+    ['https://m.youtube.com/watch?v=MIPTS5BN62c&t=1m30s', 'MIPTS5BN62c', 90],
+  ])('reads %s', (url, id, start) => {
+    const parsed = block(url, { title: 'Stiction Eliminator challenge' });
+    expect(parsed).toMatchObject({
+      type: 'video',
+      videoId: id,
+      url: `https://www.youtube.com/watch?v=${id}`,
+      title: 'Stiction Eliminator challenge',
+    });
+    expect(parsed && 'start' in parsed ? parsed.start : undefined).toBe(start);
+  });
+
+  it.each([
+    'https://vimeo.com/123456',
+    'https://www.youtube.com/watch?v=short',
+    'http://www.youtube.com/watch?v=MIPTS5BN62c',
+    'javascript:alert(1)',
+    'https://evil.example/watch?v=MIPTS5BN62c',
+  ])('rejects %s', (url) => {
+    expect(block(url)).toBeNull();
+  });
+
+  it('parses ids from the helper directly', () => {
+    expect(parseYouTubeUrl('https://www.youtube.com/embed/MIPTS5BN62c?start=12')).toEqual({
+      id: 'MIPTS5BN62c',
+      start: 12,
+    });
   });
 });

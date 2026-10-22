@@ -67,12 +67,25 @@ export type TUiVehiclePicker = {
   fields: TUiVehicleField[];
 };
 
+export type TUiVideo = {
+  type: 'video';
+  /** 11-character YouTube video id, taken from `url`. */
+  videoId: string;
+  /** Canonical watch URL rebuilt from the id. */
+  url: string;
+  title?: string;
+  summary?: string;
+  /** Start offset in seconds. */
+  start?: number;
+};
+
 export type TUiBlock =
   | TUiProductCard
   | TUiComparison
   | TUiDoseCalculator
   | TUiQuickReplies
-  | TUiVehiclePicker;
+  | TUiVehiclePicker
+  | TUiVideo;
 
 type JsonObject = { [key: string]: unknown };
 
@@ -249,12 +262,79 @@ function vehiclePicker(raw: JsonObject): TUiVehiclePicker | null {
   );
 }
 
+const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
+const YOUTUBE_HOSTS = new Set([
+  'youtube.com',
+  'www.youtube.com',
+  'm.youtube.com',
+  'youtu.be',
+  'www.youtube-nocookie.com',
+]);
+
+/** Seconds from a `t`/`start` value such as "90", "90s" or "1m30s". */
+const startSeconds = (value: string | null): number | undefined => {
+  if (!value) {
+    return undefined;
+  }
+  const match = /^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?$/.exec(value);
+  if (!match) {
+    return undefined;
+  }
+  const [, h = '0', m = '0', sec = '0'] = match;
+  const total = Number(h) * 3600 + Number(m) * 60 + Number(sec);
+  return total > 0 ? total : undefined;
+};
+
+/** Video id and start offset from any common YouTube URL shape; null for anything else. */
+export function parseYouTubeUrl(value: unknown): { id: string; start?: number } | null {
+  const href = safeUiUrl(value);
+  if (!href) {
+    return null;
+  }
+  const url = new URL(href);
+  if (!YOUTUBE_HOSTS.has(url.hostname)) {
+    return null;
+  }
+  const path = url.pathname.split('/').filter(Boolean);
+  let candidate = url.searchParams.get('v');
+  if (url.hostname === 'youtu.be') {
+    candidate = path[0];
+  } else if (['shorts', 'embed', 'live'].includes(path[0])) {
+    candidate = path[1];
+  }
+  if (!candidate || !YOUTUBE_ID.test(candidate)) {
+    return null;
+  }
+  const start = startSeconds(url.searchParams.get('t') ?? url.searchParams.get('start'));
+  return start ? { id: candidate, start } : { id: candidate };
+}
+
+function video(raw: JsonObject): TUiVideo | null {
+  const parsed = parseYouTubeUrl(raw.url);
+  if (!parsed) {
+    return null;
+  }
+  return withOptional<TUiVideo>(
+    {
+      type: 'video',
+      videoId: parsed.id,
+      url: `https://www.youtube.com/watch?v=${parsed.id}`,
+    },
+    {
+      title: text(raw.title, 160),
+      summary: text(raw.summary, 300),
+      start: positive(raw.start) ?? parsed.start,
+    },
+  );
+}
+
 const BUILDERS: Record<TUiBlock['type'], (raw: JsonObject) => TUiBlock | null> = {
   product_card: productCard,
   comparison,
   dose_calculator: doseCalculator,
   quick_replies: quickReplies,
   vehicle_picker: vehiclePicker,
+  video,
 };
 
 /**

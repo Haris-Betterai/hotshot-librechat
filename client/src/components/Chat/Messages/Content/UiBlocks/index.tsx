@@ -8,6 +8,7 @@ import Comparison from './Comparison';
 import Calculator from './Calculator';
 import Replies from './Replies';
 import Vehicle from './Vehicle';
+import Video from './Video';
 import { useLocalize } from '~/hooks';
 import { cn } from '~/utils';
 
@@ -54,6 +55,8 @@ function Block({ block }: { block: TUiBlock }) {
       return <Replies block={block} />;
     case 'vehicle_picker':
       return <Vehicle block={block} />;
+    case 'video':
+      return <Video block={block} />;
   }
 }
 

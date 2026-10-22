@@ -138,6 +138,30 @@ describe('UiBlock', () => {
     expect(screen.getByLabelText('Year')).toBeDisabled();
   });
 
+  it('shows a video thumbnail and loads the player only on play', () => {
+    renderBlock({
+      type: 'video',
+      url: 'https://youtu.be/MIPTS5BN62c?t=30',
+      title: 'Stiction Eliminator challenge',
+    });
+    expect(document.querySelector('iframe')).toBeNull();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Play video: Stiction Eliminator challenge' }),
+    );
+    const frame = document.querySelector('iframe');
+    expect(frame?.getAttribute('src')).toContain('youtube-nocookie.com/embed/MIPTS5BN62c');
+    expect(frame?.getAttribute('src')).toContain('start=30');
+    expect(screen.getByRole('link', { name: /Watch on YouTube/ })).toHaveAttribute(
+      'href',
+      'https://www.youtube.com/watch?v=MIPTS5BN62c',
+    );
+  });
+
+  it('ignores a video block that is not YouTube', () => {
+    const { container } = renderBlock({ type: 'video', url: 'https://vimeo.com/1' });
+    expect(container).toBeEmptyDOMElement();
+  });
+
   it('shows a skeleton while streaming and nothing once final', () => {
     const partial = '{"type":"product_card","name":"Hot';
     const streaming = renderBlock(partial, {}, true);
