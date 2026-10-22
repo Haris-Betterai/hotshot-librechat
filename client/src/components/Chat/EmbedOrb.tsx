@@ -57,20 +57,25 @@ function EmbedOrb({ size = 32, className, state, paused }: EmbedOrbProps) {
   const ink = 'brightness-[0.2] transition-opacity duration-500 dark:brightness-100';
 
   if (!cycling) {
+    /** Small orbs are drawn twice: their translucent dots wash out at avatar size. */
+    const copies = size < ANIMATE_MIN ? [0, 1] : [0];
     return (
       <span
         className={`relative inline-block shrink-0 ${className ?? ''}`}
         style={{ width: size, height: size }}
         data-testid="embed-orb"
       >
-        <ThinkingOrb
-          state={state ?? 'searching'}
-          size={preset}
-          paused={still}
-          aria-hidden="true"
-          className={ink}
-          style={layer}
-        />
+        {copies.map((copy) => (
+          <ThinkingOrb
+            key={copy}
+            state={state ?? 'searching'}
+            size={preset}
+            paused={still}
+            aria-hidden="true"
+            className={ink}
+            style={layer}
+          />
+        ))}
       </span>
     );
   }

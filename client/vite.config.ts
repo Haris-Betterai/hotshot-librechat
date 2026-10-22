@@ -45,6 +45,10 @@ const QUERY_DEVTOOLS_CHUNK_MODULES = [
 
 export default defineConfig(({ command }) => ({
   base: '',
+  /** Changes on every build; versions the site widget loader so browsers never run a stale copy. */
+  define: {
+    'import.meta.env.VITE_BUILD_ID': JSON.stringify(Date.now().toString(36)),
+  },
   server: {
     allowedHosts:
       (process.env.VITE_ALLOWED_HOSTS && process.env.VITE_ALLOWED_HOSTS.split(',')) || [],

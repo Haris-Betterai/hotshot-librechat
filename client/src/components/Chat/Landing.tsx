@@ -13,9 +13,11 @@ import {
 } from '~/utils';
 import { useChatContext, useAgentsMapContext, useAssistantsMapContext } from '~/Providers';
 import { useGetEndpointsQuery, useGetStartupConfig } from '~/data-provider';
+import Backdrop, { HeroOrb, Capabilities } from '~/components/Chat/Hero';
 import EmbedLanding from '~/components/Chat/EmbedLanding';
 import AgentContact from '~/components/Agents/AgentContact';
 import ConvoIcon from '~/components/Endpoints/ConvoIcon';
+import { isHotshotOrb } from '~/utils/orb';
 import { useLocalize, useAuthContext } from '~/hooks';
 
 const containerClassName =
@@ -76,6 +78,8 @@ export default function Landing({ centerFormOnLanding }: { centerFormOnLanding: 
     [conversation?.spec, startupConfig],
   );
 
+  /** The Hotshot brand gets the full hero: large living orb, backdrop and capability chips. */
+  const hero = isHotshotOrb(modelSpec?.iconURL ?? conversation?.iconURL ?? '');
   const brandedSpecLabel = modelSpec?.showOnLanding === true ? modelSpec.label : '';
   const brandedSpecDescription = (modelSpec?.showOnLanding === true && modelSpec.description) || '';
   const name = brandedSpecLabel || entity?.name || '';
@@ -173,37 +177,42 @@ export default function Landing({ centerFormOnLanding }: { centerFormOnLanding: 
 
   return (
     <div
-      className={`flex h-full transform-gpu flex-col items-center justify-center pb-16 transition-all duration-200 ${centerFormOnLanding ? 'max-h-full sm:max-h-0' : 'max-h-full'} ${getDynamicMargin}`}
+      className={`relative isolate flex h-full transform-gpu flex-col items-center justify-center pb-16 transition-all duration-200 ${centerFormOnLanding ? 'max-h-full sm:max-h-0' : 'max-h-full'} ${getDynamicMargin}`}
     >
+      {hero && <Backdrop />}
       <div ref={contentRef} className="flex flex-col items-center gap-0 p-2">
         <div className="flex flex-col items-center justify-center gap-3">
-          <div className="relative size-16 justify-center">
-            <ConvoIcon
-              agentsMap={agentsMap}
-              assistantMap={assistantMap}
-              conversation={conversation}
-              endpointsConfig={endpointsConfig}
-              containerClassName={containerClassName}
-              context="landing"
-              className="h-2/3 w-2/3 text-black dark:text-white"
-              size={41}
-            />
-            {startupConfig?.showBirthdayIcon && (
-              <TooltipAnchor
-                className="absolute bottom-[27px] right-2"
-                description={localize('com_ui_happy_birthday')}
-                aria-label={localize('com_ui_happy_birthday')}
-              >
-                <BirthdayIcon />
-              </TooltipAnchor>
-            )}
-          </div>
+          {hero ? (
+            <HeroOrb />
+          ) : (
+            <div className="relative size-16 justify-center">
+              <ConvoIcon
+                agentsMap={agentsMap}
+                assistantMap={assistantMap}
+                conversation={conversation}
+                endpointsConfig={endpointsConfig}
+                containerClassName={containerClassName}
+                context="landing"
+                className="h-2/3 w-2/3 text-black dark:text-white"
+                size={41}
+              />
+              {startupConfig?.showBirthdayIcon && (
+                <TooltipAnchor
+                  className="absolute bottom-[27px] right-2"
+                  description={localize('com_ui_happy_birthday')}
+                  aria-label={localize('com_ui_happy_birthday')}
+                >
+                  <BirthdayIcon />
+                </TooltipAnchor>
+              )}
+            </div>
+          )}
           {((isAgent || isAssistant) && name) || name ? (
             <div className="flex flex-col items-center gap-0 p-2">
               <SplitText
                 key={`split-text-${name}`}
                 text={name}
-                className={`${getTextSizeClass(name)} font-semibold tracking-tight text-text-primary`}
+                className={`${hero ? 'text-4xl sm:text-5xl' : getTextSizeClass(name)} font-semibold tracking-tight text-text-primary`}
                 delay={50}
                 textAlign="center"
                 animationFrom={{ opacity: 0, transform: 'translate3d(0,50px,0)' }}
@@ -241,6 +250,7 @@ export default function Landing({ centerFormOnLanding }: { centerFormOnLanding: 
               {description}
             </div>
           ))}
+        {hero && <Capabilities />}
         {/** The agent's support contact is staff-facing detail; a customer
          *   landing on the chat does not need an admin name under the title. */}
         {selectedAgent && !brandedSpecLabel && (
