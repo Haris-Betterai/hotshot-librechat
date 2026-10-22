@@ -1,7 +1,8 @@
 import { memo } from 'react';
 import EmbedOrb from '~/components/Chat/EmbedOrb';
 
-const ORB_SIZE = 112;
+const ORB_SIZE = 104;
+const BOX = 140;
 
 /** Decorative backdrop: a soft spotlight and a fine dot grid that fades out towards the edges. */
 function Backdrop() {
@@ -16,15 +17,17 @@ function Backdrop() {
 /** The large living orb on the landing screen, in a soft glow with a hairline ring. */
 export const HeroOrb = memo(function HeroOrb() {
   return (
-    <div className="relative flex items-center justify-center" style={{ width: 168, height: 168 }}>
+    <div className="relative flex items-center justify-center" style={{ width: BOX, height: BOX }}>
       <div
         aria-hidden="true"
         className="absolute -inset-6 rounded-full bg-[radial-gradient(closest-side,rgba(59,108,246,0.12),rgba(59,108,246,0))] dark:bg-[radial-gradient(closest-side,rgba(120,150,255,0.18),rgba(120,150,255,0))]"
       />
       <div
         aria-hidden="true"
-        className="absolute inset-[14px] rounded-full border border-neutral-900/[0.05] dark:border-white/[0.08]"
+        className="absolute inset-[8px] rounded-full border border-neutral-900/[0.05] dark:border-white/[0.08]"
       />
+      {/** Drawn twice: one layer of translucent dots reads pale at this size. */}
+      <EmbedOrb size={ORB_SIZE} className="absolute" />
       <EmbedOrb size={ORB_SIZE} className="relative" />
     </div>
   );

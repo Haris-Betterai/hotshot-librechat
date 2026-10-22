@@ -180,7 +180,10 @@ export default function Landing({ centerFormOnLanding }: { centerFormOnLanding: 
       className={`relative isolate flex h-full transform-gpu flex-col items-center justify-center pb-16 transition-all duration-200 ${centerFormOnLanding ? 'max-h-full sm:max-h-0' : 'max-h-full'} ${getDynamicMargin}`}
     >
       {hero && <Backdrop />}
-      <div ref={contentRef} className="flex flex-col items-center gap-0 p-2">
+      <div
+        ref={contentRef}
+        className={`flex flex-col items-center gap-0 p-2 ${hero ? '-translate-y-10' : ''}`}
+      >
         <div className="flex flex-col items-center justify-center gap-3">
           {hero ? (
             <HeroOrb />
@@ -212,7 +215,7 @@ export default function Landing({ centerFormOnLanding }: { centerFormOnLanding: 
               <SplitText
                 key={`split-text-${name}`}
                 text={name}
-                className={`${hero ? 'text-4xl sm:text-5xl' : getTextSizeClass(name)} font-semibold tracking-tight text-text-primary`}
+                className={`${hero ? 'text-3xl sm:text-[2.75rem] sm:leading-tight' : getTextSizeClass(name)} font-semibold tracking-tight text-text-primary`}
                 delay={50}
                 textAlign="center"
                 animationFrom={{ opacity: 0, transform: 'translate3d(0,50px,0)' }}
