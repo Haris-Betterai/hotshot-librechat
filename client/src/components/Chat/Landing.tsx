@@ -13,7 +13,7 @@ import {
 } from '~/utils';
 import { useChatContext, useAgentsMapContext, useAssistantsMapContext } from '~/Providers';
 import { useGetEndpointsQuery, useGetStartupConfig } from '~/data-provider';
-import Backdrop, { HeroOrb, Capabilities } from '~/components/Chat/Hero';
+import Backdrop, { HeroOrb } from '~/components/Chat/Hero';
 import EmbedLanding from '~/components/Chat/EmbedLanding';
 import AgentContact from '~/components/Agents/AgentContact';
 import ConvoIcon from '~/components/Endpoints/ConvoIcon';
@@ -250,7 +250,6 @@ export default function Landing({ centerFormOnLanding }: { centerFormOnLanding: 
               {description}
             </div>
           ))}
-        {hero && <Capabilities />}
         {/** The agent's support contact is staff-facing detail; a customer
          *   landing on the chat does not need an admin name under the title. */}
         {selectedAgent && !brandedSpecLabel && (
