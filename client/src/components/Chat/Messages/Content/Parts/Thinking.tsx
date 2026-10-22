@@ -46,7 +46,6 @@ export const ThinkingButton = memo(
     showCopyButton?: boolean;
   }) => {
     const localize = useLocalize();
-    const fontSize = useAtomValue(fontSizeAtom);
 
     const [isCopied, setIsCopied] = useState(false);
 
@@ -69,10 +68,7 @@ export const ThinkingButton = memo(
           onClick={onClick}
           aria-expanded={isExpanded}
           aria-controls={contentId}
-          className={cn(
-            'group/button flex flex-1 items-center justify-start rounded-lg leading-[18px]',
-            fontSize,
-          )}
+          className="group/button flex flex-1 items-center justify-start rounded-lg text-sm leading-[18px] text-text-secondary transition-colors hover:text-text-primary"
         >
           <span className="relative mr-1.5 inline-flex h-[18px] w-[18px] items-center justify-center">
             <Lightbulb

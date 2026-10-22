@@ -54,6 +54,8 @@ jest.mock('../ToolOutput', () => ({
 
 jest.mock('lucide-react', () => ({
   Check: () => <span>{'check'}</span>,
+  Loader2: () => <span data-testid="steps-working" />,
+  CircleCheck: () => <span data-testid="steps-done" />,
   ChevronDown: () => <span>{'chevron'}</span>,
   Users: () => <span>{'users'}</span>,
   MessageCircleQuestion: () => <span data-testid="question-icon">{'question'}</span>,
@@ -355,6 +357,8 @@ describe('ToolCallGroup customer view', () => {
     expect(chip).toHaveAttribute('aria-expanded', 'false');
     expect(container.textContent).not.toMatch(/[└⌐┌┐┘⬤●]/);
     expect(screen.queryByText(/hotshot-secret-mcp/)).not.toBeInTheDocument();
+    expect(screen.getByTestId('steps-done')).toBeInTheDocument();
+    expect(screen.queryByTestId('steps-working')).not.toBeInTheDocument();
   });
 
   it('expands to a deduped, friendly step list instead of raw rows', () => {
@@ -379,6 +383,7 @@ describe('ToolCallGroup customer view', () => {
       'aria-expanded',
       'false',
     );
+    expect(screen.getByTestId('steps-working')).toBeInTheDocument();
   });
 
   it('keeps raw per-call rows for staff', () => {

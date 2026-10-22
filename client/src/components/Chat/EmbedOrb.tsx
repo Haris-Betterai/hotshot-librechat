@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect, useState, useContext, createContext } from 'react';
 import { ThinkingOrb } from 'thinking-orbs';
 import { useReducedMotion } from 'framer-motion';
 import type { CSSProperties } from 'react';
@@ -12,6 +12,9 @@ type EmbedOrbProps = {
   /** Defaults to still below 40px so avatars and menus stay calm. */
   paused?: boolean;
 };
+
+/** Lets a parent animate small orbs (the latest reply's avatar) that would otherwise stay still. */
+export const OrbMotionContext = createContext<boolean | undefined>(undefined);
 
 /** Smallest rendered size that uses the detailed 64px preset. */
 const DETAIL_MIN = 30;
@@ -40,7 +43,8 @@ function useCycleStep(enabled: boolean): number {
 /** Black dots on light surfaces; the library's light ink takes over in dark mode. */
 function EmbedOrb({ size = 32, className, state, paused }: EmbedOrbProps) {
   const reduceMotion = useReducedMotion() === true;
-  const still = paused ?? size < ANIMATE_MIN;
+  const motion = useContext(OrbMotionContext);
+  const still = paused ?? (motion != null ? !motion : size < ANIMATE_MIN);
   const cycling = state == null && !still && !reduceMotion;
   const step = useCycleStep(cycling);
 

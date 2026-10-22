@@ -19,6 +19,7 @@ import PlaceholderRow from '~/components/Chat/Messages/ui/PlaceholderRow';
 import SiblingSwitch from '~/components/Chat/Messages/SiblingSwitch';
 import HoverButtons from '~/components/Chat/Messages/HoverButtons';
 import MessageIcon from '~/components/Chat/Messages/MessageIcon';
+import { OrbMotionContext } from '~/components/Chat/EmbedOrb';
 import SubRow from '~/components/Chat/Messages/SubRow';
 import { fontSizeAtom } from '~/store/fontSize';
 import store from '~/store';
@@ -212,7 +213,9 @@ const ContentRender = memo(function ContentRender({
       {!hasParallelContent && !isUser && !isEmbed && (
         <div className="relative flex flex-shrink-0 flex-col items-center">
           <div className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full">
-            <MessageIcon iconData={iconData} assistant={assistant} agent={agent} />
+            <OrbMotionContext.Provider value={isLast}>
+              <MessageIcon iconData={iconData} assistant={assistant} agent={agent} />
+            </OrbMotionContext.Provider>
           </div>
         </div>
       )}

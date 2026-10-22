@@ -1,6 +1,13 @@
 import { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import { useRecoilValue } from 'recoil';
-import { Check, ChevronDown, MessageCircleQuestion, Users } from 'lucide-react';
+import {
+  Check,
+  Loader2,
+  CircleCheck,
+  ChevronDown,
+  MessageCircleQuestion,
+  Users,
+} from 'lucide-react';
 import { Tools, Constants, ContentTypes, ToolCallTypes } from 'librechat-data-provider';
 import type {
   TAttachment,
@@ -96,6 +103,39 @@ export type ToolCallGroupExpansionState = {
   isExpanded: boolean;
   userOverride: boolean;
 };
+
+/** Customers see a single status mark (spinner, then check); staff keep the tool icons. */
+function ToolGlyph({
+  stepList,
+  working,
+  toolNames,
+  mcpIconMap,
+}: {
+  stepList: boolean;
+  working: boolean;
+  toolNames: string[];
+  mcpIconMap?: Map<string, string>;
+}) {
+  if (!stepList) {
+    return (
+      <StackedToolIcons
+        toolNames={toolNames}
+        mcpIconMap={mcpIconMap}
+        maxIcons={4}
+        isAnimating={working}
+      />
+    );
+  }
+  return (
+    <span className="flex size-4 shrink-0 items-center justify-center" aria-hidden="true">
+      {working ? (
+        <Loader2 className="size-3.5 animate-spin text-text-secondary" />
+      ) : (
+        <CircleCheck className="size-4 text-emerald-600 dark:text-emerald-400" />
+      )}
+    </span>
+  );
+}
 
 export default function ToolCallGroup({
   parts,
@@ -308,7 +348,7 @@ export default function ToolCallGroup({
         'mt-1 overflow-hidden rounded-xl transition-colors duration-150',
         showCardChrome
           ? 'bg-surface-secondary/50 mb-3 border border-border-light'
-          : 'mb-2 w-fit border border-transparent',
+          : '-ml-1.5 mb-1.5 w-fit border border-transparent',
       )}
       ref={rootRef}
     >
@@ -318,7 +358,7 @@ export default function ToolCallGroup({
           'inline-flex items-center gap-2 text-text-secondary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-heavy',
           showCardChrome
             ? 'hover:bg-surface-tertiary/60 w-full px-3 py-2'
-            : 'hover:bg-surface-tertiary/60 rounded-lg px-2 py-1 text-xs opacity-70 hover:opacity-100',
+            : 'hover:bg-surface-tertiary/60 rounded-lg px-1.5 py-1 text-sm hover:text-text-primary',
         )}
         onClick={handleToggle}
         aria-expanded={isExpanded}
@@ -340,14 +380,16 @@ export default function ToolCallGroup({
             <CategoryIcon size={14} />
           </div>
         ) : (
-          <StackedToolIcons
+          <ToolGlyph
+            stepList={showStepList}
+            working={!allCompleted && isSubmitting}
             toolNames={iconToolNames}
             mcpIconMap={mcpIconMap}
-            maxIcons={4}
-            isAnimating={!allCompleted && isSubmitting}
           />
         )}
-        <span className="tool-status-text font-medium">{groupLabel}</span>
+        <span className={cn('tool-status-text', showCardChrome ? 'font-medium' : 'font-normal')}>
+          {groupLabel}
+        </span>
         {/** Hide the tool-name summary for pure-category groups (subagents /
          *   questions) — every entry deduplicates to the same token, which
          *   adds noise without info. Mixed groups keep the summary. */}
@@ -356,7 +398,8 @@ export default function ToolCallGroup({
         )}
         <ChevronDown
           className={cn(
-            'ml-auto size-4 shrink-0 text-text-secondary transition-transform duration-200 ease-out',
+            'shrink-0 text-text-secondary transition-transform duration-200 ease-out',
+            showCardChrome ? 'ml-auto size-4' : 'size-3.5',
             isExpanded && 'rotate-180',
           )}
           aria-hidden="true"
