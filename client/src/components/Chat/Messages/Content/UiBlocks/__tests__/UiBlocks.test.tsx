@@ -193,6 +193,24 @@ describe('UiBlock', () => {
     expect(mockSubmit).toHaveBeenCalledWith({ text: '2018 Ram 2500, 6.7 Cummins' });
   });
 
+  it('moves to the next empty vehicle field on Enter, then sends once complete', () => {
+    renderBlock({ type: 'vehicle_picker', fields: ['year', 'make', 'model'] });
+    const year = screen.getByLabelText('Year');
+    year.focus();
+    fireEvent.change(year, { target: { value: '2018' } });
+    fireEvent.keyDown(year, { key: 'Enter' });
+    expect(screen.getByLabelText('Make')).toHaveFocus();
+    expect(mockSubmit).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText('Make'), { target: { value: 'Ram' } });
+    fireEvent.keyDown(screen.getByLabelText('Make'), { key: 'Enter' });
+    expect(screen.getByLabelText('Model')).toHaveFocus();
+
+    fireEvent.change(screen.getByLabelText('Model'), { target: { value: '2500' } });
+    fireEvent.submit(screen.getByRole('form', { name: 'Tell me about your vehicle' }));
+    expect(mockSubmit).toHaveBeenCalledWith({ text: '2018 Ram 2500' });
+  });
+
   it('rejects an out-of-range vehicle year and is inert on older messages', () => {
     const { unmount } = renderBlock({ type: 'vehicle_picker', fields: ['year'] });
     fireEvent.change(screen.getByLabelText('Year'), { target: { value: '1950' } });

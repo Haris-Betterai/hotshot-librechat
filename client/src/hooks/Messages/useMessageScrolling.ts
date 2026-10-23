@@ -10,6 +10,10 @@ import store from '~/store';
 const threshold = 0.85;
 const debounceRate = 150;
 const resizeFollowThreshold = 120;
+/** Scrolling back to within this distance of the bottom resumes following a streaming reply. */
+const resumeFollowThreshold = 24;
+/** Keep following for a moment after a reply ends, while late content (blocks, images) lays out. */
+const settleFollowMs = 2500;
 
 export default function useMessageScrolling(messagesTree?: TMessage[] | null) {
   const autoScroll = useRecoilValue(store.autoScroll);
@@ -18,6 +22,10 @@ export default function useMessageScrolling(messagesTree?: TMessage[] | null) {
   const contentRef = useRef<HTMLDivElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const isNearBottomRef = useRef(true);
+  /** Whether the reader is at the bottom, updated only by scrolling so a tall block landing at once doesn't unpin them. */
+  const pinnedRef = useRef(true);
+  const settleUntilRef = useRef(0);
+  const wasSubmittingRef = useRef(false);
   const suppressNextResizeFollowRef = useRef(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const { conversation, conversationId } = useMessagesConversation();
@@ -64,6 +72,14 @@ export default function useMessageScrolling(messagesTree?: TMessage[] | null) {
 
   const debouncedHandleScroll = useCallback(() => {
     isNearBottomRef.current = getIsNearBottom();
+    pinnedRef.current = isNearBottomRef.current;
+    const scrollEl = scrollableRef.current;
+    const distance = scrollEl
+      ? scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight
+      : 0;
+    if (isSubmitting && abortScroll === true && distance <= resumeFollowThreshold) {
+      setAbortScroll(false);
+    }
     if (messagesEndRef.current && scrollableRef.current) {
       const observer = new IntersectionObserver(
         ([entry]) => {
@@ -75,11 +91,12 @@ export default function useMessageScrolling(messagesTree?: TMessage[] | null) {
       observer.observe(messagesEndRef.current);
       return () => observer.disconnect();
     }
-  }, [debouncedSetShowScrollButton, getIsNearBottom]);
+  }, [abortScroll, debouncedSetShowScrollButton, getIsNearBottom, isSubmitting, setAbortScroll]);
 
   const scrollCallback = () => {
     reconcileMessageContentLayout(scrollableRef.current);
     isNearBottomRef.current = true;
+    pinnedRef.current = true;
     debouncedSetShowScrollButton(false);
   };
 
@@ -105,6 +122,7 @@ export default function useMessageScrolling(messagesTree?: TMessage[] | null) {
 
     scrollEl.scrollTop = maxScrollTop;
     isNearBottomRef.current = getIsNearBottom();
+    pinnedRef.current = isNearBottomRef.current;
     return true;
   }, [getIsNearBottom]);
 
@@ -120,12 +138,20 @@ export default function useMessageScrolling(messagesTree?: TMessage[] | null) {
         return;
       }
 
-      if (shouldFollowResize && isSubmitting && abortScroll !== true && isNearBottomRef.current) {
+      const following = isSubmitting || Date.now() < settleUntilRef.current;
+      if (shouldFollowResize && following && abortScroll !== true && pinnedRef.current) {
         scrollToBottom?.();
       }
     },
     [abortScroll, clampScrollToContent, getIsNearBottom, isSubmitting, scrollToBottom],
   );
+
+  useEffect(() => {
+    if (wasSubmittingRef.current && !isSubmitting) {
+      settleUntilRef.current = Date.now() + settleFollowMs;
+    }
+    wasSubmittingRef.current = isSubmitting;
+  }, [isSubmitting]);
 
   useEffect(() => {
     const contentEl = contentRef.current;

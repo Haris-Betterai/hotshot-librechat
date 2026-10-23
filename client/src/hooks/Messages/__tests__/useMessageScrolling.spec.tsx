@@ -241,6 +241,81 @@ describe('useMessageScrolling resize reconciliation', () => {
     expect(mockScrollToBottom).not.toHaveBeenCalled();
   });
 
+  it('resumes following when the user scrolls back to the bottom mid-reply', () => {
+    const setAbortScroll = jest.fn();
+    renderScrolling({ contextOverrides: { abortScroll: true, setAbortScroll } });
+
+    const scrollable = screen.getByTestId('scrollable');
+    Object.defineProperty(scrollable, 'scrollHeight', { value: 1000, configurable: true });
+    Object.defineProperty(scrollable, 'clientHeight', { value: 200, configurable: true });
+    scrollable.scrollTop = 790;
+    fireEvent.scroll(scrollable);
+
+    expect(setAbortScroll).toHaveBeenCalledWith(false);
+  });
+
+  it('stays paused while the user reads further up', () => {
+    const setAbortScroll = jest.fn();
+    renderScrolling({ contextOverrides: { abortScroll: true, setAbortScroll } });
+
+    const scrollable = screen.getByTestId('scrollable');
+    Object.defineProperty(scrollable, 'scrollHeight', { value: 1000, configurable: true });
+    Object.defineProperty(scrollable, 'clientHeight', { value: 200, configurable: true });
+    scrollable.scrollTop = 600;
+    fireEvent.scroll(scrollable);
+
+    expect(setAbortScroll).not.toHaveBeenCalled();
+  });
+
+  it('keeps following when a tall block lands without the user scrolling', () => {
+    renderScrolling();
+
+    act(() => {
+      MockIntersectionObserver.instances[0]?.callback(
+        [{ isIntersecting: false } as IntersectionObserverEntry],
+        MockIntersectionObserver.instances[0] as unknown as IntersectionObserver,
+      );
+      MockResizeObserver.last()?.trigger();
+    });
+
+    expect(mockScrollToBottom).toHaveBeenCalledTimes(1);
+  });
+
+  it('follows late content briefly after the reply ends, then stops', () => {
+    const now = jest.spyOn(Date, 'now').mockReturnValue(10_000);
+    const tree = (submitting: boolean) => (
+      <RecoilRoot>
+        <MessagesViewContext.Provider value={createContextValue({ isSubmitting: submitting })}>
+          <ScrollingHarness />
+        </MessagesViewContext.Provider>
+      </RecoilRoot>
+    );
+    const { rerender } = render(tree(true));
+    rerender(tree(false));
+
+    act(() => {
+      MockResizeObserver.last()?.trigger();
+    });
+    expect(mockScrollToBottom).toHaveBeenCalledTimes(1);
+
+    now.mockReturnValue(13_000);
+    act(() => {
+      MockResizeObserver.last()?.trigger();
+    });
+    expect(mockScrollToBottom).toHaveBeenCalledTimes(1);
+    now.mockRestore();
+  });
+
+  it('does not follow resizes in a conversation that was not streaming', () => {
+    renderScrolling({ contextOverrides: { isSubmitting: false } });
+
+    act(() => {
+      MockResizeObserver.last()?.trigger();
+    });
+
+    expect(mockScrollToBottom).not.toHaveBeenCalled();
+  });
+
   it('does not follow the next resize after user interaction inside message content', () => {
     renderScrolling();
 

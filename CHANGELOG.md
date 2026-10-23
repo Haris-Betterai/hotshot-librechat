@@ -26,6 +26,8 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 - The composer beam is drawn in Hotshot blues with a teal tip instead of a rainbow; the `border-beam` package was removed. (`87d5d3a50`, `c54bbe48d`)
 
 ### Fixed
+- **Auto-scroll while a reply streams.** Any wheel or touch scroll over a message mid-reply (even scrolling down) stopped following for the rest of that reply, and scrolling back to the bottom never resumed it. Now scrolling up pauses following and shows the scroll-down button; scrolling back to the bottom resumes it. Tall blocks that land at once no longer knock the view out of following, and it keeps following for 2.5 seconds after a reply ends while images and tables finish loading. (HASH)
+- **Enter in the vehicle form.** On an unfinished form, Enter did nothing because Send was disabled; it now moves to the next empty field, and sends once every field is filled. (HASH)
 - The widget launcher showed the old orb because browsers cached `embed.js` for 2 days; the script URL now carries a per-build version. (`57ff472d4`)
 - The landing hero overlapped the starter questions, and its two orb layers rendered side by side. (`d548ebd95`, `5f035a3e8`)
 - The photo gallery sat under the site's chat launcher and teaser. (`ee5ff9b5a`)

@@ -1,5 +1,5 @@
 import React, { useId, useState } from 'react';
-import type { FormEvent } from 'react';
+import type { FormEvent, KeyboardEvent } from 'react';
 import { Send } from 'lucide-react';
 import type { TUiVehicleField, TUiVehiclePicker } from 'librechat-data-provider';
 import { CARD_CLASS, FIELD_CLASS, SendGate, usePrimaryButton } from './shared';
@@ -58,9 +58,23 @@ export default function Vehicle({ block }: { block: TUiVehiclePicker }) {
           setSent(true);
           send(buildVehicleMessage(values, block.fields));
         };
+        /** Enter on an unfinished form moves to the next empty field instead of doing nothing. */
+        const onKeyDown = (event: KeyboardEvent<HTMLFormElement>) => {
+          if (event.key !== 'Enter' || complete || !(event.target instanceof HTMLInputElement)) {
+            return;
+          }
+          event.preventDefault();
+          const next = block.fields.find((field) =>
+            field === 'year' ? !isValidYear(values.year, maxYear) : values[field].trim() === '',
+          );
+          if (next) {
+            document.getElementById(`${baseId}-${next}`)?.focus();
+          }
+        };
         return (
           <form
             onSubmit={onSubmit}
+            onKeyDown={onKeyDown}
             className={CARD_CLASS}
             aria-label={localize('com_ui_block_vehicle')}
           >
