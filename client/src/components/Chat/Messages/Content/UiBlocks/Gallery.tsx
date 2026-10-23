@@ -47,11 +47,11 @@ export default function Gallery({ items, index, onIndexChange }: GalleryProps) {
   return (
     <Dialog.Root open={item != null} onOpenChange={(open) => !open && onIndexChange(null)}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm" />
+        <Dialog.Overlay className="fixed inset-0 z-[2147483001] bg-black/70 backdrop-blur-sm" />
         <Dialog.Content
           onKeyDown={onKeyDown}
           aria-describedby={undefined}
-          className="fixed left-1/2 top-1/2 z-[101] flex max-h-[92vh] w-[min(92vw,44rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl bg-white text-neutral-900 shadow-2xl focus:outline-none dark:bg-neutral-900 dark:text-neutral-100"
+          className="fixed left-1/2 top-1/2 z-[2147483002] flex max-h-[92vh] w-[min(92vw,44rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl bg-white text-neutral-900 shadow-2xl focus:outline-none dark:bg-neutral-900 dark:text-neutral-100"
         >
           {item && (
             <>
