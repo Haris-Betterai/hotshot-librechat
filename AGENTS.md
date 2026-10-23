@@ -20,5 +20,6 @@ Every change and every production deploy gets an entry in **[CHANGELOG.md](./CHA
 
 - Add it under today's date (`## YYYY-MM-DD`, newest first), creating the date if it isn't there.
 - Put each item under **Added**, **Changed**, **Fixed** or **Config** (changes made outside the code: agent instructions in the staff UI, server `.env`, settings). Write one plain sentence per item about what a user or staff member will notice, and end it with the commit hash.
+- A commit can't name its own hash, so write the entry in the change's commit and fill in the hash in the next commit (usually the one that records the deploy). Never amend just to add the hash: amending changes it.
 - After a deploy, update **Deployed** for that date with the commit now live.
 - Changes to the tool server go in `hotshot-ai-mcp-server/CHANGELOG.md` instead.
