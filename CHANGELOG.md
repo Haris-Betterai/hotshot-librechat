@@ -26,6 +26,7 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 - The composer beam is drawn in Hotshot blues with a teal tip instead of a rainbow; the `border-beam` package was removed. (`87d5d3a50`, `c54bbe48d`)
 
 ### Fixed
+- **Enter in the dose calculator** did nothing, so it wasn't clear the dose was already worked out. Enter now confirms it with a brief highlight on the result, and the field says "Dose updates as you type". (HASH2)
 - **Auto-scroll while a reply streams.** Any wheel or touch scroll over a message mid-reply (even scrolling down) stopped following for the rest of that reply, and scrolling back to the bottom never resumed it. Now scrolling up pauses following and shows the scroll-down button; scrolling back to the bottom resumes it. Tall blocks that land at once no longer knock the view out of following, and it keeps following for 2.5 seconds after a reply ends while images and tables finish loading. (`570f17bd3`)
 - **Enter in the vehicle form.** On an unfinished form, Enter did nothing because Send was disabled; it now moves to the next empty field, and sends once every field is filled. (`570f17bd3`)
 - The widget launcher showed the old orb because browsers cached `embed.js` for 2 days; the script URL now carries a per-build version. (`57ff472d4`)
@@ -39,6 +40,7 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
   - Response style: no em dashes touching words.
   - Fast level: call `get_product_document` with `detail: "full"`.
   - `get_product_document` enabled on the agent.
+  - Follow-up suggestions: after a complete product, dose, comparison or diagnosis answer, the agent ends with 2 to 3 tappable follow-up questions specific to that answer (not for urgent safety answers, or when the reply already ends with a question). This replaces the rule "When the request is fully answered, stop. Do not add a generic follow-up question."
 
 ### Deployed
 - All of the above is live. Last deploy: `570f17bd3`.

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, within, fireEvent } from '@testing-library/react';
+import { act, render, screen, within, fireEvent } from '@testing-library/react';
 import { ChatContext, MessageContext } from '~/Providers';
 import { localizeEnglish } from '../fixtures/english';
 import UiBlock from '../index';
@@ -139,6 +139,25 @@ describe('UiBlock', () => {
       'https://example.com/p',
     );
     expect(viewer.queryByRole('button', { name: 'Next photo' })).not.toBeInTheDocument();
+  });
+
+  it('confirms the dose on Enter and tells the user it updates live', () => {
+    jest.useFakeTimers();
+    const { container } = renderBlock({
+      type: 'dose_calculator',
+      product: 'Diesel Extreme',
+      ratio: { amount: 16, unit: 'oz', per: 40, perUnit: 'gallon' },
+    });
+    expect(screen.getByText('Dose updates as you type')).toBeInTheDocument();
+    const input = screen.getByLabelText('Capacity');
+    fireEvent.change(input, { target: { value: '44' } });
+    expect(screen.getByText('17.6 oz')).toBeInTheDocument();
+
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(container.querySelector('[data-confirmed]')).toBeInTheDocument();
+    act(() => jest.advanceTimersByTime(900));
+    expect(container.querySelector('[data-confirmed]')).toBeNull();
+    jest.useRealTimers();
   });
 
   it('calculates a dose and guards invalid input', () => {

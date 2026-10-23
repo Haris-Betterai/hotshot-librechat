@@ -2,6 +2,7 @@ export const ENGLISH: Record<string, string> = {
   com_ui_block_view_product: 'View product',
   com_ui_block_size: 'Size',
   com_ui_block_capacity: 'Capacity',
+  com_ui_block_capacity_live: 'Dose updates as you type',
   com_ui_block_capacity_invalid: 'Enter a capacity greater than 0',
   com_ui_block_capacity_prompt: 'Enter your capacity to see the dose',
   com_ui_block_dose_result: 'Recommended dose',
