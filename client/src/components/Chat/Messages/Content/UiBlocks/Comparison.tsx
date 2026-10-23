@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { Check } from 'lucide-react';
 import type { TUiComparison } from 'librechat-data-provider';
+import type { GalleryItem } from './Gallery';
 import { CARD_CLASS, LINK_CLASS } from './shared';
+import Gallery from './Gallery';
 import { useLocalize } from '~/hooks';
 import { cn } from '~/utils';
 
@@ -9,9 +11,17 @@ const STICKY_CELL = 'sticky left-0 z-10 bg-white dark:bg-neutral-900';
 
 export default function Comparison({ block }: { block: TUiComparison }) {
   const localize = useLocalize();
+  const [photo, setPhoto] = useState<number | null>(null);
+  const photos = useMemo(
+    () =>
+      block.products.flatMap((product): GalleryItem[] =>
+        product.image ? [{ src: product.image, name: product.name, caption: product.price }] : [],
+      ),
+    [block.products],
+  );
 
   return (
-    <div className={cn(CARD_CLASS, 'overflow-hidden p-0 sm:p-0')}>
+    <div className={cn(CARD_CLASS, 'max-w-none overflow-hidden p-0 sm:p-0')}>
       {block.title && (
         <h3 className="px-3 pb-1 pt-3 text-base font-semibold sm:px-4">{block.title}</h3>
       )}
@@ -26,12 +36,19 @@ export default function Comparison({ block }: { block: TUiComparison }) {
                 <th key={product.name} scope="col" className="px-3 py-3 align-top font-medium">
                   <div className="flex items-start gap-2">
                     {product.image && (
-                      <img
-                        src={product.image}
-                        alt=""
-                        loading="lazy"
-                        className="size-10 shrink-0 rounded-lg bg-white object-contain"
-                      />
+                      <button
+                        type="button"
+                        onClick={() => setPhoto(photos.findIndex((p) => p.src === product.image))}
+                        aria-label={localize('com_ui_block_gallery_open', { 0: product.name })}
+                        className="shrink-0 cursor-zoom-in rounded-lg bg-white transition hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900"
+                      >
+                        <img
+                          src={product.image}
+                          alt=""
+                          loading="lazy"
+                          className="size-12 rounded-lg object-contain"
+                        />
+                      </button>
                     )}
                     <div className="min-w-0">
                       {product.url ? (
@@ -88,6 +105,7 @@ export default function Comparison({ block }: { block: TUiComparison }) {
           <span>{block.verdict}</span>
         </p>
       )}
+      <Gallery items={photos} index={photo} onIndexChange={setPhoto} />
     </div>
   );
 }

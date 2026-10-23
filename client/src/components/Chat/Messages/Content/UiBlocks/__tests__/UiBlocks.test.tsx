@@ -77,6 +77,38 @@ describe('UiBlock', () => {
     expect(screen.getByText('Pick Alpha for diesel.')).toBeInTheDocument();
   });
 
+  it('spans the answer column and opens product photos in a gallery', () => {
+    const { container } = renderBlock({
+      type: 'comparison',
+      products: [
+        { name: 'Alpha', price: '$10', image: 'https://example.com/a.png' },
+        { name: 'Beta', price: '$12', image: 'https://example.com/b.png' },
+      ],
+      rows: [{ label: 'Best for', values: ['Diesel', 'Gas'] }],
+    });
+    expect(container.querySelector('.ui-block')).toHaveClass('max-w-none');
+
+    fireEvent.click(screen.getByRole('button', { name: 'View photo of Beta' }));
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveTextContent('Beta');
+    expect(dialog).toHaveTextContent('$12');
+
+    fireEvent.keyDown(dialog, { key: 'ArrowRight' });
+    expect(screen.getByRole('dialog')).toHaveTextContent('Alpha');
+    fireEvent.click(screen.getByRole('button', { name: 'Next photo' }));
+    expect(screen.getByRole('dialog')).toHaveTextContent('Beta');
+
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('opens a product card photo on its own', () => {
+    renderBlock(product);
+    fireEvent.click(screen.getByRole('button', { name: 'View photo of Hotshot Secret Stop Tick' }));
+    expect(screen.getByRole('dialog')).toHaveTextContent('Hotshot Secret Stop Tick');
+    expect(screen.queryByRole('button', { name: 'Next photo' })).not.toBeInTheDocument();
+  });
+
   it('calculates a dose and guards invalid input', () => {
     renderBlock({
       type: 'dose_calculator',

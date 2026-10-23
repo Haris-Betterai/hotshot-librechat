@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ExternalLink, Droplets } from 'lucide-react';
 import type { TUiProductCard } from 'librechat-data-provider';
 import { CARD_CLASS, LINK_CLASS, usePrimaryButton } from './shared';
+import Gallery from './Gallery';
 import { useLocalize } from '~/hooks';
 import { cn } from '~/utils';
 
@@ -11,19 +12,27 @@ export default function ProductCard({ block }: { block: TUiProductCard }) {
   const sizes = block.sizes ?? [];
   const [selected, setSelected] = useState(0);
   const [imageFailed, setImageFailed] = useState(false);
+  const [photo, setPhoto] = useState<number | null>(null);
   const size = sizes[selected];
   const price = size?.price ?? block.price;
 
   return (
     <div className={cn(CARD_CLASS, 'flex flex-col gap-3 min-[420px]:flex-row')}>
       {block.image && !imageFailed && (
-        <img
-          src={block.image}
-          alt={block.name}
-          loading="lazy"
-          onError={() => setImageFailed(true)}
-          className="size-24 shrink-0 self-center rounded-xl bg-white object-contain min-[420px]:size-28 min-[420px]:self-start"
-        />
+        <button
+          type="button"
+          onClick={() => setPhoto(0)}
+          aria-label={localize('com_ui_block_gallery_open', { 0: block.name })}
+          className="shrink-0 cursor-zoom-in self-center rounded-xl bg-white transition hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 min-[420px]:self-start"
+        >
+          <img
+            src={block.image}
+            alt={block.name}
+            loading="lazy"
+            onError={() => setImageFailed(true)}
+            className="size-24 rounded-xl object-contain min-[420px]:size-28"
+          />
+        </button>
       )}
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <a
@@ -92,6 +101,13 @@ export default function ProductCard({ block }: { block: TUiProductCard }) {
           </a>
         </div>
       </div>
+      {block.image && (
+        <Gallery
+          items={[{ src: block.image, name: block.name, caption: price }]}
+          index={photo}
+          onIndexChange={setPhoto}
+        />
+      )}
     </div>
   );
 }
