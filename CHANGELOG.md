@@ -26,7 +26,7 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 - The composer beam is drawn in Hotshot blues with a teal tip instead of a rainbow; the `border-beam` package was removed. (`87d5d3a50`, `c54bbe48d`)
 
 ### Fixed
-- **Answer-block placeholders while a reply streams.** Every unfinished block showed the same product-card placeholder, so answers ending in follow-up buttons flashed a card that then shrank to a few buttons. Now nothing shows until the block's type is known, follow-ups get small button placeholders, other blocks get a placeholder in their own shape, and a block that never becomes valid shows nothing. (HASH3)
+- **Answer-block placeholders while a reply streams.** Every unfinished block showed the same product-card placeholder, so answers ending in follow-up buttons flashed a card that then shrank to a few buttons. Now nothing shows until the block's type is known, follow-ups get small button placeholders, other blocks get a placeholder in their own shape, and a block that never becomes valid shows nothing. (`495dafe6f`)
 - **Enter in the dose calculator** did nothing, so it wasn't clear the dose was already worked out. Enter now confirms it with a brief highlight on the result, and the field says "Dose updates as you type". (`61a945ce7`)
 - **Auto-scroll while a reply streams.** Any wheel or touch scroll over a message mid-reply (even scrolling down) stopped following for the rest of that reply, and scrolling back to the bottom never resumed it. Now scrolling up pauses following and shows the scroll-down button; scrolling back to the bottom resumes it. Tall blocks that land at once no longer knock the view out of following, and it keeps following for 2.5 seconds after a reply ends while images and tables finish loading. (`570f17bd3`)
 - **Enter in the vehicle form.** On an unfinished form, Enter did nothing because Send was disabled; it now moves to the next empty field, and sends once every field is filled. (`570f17bd3`)
@@ -44,7 +44,7 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
   - Follow-up suggestions: after a complete product, dose, comparison or diagnosis answer, the agent ends with 2 to 3 tappable follow-up questions specific to that answer (not for urgent safety answers, or when the reply already ends with a question). This replaces the rule "When the request is fully answered, stop. Do not add a generic follow-up question."
 
 ### Deployed
-- All of the above is live. Last deploy: `61a945ce7`.
+- All of the above is live. Last deploy: `495dafe6f`.
 
 ---
 
