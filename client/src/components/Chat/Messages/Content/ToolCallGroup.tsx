@@ -104,7 +104,7 @@ export type ToolCallGroupExpansionState = {
   userOverride: boolean;
 };
 
-/** Customers see a single status mark (spinner, then check); staff keep the tool icons. */
+/** Hotshot tool groups show a single status mark (spinner, then check) instead of tool icons. */
 function ToolGlyph({
   stepList,
   working,
@@ -381,7 +381,7 @@ export default function ToolCallGroup({
           </div>
         ) : (
           <ToolGlyph
-            stepList={showStepList}
+            stepList={allMcpTools}
             working={!allCompleted && isSubmitting}
             toolNames={iconToolNames}
             mcpIconMap={mcpIconMap}

@@ -389,6 +389,7 @@ describe('ToolCallGroup customer view', () => {
   it('keeps raw per-call rows for staff', () => {
     mockShowDetail = true;
     renderGroup(props);
+    expect(screen.getByTestId('steps-done')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Checked 3 sources' }));
     expect(screen.getByTestId('inner-0')).toBeInTheDocument();
   });
