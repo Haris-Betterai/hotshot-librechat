@@ -160,6 +160,28 @@ describe('UiBlock', () => {
     jest.useRealTimers();
   });
 
+  it('shows nothing while streaming until the block type is known', () => {
+    const { container } = renderBlock('{"pro', {}, true);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('shows small button placeholders, not a product card, for streaming follow-ups', () => {
+    renderBlock('{"type": "quick_replies", "options": ["How of', {}, true);
+    const placeholder = screen.getByRole('status', { name: 'Preparing details' });
+    expect(placeholder).not.toHaveClass('ui-block');
+    expect(placeholder.querySelectorAll('.rounded-full')).toHaveLength(3);
+  });
+
+  it('shapes the placeholder after the block being built', () => {
+    renderBlock('{"type": "comparison", "products": [', {}, true);
+    expect(screen.getByRole('status', { name: 'Preparing details' })).toHaveClass('max-w-none');
+  });
+
+  it('drops a block that never becomes valid once streaming ends', () => {
+    const { container } = renderBlock('{"type": "product_card", "name": "x"}', {}, false);
+    expect(container).toBeEmptyDOMElement();
+  });
+
   it('calculates a dose and guards invalid input', () => {
     renderBlock({
       type: 'dose_calculator',

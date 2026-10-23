@@ -47,8 +47,11 @@ describe('markdown code routing', () => {
     expect(container.querySelector('pre')).toBeNull();
   });
 
-  it('shows a skeleton for a partial block while submitting, nothing otherwise', () => {
-    const partial = '```hotshot-ui\n{"type":"quick_rep\n```';
+  it('shows a skeleton once a streaming block names its type, nothing otherwise', () => {
+    const undecided = renderMarkdown('```hotshot-ui\n{"type":"quick_rep\n```', true);
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    undecided.unmount();
+    const partial = '```hotshot-ui\n{"type":"quick_replies","options":["How\n```';
     const streaming = renderMarkdown(partial, true);
     expect(screen.getByRole('status')).toBeInTheDocument();
     streaming.unmount();
