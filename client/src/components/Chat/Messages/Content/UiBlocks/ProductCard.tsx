@@ -103,7 +103,18 @@ export default function ProductCard({ block }: { block: TUiProductCard }) {
       </div>
       {block.image && (
         <Gallery
-          items={[{ src: block.image, name: block.name, caption: price }]}
+          items={[
+            {
+              src: block.image,
+              name: block.name,
+              price: size && sizes.length > 1 ? `${price} · ${size.label}` : price,
+              summary: block.summary,
+              url: block.url,
+              details: block.dose
+                ? [{ label: localize('com_ui_block_dose_result'), value: block.dose }]
+                : undefined,
+            },
+          ]}
           index={photo}
           onIndexChange={setPhoto}
         />

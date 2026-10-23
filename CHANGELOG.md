@@ -19,6 +19,7 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 - **Composer beam.** A blue arc travels around the input bar on the landing screen. It flares and fades out when the first message is sent, stays off while a reply streams or the user types, and returns at about a third of the strength after 12 seconds idle. New `useBeam` hook with tests. (`87d5d3a50`, `c54bbe48d`, `2e41ad5d3`, `d548310d6`)
 
 ### Changed
+- **The photo gallery is now a product viewer.** The photo sits beside the product's details (the comparison rows for that product, or a product card's summary and dose), its price, and a **View product** button to its store page. Switching products swaps the details too; it stacks photo above details on phones. (`551d2fee5`)
 - **Comparison tables** span the full answer column, so the right edge lines up with the input bar; product photos are larger. (`81c9c470b`)
 - **Reply header.** The orb beside the latest reply now animates (older replies stay still). "Checked N sources" shows a spinner, then a green check, instead of wrench icons, for staff as well as customers. The thinking line matches it in size, colour and alignment. Answer text size is unchanged. (`99cee28a6`, `5ab45a5b8`)
 - **Widget launcher** shows the bare black animated orb, like the main site, with no dark disc while closed. The orbs in the widget header and welcome message cycle too. (`13bdcb245`)

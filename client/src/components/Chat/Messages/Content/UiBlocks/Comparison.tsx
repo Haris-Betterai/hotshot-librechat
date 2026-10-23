@@ -14,10 +14,22 @@ export default function Comparison({ block }: { block: TUiComparison }) {
   const [photo, setPhoto] = useState<number | null>(null);
   const photos = useMemo(
     () =>
-      block.products.flatMap((product): GalleryItem[] =>
-        product.image ? [{ src: product.image, name: product.name, caption: product.price }] : [],
+      block.products.flatMap((product, column): GalleryItem[] =>
+        product.image
+          ? [
+              {
+                src: product.image,
+                name: product.name,
+                price: product.price,
+                url: product.url,
+                details: block.rows
+                  .map((row) => ({ label: row.label, value: row.values[column] ?? '' }))
+                  .filter((detail) => detail.value !== ''),
+              },
+            ]
+          : [],
       ),
-    [block.products],
+    [block.products, block.rows],
   );
 
   return (
