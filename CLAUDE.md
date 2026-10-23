@@ -1,5 +1,7 @@
 # LibreChat
 
+> **Hotshot changelog (required):** every change and every production deploy gets an entry in [CHANGELOG.md](./CHANGELOG.md). Rules are in [AGENTS.md](./AGENTS.md#changelog-required).
+
 ## Project Overview
 
 LibreChat is a monorepo with the following key workspaces:

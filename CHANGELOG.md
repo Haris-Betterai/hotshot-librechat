@@ -1,0 +1,83 @@
+# Changelog
+
+What changed in Hotshot AI (the LibreChat app at https://hotshotai.thebetterai.com), newest first.
+Each day lists what was **added**, **changed** and **fixed**, the commits, and what was **deployed**.
+Changes made outside the code (agent instructions, server settings) are listed under **Config**.
+
+How the product works today is in [CHANGES.md](./CHANGES.md). The tool server has its own log in
+`hotshot-ai-mcp-server/CHANGELOG.md`.
+
+---
+
+## 2026-10-23
+
+### Added
+- **Photo gallery for products.** Clicking a product photo in a comparison table or a product card opens it large with its name and price. Arrows, ← → keys and thumbnails step between the products; Escape, the X or a click outside closes it. (`81c9c470b`, `ee5ff9b5a`)
+- **YouTube videos in the chat.** A new `video` answer block plays Hot Shot's Secret videos inline (youtube-nocookie, loads on click). (`61959a249`)
+- **Product document status.** The live status line names the sheet being read, e.g. "Reading the Gasoline Extreme safety data sheet…". (`430700dc3`)
+- **Premium landing screen.** A large animated orb with a soft glow and a fine dot grid, and a cool gradient instead of flat white. (`57ff472d4`, `b2744c101`, `d548ebd95`, `5f035a3e8`, `13bdcb245`)
+- **Composer beam.** A blue arc travels around the input bar on the landing screen. It flares and fades out when the first message is sent, stays off while a reply streams or the user types, and returns at about a third of the strength after 12 seconds idle. New `useBeam` hook with tests. (`87d5d3a50`, `c54bbe48d`, `2e41ad5d3`, `d548310d6`)
+
+### Changed
+- **Comparison tables** span the full answer column, so the right edge lines up with the input bar; product photos are larger. (`81c9c470b`)
+- **Reply header.** The orb beside the latest reply now animates (older replies stay still). "Checked N sources" shows a spinner, then a green check, instead of wrench icons, for staff as well as customers. The thinking line matches it in size, colour and alignment. Answer text size is unchanged. (`99cee28a6`, `5ab45a5b8`)
+- **Widget launcher** shows the bare black animated orb, like the main site, with no dark disc while closed. The orbs in the widget header and welcome message cycle too. (`13bdcb245`)
+- The composer beam is drawn in Hotshot blues with a teal tip instead of a rainbow; the `border-beam` package was removed. (`87d5d3a50`, `c54bbe48d`)
+
+### Fixed
+- The widget launcher showed the old orb because browsers cached `embed.js` for 2 days; the script URL now carries a per-build version. (`57ff472d4`)
+- The landing hero overlapped the starter questions, and its two orb layers rendered side by side. (`d548ebd95`, `5f035a3e8`)
+- The photo gallery sat under the site's chat launcher and teaser. (`ee5ff9b5a`)
+
+### Config
+- **Agent instructions** (staff UI → Agent setup), saved and verified:
+  - New "Product documents (SDS and Tech Data)" section: say what's being checked, give the urgent first-aid step first (eyes: rinse; skin: wash; swallowed: Poison Control 1-800-222-1222 or 911; pets: vet or ASPCA (888) 426-4435), fetch the SDS together with the product, and offer a follow-up.
+  - Video block rule: only use URLs from `recommend_youtube_video` or `get_youtube_video_by_url`.
+  - Response style: no em dashes touching words.
+  - Fast level: call `get_product_document` with `detail: "full"`.
+  - `get_product_document` enabled on the agent.
+
+### Deployed
+- All of the above is live. Last deploy: `ee5ff9b5a`.
+
+---
+
+## 2026-10-22
+
+### Changed
+- **Embed widget settings** in Agent setup redesigned into clear groups (Look, Placement, Greeting, Behaviour) with a live preview; a second pass fixed the orb and layout issues. (`1daf6ef3a`, `bebd1eb73`)
+
+### Deployed
+- `bebd1eb73`.
+
+---
+
+## 2026-10-21
+
+### Added
+- **Interactive answer blocks:** product card with size picker and live price, side-by-side comparison with a verdict, dose calculator, and quick-reply buttons. Customer chat modernised. (`eba2c743c`)
+- **Configurable embed widget** from Agent setup: one script tag, launcher, teaser bubble, branded panel, starter questions, Auto · Deep · Ultra slider, allowed domains. (`d7a0c0ffa`, `454e6b97f`, `3bde6fbf3`, `9d7c7ab26`)
+- The floating widget on the public chat pages, and a demo page styled as a Hot Shot's Secret storefront. (`26334977b`, `f9ce23ae3`, `1fa8c68ce`)
+- The thinking-orbs orb as the Hotshot AI icon, cycling through its states on the landing screen. (`889e58b86`, `cba9f47c5`)
+- **GPT-6 models** (gpt-6-luna, gpt-6.1-sol, gpt-6-astra), web search limited to hotshotsecret.com, and customer and staff fixes. (`47a10616a`)
+
+### Fixed
+- Three rounds of chat fixes: user bubbles, block styling, streaming dot, block links and tables, actions, widget width, calculator name key, empty-state copy. (`08f2683ce`, `7bc3f5b23`, `22c2a9562`)
+- Staff sessions silently turning into guest sessions. (`26ec688f1`)
+- Widget mode leaking into the full app outside a frame; widget settings not loading for first-time visitors. (`673fd93b7`, `3543d8f97`)
+- The embed loader, demo page and orb are revalidated on every use. (`883a80560`)
+
+---
+
+## 2026-09-01 to 2026-09-07
+
+### Added
+- Hotshot branding, customer copy and a quieter tool-call UI. (`7d8486e45`, `b8c46b93a`)
+- Intelligence levels with a configurable default (new chats start on Balanced), and per-level reasoning effort. (`0630e0417`, `1b0d8843c`, `058ad1abc`)
+- Automatic chat reviews and a full-page Agent setup. (`058ad1abc`)
+- The responding model per message; the live reasoning heading while a reply is generated. (`8f6e2281d`, `201a7d180`, `e691dd546`)
+- Full-size product images; `STRESS_TESTS.md` for repeatable agent testing. (`5fd7ad39a`, `cbe01f1c6`)
+
+### Fixed
+- The embed widget loading a chat; tool-using GPT-5.6 agents routed through the Responses API. (`65c1a0de8`, `8d000dc2d`)
+- A regenerated guest index blocking deploys; `run.sh` guest HTML edits failing on macOS. (`d3fee2f39`, `dc8ad9aa6`)
