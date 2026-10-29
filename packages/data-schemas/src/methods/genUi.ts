@@ -1,6 +1,8 @@
 import type { Model } from 'mongoose';
 import type { IGenUiComponent, IGenUiRender } from '~/schema/genUi';
 
+const MAX_KEY_ATTEMPTS = 20;
+
 export type GenUiComponentInput = Pick<
   IGenUiComponent,
   'key' | 'name' | 'description' | 'propsSchema' | 'html' | 'authorModel' | 'kitVersion'
@@ -47,14 +49,26 @@ export function createGenUiMethods(mongoose: typeof import('mongoose')): GenUiMe
       .lean<IGenUiComponent>();
   }
 
-  /** Saves a new component; an existing key is kept, so two racing writers agree on one. */
+  /**
+   * Saves a new component under its key, or under `key_2`, `key_3`… when that key is taken (for
+   * example by a component written for an older UI kit), so code and props are never mismatched.
+   */
   async function saveGenUiComponent(input: GenUiComponentInput): Promise<IGenUiComponent> {
-    await components().updateOne({ key: input.key }, { $setOnInsert: input }, { upsert: true });
-    const saved = await components().findOne({ key: input.key }).lean<IGenUiComponent>();
-    if (!saved) {
-      throw new Error(`[saveGenUiComponent] ${input.key} was not saved`);
+    for (let attempt = 1; attempt <= MAX_KEY_ATTEMPTS; attempt++) {
+      const key = attempt === 1 ? input.key : `${input.key}_${attempt}`;
+      const result = await components().updateOne(
+        { key },
+        { $setOnInsert: { ...input, key } },
+        { upsert: true },
+      );
+      if (result.upsertedCount === 1) {
+        const saved = await components().findOne({ key }).lean<IGenUiComponent>();
+        if (saved) {
+          return saved;
+        }
+      }
     }
-    return saved;
+    throw new Error(`[saveGenUiComponent] no free key for ${input.key}`);
   }
 
   async function countGenUiComponentsSince(since: Date): Promise<number> {

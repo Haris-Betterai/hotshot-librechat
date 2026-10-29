@@ -323,4 +323,36 @@ describe('getGenUi', () => {
     expect(values).toContain('saved:winter_plan');
     expect(values[values.length - 1]).toBe('new');
   });
+
+  it('saves a new component under a fresh key when an older-kit component holds its key', async () => {
+    await deps.saveGenUiComponent({
+      key: 'power_loss_checklist',
+      name: 'Old checklist',
+      description: 'Written for an older UI kit.',
+      propsSchema: {},
+      html: '<p>old</p>',
+      authorModel: 'gpt-6.1-sol',
+      kitVersion: 1,
+    });
+    await saveTurn('m1', LONG_ANSWER);
+    mockOpenAI({
+      decision: { choice: 'new', confidence: 0.9 },
+      responses: [
+        {
+          key: 'power_loss_checklist',
+          name: 'Power loss checklist',
+          description: 'A checklist of diagnostic steps.',
+          props_schema_json: '{}',
+          props_json: JSON.stringify({ title: 'Lost power' }),
+          html: COMPONENT_HTML,
+        },
+      ],
+    });
+    await getGenUi(deps, { user: USER, messageId: 'm1', run: true });
+
+    expect(await settle('m1')).toMatchObject({
+      status: 'ready',
+      component: { key: 'power_loss_checklist_2', html: COMPONENT_HTML },
+    });
+  });
 });
