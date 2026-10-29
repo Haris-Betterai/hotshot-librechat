@@ -18,7 +18,7 @@ type GenUiProps = {
   conversationId?: string | null;
   isLatestMessage: boolean;
   isSubmitting: boolean;
-  /** The answer's follow-up buttons, moved here so they sit after the card. */
+  /** The answer's follow-up buttons, shown after the card; a generated card carries them itself. */
   followUps?: string;
 };
 
@@ -140,7 +140,11 @@ export default function GenUi({
           </div>
         )}
       </AutoHeight>
-      {followUps && enabled && <UiBlock source={followUps} />}
+      {followUps && enabled && !(component && frameReady) && (
+        <div className={ENTER}>
+          <UiBlock source={followUps} />
+        </div>
+      )}
       {devMode && enabled && <Decision result={data} />}
     </MessageContext.Provider>
   );

@@ -5,7 +5,7 @@ export const MAX_COMPONENT_HTML = 60_000;
 
 /** What a generated component may rely on inside its sandboxed frame. */
 /** Bump when the frame's UI kit changes; components written for an older kit are no longer offered. */
-export const KIT_VERSION = 3;
+export const KIT_VERSION = 4;
 
 /** What a generated component may rely on inside its sandboxed frame. */
 export const FRAME_CONTRACT = `The component runs inside a sandboxed iframe under a chat answer (no same-origin access, no network).
@@ -21,9 +21,9 @@ It must look like part of the chat, which already loads a UI kit in the frame (I
 - Text: h3 for the title (or .hs-title), .hs-muted for secondary text, .hs-small for fine print, .hs-badge for a small pill label, .hs-divider for a rule.
 - .hs-tile: a small bordered box, e.g. a stat with <strong> value and .hs-small label.
 - Buttons: a plain <button> already looks like the chat's follow-up chips; .hs-btn-primary for the one main action; .hs-btn-ghost for quiet actions such as Reset.
-- Calls to action are required. End the card with a footer row (.hs-row) holding one .hs-btn-primary that moves the customer forward: hotshot.open(url) to a product or page URL from the props, or, when there is no URL, hotshot.send(text) with the natural next question (e.g. "Which anti-gel should I use for -20°F?"). Add one or two plain <button> chips beside it for other next steps. In lists of steps or items, give each row a small .hs-btn-ghost "Ask about this" (or similar) button that calls hotshot.send with a question about that row. Put CTA labels and messages in the props, written from the answer.
+- Calls to action are required. End the card with a footer row (.hs-row) holding one .hs-btn-primary that moves the customer forward: hotshot.open(url) to a product or page URL from the props, or, when there is no URL, hotshot.send(text) with the natural next question (e.g. "Which anti-gel should I use for -20°F?"). Add one or two plain <button> chips beside it for other next steps. When the conversation lists suggested next steps, those are the footer buttons: the first is the .hs-btn-primary and the rest are chips, each calling hotshot.send with its exact text; make the labels props so other answers can supply their own. In lists of steps or items, give each row a small .hs-btn-ghost "Ask about this" (or similar) button placed inside the row's text span after the detail that calls hotshot.send with a question about that row. Put CTA labels and messages in the props, written from the answer.
 - Fields: <input>, <select> and <textarea> are pre-styled; checkboxes and radios are pre-styled rounded boxes with a check mark.
-- Lists: <ul class="hs-list"> gives separated rows. A checklist row is <li><label class="hs-check"><input type="checkbox"><span><strong>Step</strong><span class="hs-muted">detail</span></span></label></li>; checked rows fade and strike through on their own.
+- Lists: <ul class="hs-list"> gives separated rows. A checklist row is <li><label class="hs-check"><input type="checkbox"><span><strong>Step</strong><span class="hs-muted">detail</span></span></label></li> (title and detail stack on their own lines; do not add <br>); checked rows fade and strike through on their own.
 - Progress: <div class="hs-progress"><span style="width:40%"></span></div>, or a <progress> element.
 - <details><summary>More</summary>…</details> is pre-styled for expandable notes. Tables are pre-styled.
 Do not set colours, fonts, font sizes, borders, radii, shadows or form-control styles yourself, and do not restyle these classes. Your <style>, if any, may only add layout (grid, flex, widths, gaps, spacing). Use no emoji and no icons.

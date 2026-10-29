@@ -114,6 +114,11 @@ input[type=checkbox]:checked,input[type=radio]:checked{background-color:var(--hs
 .hs-check{display:flex;align-items:flex-start;gap:10px;cursor:pointer}
 .hs-check>span{flex:1;min-width:0}
 .hs-check input:checked+span .hs-title,.hs-check input:checked+span>strong{color:var(--hs-muted);text-decoration:line-through;text-decoration-color:var(--hs-muted)}
+.hs-check>span>strong,.hs-check>span>.hs-title{display:block}
+.hs-check>span>.hs-muted{display:block;margin-top:2px}
+.hs-check>span>br{display:none}
+.hs-list .hs-btn-ghost{font-size:12px;line-height:16px;padding:2px 0;margin-top:4px;border:0;background:none;border-radius:4px;color:var(--hs-muted);text-decoration:underline;text-decoration-color:var(--hs-field);text-underline-offset:3px}
+.hs-list .hs-btn-ghost:hover{background:none;color:var(--hs-ink);text-decoration-color:currentColor}
 .hs-progress{height:6px;border-radius:999px;background:var(--hs-line);overflow:hidden}
 .hs-progress>span{display:block;height:100%;border-radius:inherit;background:var(--hs-accent);transition:width .3s ease}
 progress{appearance:none;-webkit-appearance:none;width:100%;height:6px;border:0;border-radius:999px;background:var(--hs-line);overflow:hidden}

@@ -74,6 +74,8 @@ type Transcript = {
   evidence: string;
   /** The agent already put a visual block (not just follow-ups) in the answer. */
   hasVisualBlock: boolean;
+  /** The agent's suggested next messages; a card uses them as its call-to-action buttons. */
+  followUps: string[];
 };
 
 const partText = (part: TMessageContentParts | undefined): string => {
@@ -107,10 +109,13 @@ const messageText = (message: IMessage | null): string => {
 function readTranscript(question: IMessage | null, message: IMessage): Transcript {
   const raw = messageText(message);
   let hasVisualBlock = false;
+  let followUps: string[] = [];
   const answer = raw
     .replace(BLOCK_PATTERN, (_match, source: string) => {
       const block = parseUiBlock(source.trim());
-      if (block && block.type !== 'quick_replies') {
+      if (block?.type === 'quick_replies') {
+        followUps = block.options;
+      } else if (block) {
         hasVisualBlock = true;
       }
       return '';
@@ -118,7 +123,7 @@ function readTranscript(question: IMessage | null, message: IMessage): Transcrip
     .trim();
   const parts = (message.content ?? []) as Array<TMessageContentParts | undefined>;
   const evidence = parts.map(toolOutput).filter(Boolean).join('\n').slice(0, MAX_EVIDENCE_CHARS);
-  return { question: messageText(question), answer, evidence, hasVisualBlock };
+  return { question: messageText(question), answer, evidence, hasVisualBlock, followUps };
 }
 
 /** Drops any link or image the model wrote that the answer and its tool results never contained. */
@@ -140,6 +145,9 @@ const conversationText = (transcript: Transcript) =>
     `Customer: ${transcript.question}`,
     `Assistant answer:\n${transcript.answer}`,
     transcript.evidence ? `Tool results the answer used:\n${transcript.evidence}` : '',
+    transcript.followUps.length > 0
+      ? `Suggested next steps (use exactly these as the card's call-to-action buttons, first one as the main button):\n${transcript.followUps.map((option) => `- ${option}`).join('\n')}`
+      : '',
   ]
     .filter(Boolean)
     .join('\n\n');
