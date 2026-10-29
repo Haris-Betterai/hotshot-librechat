@@ -3333,3 +3333,8 @@ html.embed-widget #root {
     opacity: 0;
   }
 }
+
+/* Follow-up buttons move below a generated card; hide the copy inside the answer text. */
+.hs-followups-moved .markdown [data-ui-block='quick_replies'] {
+  display: none;
+}

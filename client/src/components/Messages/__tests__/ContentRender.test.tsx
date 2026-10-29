@@ -34,6 +34,10 @@ jest.mock('~/components/Chat/Messages/MessageIcon', () => ({
   __esModule: true,
   default: () => <div data-testid="message-icon" />,
 }));
+jest.mock('~/components/Chat/Messages/Content/UiBlocks/GenUi', () => ({
+  __esModule: true,
+  default: () => <div data-testid="genui" />,
+}));
 jest.mock('~/data-provider', () => ({
   useGetStartupConfig: () => ({
     data: { modelSpecs: { list: [{ name: 'spec', label: 'Hotshot Secret AI' }] } },

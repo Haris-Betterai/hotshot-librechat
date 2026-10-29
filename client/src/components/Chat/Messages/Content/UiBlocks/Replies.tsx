@@ -15,6 +15,7 @@ export default function Replies({ block }: { block: TUiQuickReplies }) {
         const active = enabled && !sent && send !== undefined;
         return (
           <div
+            data-ui-block="quick_replies"
             className={cn(
               CARD_CLASS,
               'border-0 bg-transparent p-0 shadow-none dark:bg-transparent sm:p-0',

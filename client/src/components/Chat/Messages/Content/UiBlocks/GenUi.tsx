@@ -18,6 +18,8 @@ type GenUiProps = {
   conversationId?: string | null;
   isLatestMessage: boolean;
   isSubmitting: boolean;
+  /** The answer's follow-up buttons, moved here so they sit after the card. */
+  followUps?: string;
 };
 
 const BAR = 'rounded bg-neutral-100 dark:bg-neutral-800';
@@ -54,6 +56,7 @@ export default function GenUi({
   conversationId,
   isLatestMessage,
   isSubmitting,
+  followUps,
 }: GenUiProps) {
   const localize = useLocalize();
   const devMode = useAtomValue(devModeAtom);
@@ -137,6 +140,7 @@ export default function GenUi({
           </div>
         )}
       </AutoHeight>
+      {followUps && enabled && <UiBlock source={followUps} />}
       {devMode && enabled && <Decision result={data} />}
     </MessageContext.Provider>
   );

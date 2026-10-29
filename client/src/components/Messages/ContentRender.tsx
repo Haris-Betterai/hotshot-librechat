@@ -16,6 +16,7 @@ import MessageModelBadge from '~/components/Chat/Messages/ui/MessageModelBadge';
 import MessageTimestamp from '~/components/Chat/Messages/ui/MessageTimestamp';
 import ContentParts from '~/components/Chat/Messages/Content/ContentParts';
 import GenUi from '~/components/Chat/Messages/Content/UiBlocks/GenUi';
+import { findFollowUps } from '~/components/Chat/Messages/Content/UiBlocks/followups';
 import PlaceholderRow from '~/components/Chat/Messages/ui/PlaceholderRow';
 import SiblingSwitch from '~/components/Chat/Messages/SiblingSwitch';
 import HoverButtons from '~/components/Chat/Messages/HoverButtons';
@@ -148,6 +149,15 @@ const ContentRender = memo(function ContentRender({
   );
   const hasNoChildren = !(msg?.children?.length ?? 0);
   const isLatestMessage = msg?.messageId === latestMessageId;
+  const followUps = useMemo(
+    () => (msg?.isCreatedByUser ? '' : findFollowUps(msg?.content)),
+    [msg?.isCreatedByUser, msg?.content],
+  );
+  const moveFollowUps =
+    followUps !== '' &&
+    !edit &&
+    !(isLatestMessage && isSubmitting) &&
+    !(msg?.messageId ?? '').endsWith('_');
 
   const iconData: TMessageIcon = useMemo(
     () => ({
@@ -250,6 +260,7 @@ const ContentRender = memo(function ContentRender({
           <div
             className={cn(
               'flex min-h-[20px] max-w-full flex-grow flex-col gap-0',
+              moveFollowUps && 'hs-followups-moved',
               isUser &&
                 !edit &&
                 !hasParallelContent &&
@@ -279,6 +290,7 @@ const ContentRender = memo(function ContentRender({
                 conversationId={conversation?.conversationId}
                 isLatestMessage={isLatestMessage}
                 isSubmitting={isSubmitting}
+                followUps={moveFollowUps ? followUps : undefined}
               />
             )}
           </div>

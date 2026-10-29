@@ -17,6 +17,7 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 - **Reusing a card failed live.** When the Decisions API picked a saved card or a built-in block (live: the saved checklist at 91%), filling in its data errored, because OpenAI's JSON mode needs the word "json" in the input and it was only in the instructions. The input now asks for one JSON object.
 - **The list never folded** ("card repeats the list" scored 0): the question was asked before the card existed. It is now a second Decisions API call made once the card's data is ready, with that data as input.
 - The Developer button could not be clicked: a theme rule set its stacking order to 1, so the footer strip covered it.
+- **Follow-up buttons come last.** Once an answer finishes, its follow-up buttons (such as "Help me choose an anti-gel") move below the generated card instead of sitting above it; the card grows in between the answer and them. While the answer streams they stay where they are.
 - Checked rows in generated checklists strike through more visibly, and progress bars have a clearer track.
 - New cards are written by `gpt-6.1-sol` with **low** reasoning for speed (a brief switch to `gpt-6-luna` was reverted). `GENUI_AUTHOR_EFFORT=medium` raises it; medium is the ceiling.
 
