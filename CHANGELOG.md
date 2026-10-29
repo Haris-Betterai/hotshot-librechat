@@ -13,9 +13,11 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 
 ### Changed
 - **Generated cards blend into the chat.** The frame now loads a UI kit copied from the chat's own answer blocks: Inter (served from the app), white cards with a thin border, pill buttons like the follow-up chips, a dark primary button, fields, rounded checkboxes with a check mark, progress bars, expandable notes and tables. The writer must build with these classes and may only add layout CSS, so it can no longer invent its own colours, fonts or form controls. Components written for the old look are no longer offered (they still show under their original answers).
+- Checked rows in generated checklists strike through more visibly, and progress bars have a clearer track.
 - New cards are written by `gpt-6.1-sol` with **low** reasoning for speed (a brief switch to `gpt-6-luna` was reverted). `GENUI_AUTHOR_EFFORT=medium` raises it; medium is the ceiling.
 
 ### Verified live
+- After the UI kit change, the same question produced a new "Winter prep tracker" built only from kit classes: the chat's white card, Inter, rounded checkboxes that fill dark with a white tick, and a progress bar (Decisions API: `new` at 97% in 151 ms).
 - Asked for a winter checklist: the Decisions API chose `new` at 92% in 188 ms, `gpt-6.1-sol` wrote an interactive "Ordered preparation checklist" (checkboxes, progress, task notes), it rendered under the answer and now appears under **Cards** as a saved component.
 
 ### Added
