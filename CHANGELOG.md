@@ -11,6 +11,9 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 
 ## 2026-10-29
 
+### Changed
+- New UI cards are now written by `gpt-6-luna` (was `gpt-6.1-sol`), so the whole generative UI path (deciding, filling and writing cards) runs on GPT-6 Luna. `GENUI_AUTHOR_MODEL` still overrides it.
+
 ### Verified live
 - Asked for a winter checklist: the Decisions API chose `new` at 92% in 188 ms, `gpt-6.1-sol` wrote an interactive "Ordered preparation checklist" (checkboxes, progress, task notes), it rendered under the answer and now appears under **Cards** as a saved component.
 

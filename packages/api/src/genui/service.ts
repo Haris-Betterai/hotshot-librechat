@@ -56,7 +56,7 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const env = () => ({
   enabled: process.env.GENUI_ENABLED !== 'false',
-  authorModel: process.env.GENUI_AUTHOR_MODEL || 'gpt-6.1-sol',
+  authorModel: process.env.GENUI_AUTHOR_MODEL || 'gpt-6-luna',
   maxNewPerDay: Number(process.env.GENUI_MAX_NEW_PER_DAY) || 25,
 });
 
