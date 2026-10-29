@@ -21,6 +21,7 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 - New cards are written by `gpt-6.1-sol` with **low** reasoning for speed (a brief switch to `gpt-6-luna` was reverted). `GENUI_AUTHOR_EFFORT=medium` raises it; medium is the ceiling.
 
 ### Verified live
+- After `ca3e9f40e`: the winter checklist question reused the saved "Ordered preparation checklist" (Decisions API 93%, 304 ms) with its data filled in, the answer's 8-step list folded away under the card with "Show it as text" beside it, and the Developer button opens with a normal click.
 - After the UI kit change, the same question produced a new "Winter prep tracker" built only from kit classes: the chat's white card, Inter, rounded checkboxes that fill dark with a white tick, and a progress bar (Decisions API: `new` at 97% in 151 ms).
 - Asked for a winter checklist: the Decisions API chose `new` at 92% in 188 ms, `gpt-6.1-sol` wrote an interactive "Ordered preparation checklist" (checkboxes, progress, task notes), it rendered under the answer and now appears under **Cards** as a saved component.
 
