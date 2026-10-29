@@ -5,7 +5,7 @@ export const MAX_COMPONENT_HTML = 60_000;
 
 /** What a generated component may rely on inside its sandboxed frame. */
 /** Bump when the frame's UI kit changes; components written for an older kit are no longer offered. */
-export const KIT_VERSION = 2;
+export const KIT_VERSION = 3;
 
 /** What a generated component may rely on inside its sandboxed frame. */
 export const FRAME_CONTRACT = `The component runs inside a sandboxed iframe under a chat answer (no same-origin access, no network).
@@ -21,6 +21,7 @@ It must look like part of the chat, which already loads a UI kit in the frame (I
 - Text: h3 for the title (or .hs-title), .hs-muted for secondary text, .hs-small for fine print, .hs-badge for a small pill label, .hs-divider for a rule.
 - .hs-tile: a small bordered box, e.g. a stat with <strong> value and .hs-small label.
 - Buttons: a plain <button> already looks like the chat's follow-up chips; .hs-btn-primary for the one main action; .hs-btn-ghost for quiet actions such as Reset.
+- Calls to action are required. End the card with a footer row (.hs-row) holding one .hs-btn-primary that moves the customer forward: hotshot.open(url) to a product or page URL from the props, or, when there is no URL, hotshot.send(text) with the natural next question (e.g. "Which anti-gel should I use for -20°F?"). Add one or two plain <button> chips beside it for other next steps. In lists of steps or items, give each row a small .hs-btn-ghost "Ask about this" (or similar) button that calls hotshot.send with a question about that row. Put CTA labels and messages in the props, written from the answer.
 - Fields: <input>, <select> and <textarea> are pre-styled; checkboxes and radios are pre-styled rounded boxes with a check mark.
 - Lists: <ul class="hs-list"> gives separated rows. A checklist row is <li><label class="hs-check"><input type="checkbox"><span><strong>Step</strong><span class="hs-muted">detail</span></span></label></li>; checked rows fade and strike through on their own.
 - Progress: <div class="hs-progress"><span style="width:40%"></span></div>, or a <progress> element.
@@ -135,7 +136,7 @@ export async function authorComponent(
     schema: AUTHOR_SCHEMA,
     instructions: `You design small interactive UI components for Hotshot AI, the customer chat of Hot Shot's Secret (diesel and gasoline additives, oils and treatments).
 A decision model judged that the latest answer below needs a visual or interactive component that does not exist yet. Write one reusable component for this kind of answer, then fill its props from the answer.
-Use only facts from the conversation; never invent prices, doses, URLs or claims. The component sits under the answer text, so it should add structure or interaction (a checklist, steps, a schedule, a chart, a selector), not repeat the text.
+Use only facts from the conversation; never invent prices, doses, URLs or claims. The component sits under the answer text, so it should add structure or interaction (a checklist, steps, a schedule, a chart, a selector), not repeat the text. It must end with calls to action that lead the customer to the next step or the right product.
 Do not reuse these existing keys: ${params.existingKeys.join(', ') || 'none'}.
 
 ${FRAME_CONTRACT}`,

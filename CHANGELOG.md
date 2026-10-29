@@ -18,6 +18,7 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 - **The list never folded** ("card repeats the list" scored 0): the question was asked before the card existed. It is now a second Decisions API call made once the card's data is ready, with that data as input.
 - The Developer button could not be clicked: a theme rule set its stacking order to 1, so the footer strip covered it.
 - **Follow-up buttons come last.** Once an answer finishes, its follow-up buttons (such as "Help me choose an anti-gel") move below the generated card instead of sitting above it; the card grows in between the answer and them. While the answer streams they stay where they are.
+- **Generated cards end with calls to action.** Every new card has a footer with one primary button that moves the customer on (opens a product or page link from the answer, or asks the natural next question) and one or two chip buttons; list rows get a small "Ask about this" button. Cards from before this rule are no longer offered (UI kit version 3), so they get rewritten with buttons.
 - Checked rows in generated checklists strike through more visibly, and progress bars have a clearer track.
 - New cards are written by `gpt-6.1-sol` with **low** reasoning for speed (a brief switch to `gpt-6-luna` was reverted). `GENUI_AUTHOR_EFFORT=medium` raises it; medium is the ceiling.
 

@@ -4,6 +4,7 @@ import { createMethods, createModels } from '@librechat/data-schemas';
 import type { TGenUiResult } from 'librechat-data-provider';
 import type { GenUiDeps } from './service';
 import { getGenUi, getGenUiCatalog } from './service';
+import { KIT_VERSION } from './author';
 
 const USER = 'user-1';
 const PRODUCT_URL = 'https://hotshotsecret.com/product/diesel-extreme/';
@@ -311,7 +312,7 @@ describe('getGenUi', () => {
       propsSchema: {},
       html: COMPONENT_HTML,
       authorModel: 'gpt-6.1-sol',
-      kitVersion: 2,
+      kitVersion: KIT_VERSION,
     });
     const catalog = await getGenUiCatalog(deps);
     const values = catalog.entries.map((entry) => entry.value);
