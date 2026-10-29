@@ -2278,7 +2278,7 @@
   "com_ui_dev_shown": "Shown",
   "com_ui_dev_tab_cards": "Cards",
   "com_ui_dev_tab_decisions": "Decisions",
-  "com_ui_dev_threshold_values": "confidence ≥ {{0}} · a new card needs worth ≥ {{1}}",
+  "com_ui_dev_threshold_values": "confidence ≥ {{0}} · a new card needs worth ≥ {{1}} or confidence ≥ {{2}}",
   "com_ui_dev_thresholds": "Thresholds",
   "com_ui_dev_title": "Developer",
   "com_ui_dev_uses": "Used {{0}}×",

@@ -241,7 +241,7 @@ describe('getGenUi', () => {
 
   it('shows nothing when the decision model is unsure or a new component is not worth it', async () => {
     await saveTurn('m1', LONG_ANSWER);
-    mockOpenAI({ decision: { choice: 'new', confidence: 0.9, worth: 0.3 } });
+    mockOpenAI({ decision: { choice: 'new', confidence: 0.6, worth: 0.3 } });
     await getGenUi(deps, { user: USER, messageId: 'm1', run: true });
 
     expect(await settle('m1')).toMatchObject({
@@ -249,12 +249,12 @@ describe('getGenUi', () => {
       decision: {
         model: 'gpt-6-luna',
         choice: 'new',
-        confidence: 0.9,
+        confidence: 0.6,
         worth: 0.3,
-        outcome: 'not worth a new component (worth < 0.6)',
+        outcome: 'not worth a new component (worth < 0.5, confidence < 0.75)',
         options: [
-          { value: 'new', probability: 0.9 },
-          { value: 'none', probability: expect.closeTo(0.1) },
+          { value: 'new', probability: 0.6 },
+          { value: 'none', probability: expect.closeTo(0.4) },
         ],
       },
     });

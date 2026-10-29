@@ -44,7 +44,8 @@ const NONE_DESCRIPTION = 'Plain text is enough. No visual or interactive element
 const NEW_DESCRIPTION =
   'None of the other options fit, but a purpose-built visual or interactive component (for example a checklist, step-by-step guide, maintenance schedule, timeline, symptom checker or chart) would make this answer clearly easier to act on.';
 const MIN_CONFIDENCE = 0.45;
-const MIN_NEW_WORTH = 0.6;
+const MIN_NEW_WORTH = 0.5;
+const MIN_NEW_CONFIDENCE = 0.75;
 const MIN_ANSWER_CHARS = 60;
 const MAX_EVIDENCE_CHARS = 12_000;
 const STALE_PENDING_MS = 4 * 60_000;
@@ -221,8 +222,12 @@ async function chooseUi(
   if (ui.confidence < MIN_CONFIDENCE) {
     return { ...decision, outcome: `below confidence ${MIN_CONFIDENCE}` };
   }
-  if (ui.choice === NEW && (worthProbability ?? 0) < MIN_NEW_WORTH) {
-    return { ...decision, outcome: `not worth a new component (worth < ${MIN_NEW_WORTH})` };
+  const confidentNew = ui.confidence >= MIN_NEW_CONFIDENCE;
+  if (ui.choice === NEW && !confidentNew && (worthProbability ?? 0) < MIN_NEW_WORTH) {
+    return {
+      ...decision,
+      outcome: `not worth a new component (worth < ${MIN_NEW_WORTH}, confidence < ${MIN_NEW_CONFIDENCE})`,
+    };
   }
   return decision;
 }
@@ -460,6 +465,7 @@ export async function getGenUiCatalog(deps: GenUiDeps): Promise<TGenUiCatalog> {
     authorModel: env().authorModel,
     minConfidence: MIN_CONFIDENCE,
     minNewWorth: MIN_NEW_WORTH,
+    minNewConfidence: MIN_NEW_CONFIDENCE,
     entries,
   };
 }

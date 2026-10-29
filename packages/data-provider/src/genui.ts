@@ -48,6 +48,8 @@ export type TGenUiCatalog = {
   authorModel: string;
   minConfidence: number;
   minNewWorth: number;
+  /** A new card also goes ahead at this confidence, whatever the worth score. */
+  minNewConfidence: number;
   entries: TGenUiCatalogEntry[];
 };
 

@@ -20,6 +20,8 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 
 ### Fixed
 - A generated component's frame reloaded whenever the message re-rendered, because its colours were rebuilt each time; it now loads once.
+- `?dev=1` did nothing for guests, because the router drops the query string before the chat mounts; it is now read when the app loads (`?dev=0` turns it off). The Developer button sat at the top left instead of the bottom left.
+- A confident "new component" decision was vetoed by the separate "is a visual worth it" check (live: `new` at 95%, worth 16%). A new component now goes ahead at confidence ≥ 0.75, or worth ≥ 0.5.
 
 ---
 

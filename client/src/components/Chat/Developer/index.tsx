@@ -12,18 +12,12 @@ import { cn } from '~/utils';
 
 /**
  * Developer view. Staff can always open it; guests turn it on by visiting with `?dev=1`
- * (remembered in this browser until they switch it off).
+ * (remembered in this browser until they switch it off or visit with `?dev=0`).
  */
 export function useDevMode() {
   const [enabled, setEnabled] = useAtom(devModeAtom);
   const { user } = useAuthContext();
   const isStaff = user != null && user.provider !== 'anonymous';
-
-  useEffect(() => {
-    if (new URLSearchParams(window.location.search).get('dev') === '1') {
-      setEnabled(true);
-    }
-  }, [setEnabled]);
 
   return { enabled, setEnabled, available: isStaff || enabled };
 }
@@ -78,7 +72,11 @@ function Cards({ active }: { active: boolean }) {
         <dd className="font-mono">{data.authorModel}</dd>
         <dt className="text-text-secondary">{localize('com_ui_dev_thresholds')}</dt>
         <dd className="font-mono">
-          {localize('com_ui_dev_threshold_values', { 0: data.minConfidence, 1: data.minNewWorth })}
+          {localize('com_ui_dev_threshold_values', {
+            0: data.minConfidence,
+            1: data.minNewWorth,
+            2: data.minNewConfidence,
+          })}
         </dd>
       </dl>
       <ul className="flex flex-col gap-2">
@@ -171,7 +169,7 @@ export default function Developer() {
   return (
     <Dialog.Root open={open} onOpenChange={setOpen} modal={false}>
       <Dialog.Trigger
-        className="bg-surface-primary/90 absolute bottom-4 left-4 z-30 hidden items-center gap-1.5 rounded-full border border-border-light px-3 py-1.5 text-xs font-medium text-text-secondary shadow-sm backdrop-blur transition hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 md:flex"
+        className="bg-surface-primary/90 !absolute bottom-4 left-4 z-30 hidden items-center gap-1.5 rounded-full border border-border-light px-3 py-1.5 text-xs font-medium text-text-secondary shadow-sm backdrop-blur transition hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 md:flex"
         aria-label={localize('com_ui_dev_open')}
       >
         <Code2 className="size-3.5" aria-hidden="true" />
