@@ -12,7 +12,7 @@ const CSP =
   "default-src 'none'; img-src https: data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; font-src data:";
 
 type Palette = Record<
-  'ink' | 'muted' | 'line' | 'surface' | 'soft' | 'accent' | 'accentInk',
+  'ink' | 'muted' | 'line' | 'surface' | 'soft' | 'accent' | 'accentInk' | 'scheme',
   string
 >;
 
@@ -24,6 +24,7 @@ const LIGHT: Palette = {
   soft: '#f5f5f5',
   accent: '#171717',
   accentInk: '#ffffff',
+  scheme: 'light',
 };
 
 const DARK: Palette = {
@@ -34,6 +35,7 @@ const DARK: Palette = {
   soft: '#262626',
   accent: '#ffffff',
   accentInk: '#171717',
+  scheme: 'dark',
 };
 
 const LINE_SEPARATOR = new RegExp('\\u2028', 'g');
@@ -58,7 +60,7 @@ export function buildFrameDocument(params: {
 <meta http-equiv="Content-Security-Policy" content="${CSP}">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-:root{--hs-ink:${palette.ink};--hs-muted:${palette.muted};--hs-line:${palette.line};--hs-surface:${palette.surface};--hs-soft:${palette.soft};--hs-accent:${palette.accent};--hs-accent-ink:${palette.accentInk};--hs-radius:16px;color-scheme:light dark}
+:root{--hs-ink:${palette.ink};--hs-muted:${palette.muted};--hs-line:${palette.line};--hs-surface:${palette.surface};--hs-soft:${palette.soft};--hs-accent:${palette.accent};--hs-accent-ink:${palette.accentInk};--hs-radius:16px;color-scheme:${palette.scheme}}
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;background:transparent;color:var(--hs-ink);font:15px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden}
 body{padding:2px}

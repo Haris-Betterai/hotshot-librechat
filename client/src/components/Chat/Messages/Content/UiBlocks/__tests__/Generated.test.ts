@@ -8,6 +8,7 @@ const palette = {
   soft: '#f5f5f5',
   accent: '#171717',
   accentInk: '#ffffff',
+  scheme: 'light',
 };
 
 describe('buildFrameDocument', () => {
@@ -15,6 +16,7 @@ describe('buildFrameDocument', () => {
     const doc = buildFrameDocument({ html: '<p>Hi</p>', props: {}, token: 't1', palette });
     expect(doc).toContain("default-src 'none'");
     expect(doc).toContain('<body><p>Hi</p></body>');
+    expect(doc).toContain('color-scheme:light');
   });
 
   it('embeds props so they cannot close the script tag', () => {

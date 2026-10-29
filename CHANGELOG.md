@@ -11,6 +11,9 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 
 ## 2026-10-29
 
+### Verified live
+- Asked for a winter checklist: the Decisions API chose `new` at 92% in 188 ms, `gpt-6.1-sol` wrote an interactive "Ordered preparation checklist" (checkboxes, progress, task notes), it rendered under the answer and now appears under **Cards** as a saved component.
+
 ### Added
 - **Generative UI.** After each answer, OpenAI's Decisions model (`gpt-6-luna`, `POST /v1/decisions`) picks the UI that helps most: nothing, one of the built-in answer blocks, a component saved earlier, or a new one. Built-in blocks and saved components get their data from the answer and its tool results (gpt-6-luna), and any link or image the conversation never contained is dropped. When nothing fits and a visual is clearly worth it, `gpt-6.1-sol` writes a new component on the spot; it renders live under the answer in a sandboxed frame (scripts only, no network, CSP `default-src 'none'`) and is saved as a reusable component, so the decision model can pick it for later answers. Buttons inside a component can send the customer's next message. Answers where the agent already drew a block are skipped. New `GenUiComponent` and `GenUiRender` collections, `POST /api/genui/:messageId`, and tests. Settings: `GENUI_ENABLED`, `GENUI_AUTHOR_MODEL`, `GENUI_MAX_NEW_PER_DAY` (25).
 - **Developer panel.** A "Developer" button at the bottom left of a chat (staff always; guests by opening the site with `?dev=1`) opens a side panel with two tabs: **Decisions** (every Decisions API answer loaded in this tab: the choice, its confidence, what happened, the time taken and a probability bar for each option) and **Cards** (everything the decision model can pick: built-in blocks, saved generated components with their use count and author model, plus the models and thresholds). A switch also shows each answer's decision under the reply, expandable to the full probabilities. New `GET /api/genui/catalog`; the full decision is stored with each message.
@@ -21,6 +24,7 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 ### Fixed
 - A generated component's frame reloaded whenever the message re-rendered, because its colours were rebuilt each time; it now loads once.
 - `?dev=1` did nothing for guests, because the router drops the query string before the chat mounts; it is now read when the app loads (`?dev=0` turns it off). The Developer button sat at the top left instead of the bottom left.
+- Generated components drew black corners and black checkboxes when the computer was in dark mode but the page was light: the frame now uses the page's colour scheme.
 - A confident "new component" decision was vetoed by the separate "is a visual worth it" check (live: `new` at 95%, worth 16%). A new component now goes ahead at confidence ≥ 0.75, or worth ≥ 0.5.
 
 ---
