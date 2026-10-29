@@ -6,6 +6,7 @@ import { useGenUiQuery } from '~/data-provider';
 import { devModeAtom } from '~/store/devMode';
 import { MessageContext } from '~/Providers';
 import { useLocalize } from '~/hooks';
+import { useFoldLists } from './fold';
 import AutoHeight from './AutoHeight';
 import { CARD_CLASS } from './shared';
 import Generated from './Generated';
@@ -81,6 +82,10 @@ export default function GenUi({
   const deciding = data?.status === 'pending' && choice !== '' && choice !== 'none';
   const component = ready && !frameFailed ? data?.component : undefined;
   const showBuilding = deciding || (component != null && !frameReady);
+  const shown = ready && (blockSource !== '' || (component != null && frameReady));
+  const folds = shown && data?.replacesText === true;
+  const [showList, setShowList] = useState(false);
+  useFoldLists(messageId, folds && !showList);
 
   return (
     <MessageContext.Provider value={context}>
@@ -109,13 +114,25 @@ export default function GenUi({
                   onReady={onReady}
                   onFail={onFail}
                 />
-                {data?.created && (
-                  <p className="mt-1.5 flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-                    <Sparkles className="size-3" aria-hidden="true" />
-                    {localize('com_ui_genui_created', { 0: component.name })}
-                  </p>
-                )}
               </div>
+            )}
+            {shown && (data?.created || folds) && (
+              <p className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-neutral-500 dark:text-neutral-400">
+                <Sparkles className="size-3" aria-hidden="true" />
+                {data?.created &&
+                  component &&
+                  localize('com_ui_genui_created', { 0: component.name })}
+                {folds && (
+                  <button
+                    type="button"
+                    onClick={() => setShowList((value) => !value)}
+                    aria-expanded={showList}
+                    className="underline-offset-2 hover:text-neutral-800 hover:underline dark:hover:text-neutral-200"
+                  >
+                    {localize(showList ? 'com_ui_genui_hide_list' : 'com_ui_genui_show_list')}
+                  </button>
+                )}
+              </p>
             )}
           </div>
         )}

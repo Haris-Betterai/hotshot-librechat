@@ -104,6 +104,11 @@ export default function Decision({ result }: { result?: TGenUiResult }) {
           <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5">
             <dt>{localize('com_ui_dev_worth')}</dt>
             <dd className="font-mono">{percent(decision.worth)}</dd>
+            <dt>{localize('com_ui_dev_covers')}</dt>
+            <dd className="font-mono">
+              {percent(decision.covers)}
+              {result.replacesText ? ` · ${localize('com_ui_dev_list_folded')}` : ''}
+            </dd>
             <dt>{localize('com_ui_dev_shown')}</dt>
             <dd className="font-mono">{result.status === 'ready' ? result.choice : 'nothing'}</dd>
             {decision.buildModel && (

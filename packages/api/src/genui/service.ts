@@ -46,6 +46,8 @@ const NEW_DESCRIPTION =
 const MIN_CONFIDENCE = 0.45;
 const MIN_NEW_WORTH = 0.5;
 const MIN_NEW_CONFIDENCE = 0.75;
+/** At this probability the card shows the answer's list in full, so the list folds away. */
+const MIN_COVERS = 0.6;
 const MIN_ANSWER_CHARS = 60;
 const MAX_EVIDENCE_CHARS = 12_000;
 const STALE_PENDING_MS = 4 * 60_000;
@@ -191,12 +193,20 @@ async function chooseUi(
         instructions:
           'A visual or interactive component would make this answer clearly easier to understand or act on than the text alone.',
       },
+      {
+        type: 'predicate',
+        name: 'covers',
+        instructions:
+          'The main body of the answer is a list of steps, items or rows that a component under it would show in full, so the reader would otherwise see the same list twice.',
+      },
     ],
   );
   const decideMs = elapsed(start);
   const ui = answerNamed(answers, 'ui');
   const worth = answerNamed(answers, 'worth');
   const worthProbability = worth?.type === 'predicate' ? worth.probability : undefined;
+  const covers = answerNamed(answers, 'covers');
+  const coversProbability = covers?.type === 'predicate' ? covers.probability : undefined;
   if (ui?.type !== 'choice' || typeof ui.choice !== 'string') {
     return {
       model: DECISION_MODEL,
@@ -215,6 +225,7 @@ async function chooseUi(
     choice: ui.choice,
     confidence: ui.confidence,
     worth: worthProbability,
+    covers: coversProbability,
     options,
     outcome: 'shown',
     decideMs,
@@ -407,6 +418,7 @@ async function build(deps: GenUiDeps, request: GenUiRequest): Promise<void> {
 
 async function toResult(deps: GenUiDeps, render: IGenUiRender): Promise<TGenUiResult> {
   const base = { choice: render.choice, decision: render.decision };
+  const replacesText = (render.decision?.covers ?? 0) >= MIN_COVERS;
   const stale =
     render.status === 'pending' &&
     Date.now() - new Date(render.updatedAt ?? render.createdAt ?? 0).getTime() > STALE_PENDING_MS;
@@ -418,7 +430,7 @@ async function toResult(deps: GenUiDeps, render: IGenUiRender): Promise<TGenUiRe
   }
   if (render.block) {
     const block = parseUiBlock(JSON.stringify(render.block));
-    return block ? { ...base, status: 'ready', block } : { ...base, status: 'none' };
+    return block ? { ...base, status: 'ready', block, replacesText } : { ...base, status: 'none' };
   }
   const component = render.componentKey ? await deps.getGenUiComponent(render.componentKey) : null;
   if (!component) {
@@ -430,6 +442,7 @@ async function toResult(deps: GenUiDeps, render: IGenUiRender): Promise<TGenUiRe
     created: render.choice === NEW,
     component: { key: component.key, name: component.name, html: component.html },
     props: render.props ?? {},
+    replacesText,
   };
 }
 
@@ -471,6 +484,7 @@ export async function getGenUiCatalog(deps: GenUiDeps): Promise<TGenUiCatalog> {
     minConfidence: MIN_CONFIDENCE,
     minNewWorth: MIN_NEW_WORTH,
     minNewConfidence: MIN_NEW_CONFIDENCE,
+    minCovers: MIN_COVERS,
     entries,
   };
 }

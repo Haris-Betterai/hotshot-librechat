@@ -11,7 +11,7 @@ const COMPONENT_HTML =
   '<div id="list"></div><script>document.getElementById("list").textContent = hotshot.props.title;</script>';
 
 type Routes = {
-  decision: { choice: string; confidence: number; worth?: number };
+  decision: { choice: string; confidence: number; worth?: number; covers?: number };
   responses?: object[];
 };
 
@@ -47,6 +47,7 @@ function mockOpenAI(routes: Routes) {
             ],
           },
           { type: 'predicate', name: 'worth', probability: routes.decision.worth ?? 0.9 },
+          { type: 'predicate', name: 'covers', probability: routes.decision.covers ?? 0.2 },
         ],
       });
     }
@@ -134,7 +135,7 @@ describe('getGenUi', () => {
   it('writes a new component when the decision is "new", saves it, and reuses it later', async () => {
     await saveTurn('m1', LONG_ANSWER);
     mockOpenAI({
-      decision: { choice: 'new', confidence: 0.8 },
+      decision: { choice: 'new', confidence: 0.8, covers: 0.85 },
       responses: [
         {
           key: 'Power Loss Checklist',
@@ -165,6 +166,8 @@ describe('getGenUi', () => {
         html: COMPONENT_HTML,
       },
       props: { title: 'Lost power' },
+      replacesText: true,
+      decision: { covers: 0.85 },
     });
     expect(calls.map((call) => call.path)).toEqual(['/decisions', '/responses']);
     expect(calls[0].body.model).toBe('gpt-6-luna');
@@ -191,6 +194,7 @@ describe('getGenUi', () => {
       props: { title: 'Still no power' },
     });
     expect(second.created).toBe(false);
+    expect(second.replacesText).toBe(false);
     const [saved] = await deps.listGenUiComponents();
     expect(saved.uses).toBe(2);
   });

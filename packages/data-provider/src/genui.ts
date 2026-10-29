@@ -21,6 +21,8 @@ export type TGenUiDecision = {
   confidence: number;
   /** Probability that any visual beats plain text. */
   worth?: number;
+  /** Probability that the card shows the answer's main list in full. */
+  covers?: number;
   /** Every option the model weighed, most likely first. */
   options: TGenUiOption[];
   /** Why the shown UI is what it is, e.g. `shown`, `below confidence`, `agent drew a block`. */
@@ -50,6 +52,8 @@ export type TGenUiCatalog = {
   minNewWorth: number;
   /** A new card also goes ahead at this confidence, whatever the worth score. */
   minNewConfidence: number;
+  /** At this `covers` probability the answer's list folds away under the card. */
+  minCovers: number;
   entries: TGenUiCatalogEntry[];
 };
 
@@ -64,6 +68,8 @@ export type TGenUiResult = {
   component?: TGenUiComponent;
   props?: Record<string, unknown>;
   decision?: TGenUiDecision;
+  /** The card shows the answer's list in full, so the list in the text folds away. */
+  replacesText?: boolean;
   error?: string;
 };
 
