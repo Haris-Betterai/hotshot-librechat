@@ -15,6 +15,7 @@ import {
 import MessageModelBadge from '~/components/Chat/Messages/ui/MessageModelBadge';
 import MessageTimestamp from '~/components/Chat/Messages/ui/MessageTimestamp';
 import ContentParts from '~/components/Chat/Messages/Content/ContentParts';
+import GenUi from '~/components/Chat/Messages/Content/UiBlocks/GenUi';
 import PlaceholderRow from '~/components/Chat/Messages/ui/PlaceholderRow';
 import SiblingSwitch from '~/components/Chat/Messages/SiblingSwitch';
 import HoverButtons from '~/components/Chat/Messages/HoverButtons';
@@ -272,6 +273,14 @@ const ContentRender = memo(function ContentRender({
               conversationId={conversation?.conversationId}
               content={msg.content as Array<TMessageContentParts | undefined>}
             />
+            {!isUser && !edit && (
+              <GenUi
+                messageId={msg.messageId}
+                conversationId={conversation?.conversationId}
+                isLatestMessage={isLatestMessage}
+                isSubmitting={isSubmitting}
+              />
+            )}
           </div>
           {hasNoChildren && isSubmitting ? (
             <PlaceholderRow />

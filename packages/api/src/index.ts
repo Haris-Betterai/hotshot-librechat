@@ -54,6 +54,7 @@ export * from './skills';
 export * from './favorites';
 /* Endpoints */
 export * from './endpoints';
+export * from './genui';
 /* Files */
 export * from './files';
 /* Storage */

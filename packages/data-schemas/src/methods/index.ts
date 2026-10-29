@@ -39,6 +39,7 @@ import { createShareMethods, type ShareMethods } from './share';
 import { createActionMethods, type ActionMethods } from './action';
 import { createAssistantMethods, type AssistantMethods } from './assistant';
 import { createBannerMethods, type BannerMethods } from './banner';
+import { createGenUiMethods, type GenUiMethods } from './genUi';
 import { createToolCallMethods, type ToolCallMethods } from './toolCall';
 import { createCategoriesMethods, type CategoriesMethods } from './categories';
 import { createPresetMethods, type PresetMethods } from './preset';
@@ -139,6 +140,7 @@ export type AllMethods = UserMethods &
   ActionMethods &
   AssistantMethods &
   BannerMethods &
+  GenUiMethods &
   ToolCallMethods &
   CategoriesMethods &
   PresetMethods &
@@ -269,6 +271,7 @@ export function createMethods(
     ...actionMethods,
     ...createAssistantMethods(mongoose),
     ...createBannerMethods(mongoose),
+    ...createGenUiMethods(mongoose),
     ...createToolCallMethods(mongoose),
     ...createCategoriesMethods(mongoose),
     ...createPresetMethods(mongoose),
@@ -292,6 +295,7 @@ export function createMethods(
 }
 
 export type {
+  GenUiMethods,
   UserMethods,
   SessionMethods,
   TokenMethods,

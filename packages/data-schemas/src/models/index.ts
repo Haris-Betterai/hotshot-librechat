@@ -2,6 +2,7 @@ import { createSkillSyncCredentialModel } from './skillSyncCredential';
 import { createSkillSyncStatusModel } from './skillSyncStatus';
 import { createConversationTagModel } from './conversationTag';
 import { createEmbedWidgetLinkModel } from './embedWidgetLink';
+import { createGenUiComponentModel, createGenUiRenderModel } from './genUi';
 import { createAgentCategoryModel } from './agentCategory';
 import { createChatProjectModel } from './chatProject';
 import { createAgentApiKeyModel } from './agentApiKey';
@@ -70,6 +71,8 @@ export function createModels(mongoose: typeof import('mongoose')): {
   ConversationTag: ReturnType<typeof createConversationTagModel>;
   SharedLink: ReturnType<typeof createSharedLinkModel>;
   EmbedWidgetLink: ReturnType<typeof createEmbedWidgetLinkModel>;
+  GenUiComponent: ReturnType<typeof createGenUiComponentModel>;
+  GenUiRender: ReturnType<typeof createGenUiRenderModel>;
   ToolCall: ReturnType<typeof createToolCallModel>;
   MemoryEntry: ReturnType<typeof createMemoryModel>;
   ToolFavorite: ReturnType<typeof createToolFavoriteModel>;
@@ -110,6 +113,8 @@ export function createModels(mongoose: typeof import('mongoose')): {
     ConversationTag: createConversationTagModel(mongoose),
     SharedLink: createSharedLinkModel(mongoose),
     EmbedWidgetLink: createEmbedWidgetLinkModel(mongoose),
+    GenUiComponent: createGenUiComponentModel(mongoose),
+    GenUiRender: createGenUiRenderModel(mongoose),
     ToolCall: createToolCallModel(mongoose),
     MemoryEntry: createMemoryModel(mongoose),
     ToolFavorite: createToolFavoriteModel(mongoose),

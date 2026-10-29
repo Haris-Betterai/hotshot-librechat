@@ -1,4 +1,5 @@
 import type { AxiosResponse } from 'axios';
+import type { TGenUiRequest, TGenUiResult } from './genui';
 import type { TFileConfig } from './file-config';
 import type * as t from './types';
 import * as permissions from './accessPermissions';
@@ -88,6 +89,10 @@ export function createSharedLink(
     targetMessageId,
     snapshotFiles,
   });
+}
+
+export function getGenUi({ messageId, ...body }: TGenUiRequest): Promise<TGenUiResult> {
+  return request.post(endpoints.genUi(messageId), body);
 }
 
 export function listEmbedWidgets(agentId: string): Promise<t.TEmbedWidgetListResponse> {

@@ -31,6 +31,7 @@ const oauth = require('./oauth');
 const files = require('./files');
 const share = require('./share');
 const embeds = require('./embeds');
+const genui = require('./genui');
 const tags = require('./tags');
 const auth = require('./auth');
 const keys = require('./keys');
@@ -59,6 +60,7 @@ module.exports = {
   files,
   share,
   embeds,
+  genui,
   banner,
   agents,
   convos,

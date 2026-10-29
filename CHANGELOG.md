@@ -9,6 +9,13 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 
 ---
 
+## 2026-10-29
+
+### Added
+- **Generative UI.** After each answer, OpenAI's Decisions model (`gpt-6-luna`, `POST /v1/decisions`) picks the UI that helps most: nothing, one of the built-in answer blocks, a component saved earlier, or a new one. Built-in blocks and saved components get their data from the answer and its tool results (gpt-6-luna), and any link or image the conversation never contained is dropped. When nothing fits and a visual is clearly worth it, `gpt-6.1-sol` writes a new component on the spot; it renders live under the answer in a sandboxed frame (scripts only, no network, CSP `default-src 'none'`) and is saved as a reusable component, so the decision model can pick it for later answers. Buttons inside a component can send the customer's next message. Answers where the agent already drew a block are skipped. New `GenUiComponent` and `GenUiRender` collections, `POST /api/genui/:messageId`, and tests. Settings: `GENUI_ENABLED`, `GENUI_AUTHOR_MODEL`, `GENUI_MAX_NEW_PER_DAY` (25).
+
+---
+
 ## 2026-10-23
 
 ### Added

@@ -17,6 +17,7 @@ export * from './intelligence';
 export * from './websearch';
 export * from './embed';
 export * from './uiblocks';
+export * from './genui';
 /* mcp */
 export * from './mcp';
 /* RBAC */
