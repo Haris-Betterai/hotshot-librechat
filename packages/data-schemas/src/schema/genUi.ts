@@ -1,4 +1,5 @@
 import { Schema, Document } from 'mongoose';
+import type { TGenUiDecision } from 'librechat-data-provider';
 
 /** A UI component an LLM wrote on demand, saved so later answers can reuse it. */
 export interface IGenUiComponent extends Document {
@@ -34,6 +35,8 @@ export interface IGenUiRender extends Document {
   block?: Record<string, unknown>;
   componentKey?: string;
   props?: Record<string, unknown>;
+  /** The Decisions API answer and what came of it, for the developer panel. */
+  decision?: TGenUiDecision;
   error?: string;
   tenantId?: string;
   createdAt?: Date;
@@ -68,6 +71,7 @@ export const genUiRenderSchema: Schema<IGenUiRender> = new Schema(
     block: { type: Schema.Types.Mixed },
     componentKey: { type: String },
     props: { type: Schema.Types.Mixed },
+    decision: { type: Schema.Types.Mixed },
     error: { type: String },
     tenantId: { type: String, index: true },
   },

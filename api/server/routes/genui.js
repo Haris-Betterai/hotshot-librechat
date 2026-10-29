@@ -1,11 +1,20 @@
 const express = require('express');
 const { logger } = require('@librechat/data-schemas');
-const { getGenUi } = require('@librechat/api');
+const { getGenUi, getGenUiCatalog } = require('@librechat/api');
 const { requireJwtAuth } = require('~/server/middleware');
 const db = require('~/models');
 
 const router = express.Router();
 router.use(requireJwtAuth);
+
+router.get('/catalog', async (req, res) => {
+  try {
+    res.json(await getGenUiCatalog(db));
+  } catch (error) {
+    logger.error('[genui] catalog failed', error);
+    res.status(500).json({ message: 'Could not load the catalog' });
+  }
+});
 
 router.post('/:messageId', async (req, res) => {
   try {

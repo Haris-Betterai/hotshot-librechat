@@ -92,8 +92,8 @@ const isFrameMessage = (data: unknown, token: string): data is FrameMessage =>
   (data as { token?: unknown }).token === token &&
   typeof (data as { type?: unknown }).type === 'string';
 
-const usePalette = (): Palette => {
-  const isEmbed = useIsEmbed();
+/** Read once per frame: a new palette would rebuild the document and reload the frame. */
+const readPalette = (isEmbed: boolean): Palette => {
   const dark = document.documentElement.classList.contains('dark');
   const base = dark ? DARK : LIGHT;
   if (!isEmbed) {
@@ -108,18 +108,22 @@ type FrameProps = {
   props: Record<string, unknown>;
   send?: (text: string) => void;
   canSend: boolean;
+  onReady?: () => void;
+  onFail?: () => void;
 };
 
-function Frame({ component, props, send, canSend }: FrameProps) {
+function Frame({ component, props, send, canSend, onReady, onFail }: FrameProps) {
   const frameRef = useRef<HTMLIFrameElement>(null);
   const [height, setHeight] = useState(0);
-  const [failed, setFailed] = useState(false);
-  const palette = usePalette();
-  const token = useMemo(() => Math.random().toString(36).slice(2), []);
+  const isEmbed = useIsEmbed();
+  const [palette] = useState(() => readPalette(isEmbed));
+  const [token] = useState(() => Math.random().toString(36).slice(2));
   const srcDoc = useMemo(
     () => buildFrameDocument({ html: component.html, props, token, palette }),
     [component.html, props, token, palette],
   );
+  const callbacks = useRef({ onReady, onFail, send, canSend });
+  callbacks.current = { onReady, onFail, send, canSend };
 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
@@ -127,12 +131,14 @@ function Frame({ component, props, send, canSend }: FrameProps) {
         return;
       }
       const message = event.data;
+      const current = callbacks.current;
       if (message.type === 'resize') {
         setHeight(Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, Number(message.height) || 0)));
+        current.onReady?.();
         return;
       }
       if (message.type === 'error') {
-        setFailed(true);
+        current.onFail?.();
         return;
       }
       if (message.type === 'open') {
@@ -143,17 +149,14 @@ function Frame({ component, props, send, canSend }: FrameProps) {
         return;
       }
       const text = message.text.trim().slice(0, MAX_SEND);
-      if (canSend && send && text) {
-        send(text);
+      if (current.canSend && current.send && text) {
+        current.send(text);
       }
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, [token, send, canSend]);
+  }, [token]);
 
-  if (failed) {
-    return null;
-  }
   return (
     <iframe
       ref={frameRef}
@@ -161,30 +164,39 @@ function Frame({ component, props, send, canSend }: FrameProps) {
       srcDoc={srcDoc}
       sandbox="allow-scripts"
       referrerPolicy="no-referrer"
-      className="block w-full border-0 bg-transparent transition-[height] duration-200"
-      style={{ height: height || 120, opacity: height ? 1 : 0 }}
+      className="block w-full border-0 bg-transparent"
+      style={{ height: height || MIN_HEIGHT }}
     />
   );
 }
 
-/** A component an LLM wrote, run in a sandboxed frame under the answer. */
-export default function Generated({
-  component,
-  props,
-}: {
+type GeneratedProps = {
   component: TGenUiComponent;
   props: Record<string, unknown>;
-}) {
+  /** Called once the frame has laid out and reported its height. */
+  onReady?: () => void;
+  onFail?: () => void;
+};
+
+/** A component an LLM wrote, run in a sandboxed frame under the answer. */
+export default function Generated({ component, props, onReady, onFail }: GeneratedProps) {
   const localize = useLocalize();
   return (
     <section
       aria-label={localize('com_ui_genui_label', { 0: component.name })}
-      className="ui-block not-prose my-3 w-full max-w-2xl"
+      className="ui-block not-prose w-full max-w-2xl"
       data-genui={component.key}
     >
       <SendGate>
         {(send, enabled) => (
-          <Frame component={component} props={props} send={send} canSend={enabled} />
+          <Frame
+            component={component}
+            props={props}
+            send={send}
+            canSend={enabled}
+            onReady={onReady}
+            onFail={onFail}
+          />
         )}
       </SendGate>
     </section>

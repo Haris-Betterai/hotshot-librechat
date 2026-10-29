@@ -40,6 +40,7 @@ import { createActionMethods, type ActionMethods } from './action';
 import { createAssistantMethods, type AssistantMethods } from './assistant';
 import { createBannerMethods, type BannerMethods } from './banner';
 import { createGenUiMethods, type GenUiMethods } from './genUi';
+export type { GenUiRenderUpdate, GenUiComponentInput } from './genUi';
 import { createToolCallMethods, type ToolCallMethods } from './toolCall';
 import { createCategoriesMethods, type CategoriesMethods } from './categories';
 import { createPresetMethods, type PresetMethods } from './preset';

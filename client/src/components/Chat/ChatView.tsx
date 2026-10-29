@@ -21,6 +21,7 @@ import ProjectLandingChip from './ProjectLandingChip';
 import MessagesView from './Messages/MessagesView';
 import { cn, isEmbedWidget } from '~/utils';
 import Presentation from './Presentation';
+import Developer from './Developer';
 import ChatForm from './Input/ChatForm';
 import Landing from './Landing';
 import Header from './Header';
@@ -122,6 +123,7 @@ function ChatView({ index = 0, project }: { index?: number; project?: TChatProje
               )}
             >
               <Header />
+              {!isEmbed && !isLandingPage && <Developer />}
               <>
                 <div className={cn('flex flex-col', columnLayout(isLandingPage, isEmbed))}>
                   {content}

@@ -12,7 +12,13 @@ export type DecisionMessage = { role: 'user' | 'assistant' | 'developer'; conten
 
 export type DecisionAnswer =
   | { type: 'predicate'; name: string | null; probability: number }
-  | { type: 'choice'; name: string | null; choice: string | boolean; confidence: number }
+  | {
+      type: 'choice';
+      name: string | null;
+      choice: string | boolean;
+      confidence: number;
+      probabilities?: Array<{ value: string | boolean; probability: number }>;
+    }
   | { type: 'refusal'; name: string | null };
 
 type ResponsesOutput = {

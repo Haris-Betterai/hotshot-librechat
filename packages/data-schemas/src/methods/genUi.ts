@@ -9,7 +9,7 @@ export type GenUiComponentInput = Pick<
 export type GenUiRenderUpdate = Partial<
   Pick<
     IGenUiRender,
-    'status' | 'choice' | 'confidence' | 'block' | 'componentKey' | 'props' | 'error'
+    'status' | 'choice' | 'confidence' | 'block' | 'componentKey' | 'props' | 'decision' | 'error'
   >
 >;
 

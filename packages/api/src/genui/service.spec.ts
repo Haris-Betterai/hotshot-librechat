@@ -3,7 +3,7 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import { createMethods, createModels } from '@librechat/data-schemas';
 import type { TGenUiResult } from 'librechat-data-provider';
 import type { GenUiDeps } from './service';
-import { getGenUi } from './service';
+import { getGenUi, getGenUiCatalog } from './service';
 
 const USER = 'user-1';
 const PRODUCT_URL = 'https://hotshotsecret.com/product/diesel-extreme/';
@@ -36,7 +36,16 @@ function mockOpenAI(routes: Routes) {
       return json({
         model: 'gpt-6-luna',
         answers: [
-          { type: 'choice', name: 'ui', ...routes.decision, choice: routes.decision.choice },
+          {
+            type: 'choice',
+            name: 'ui',
+            ...routes.decision,
+            choice: routes.decision.choice,
+            probabilities: [
+              { value: 'none', probability: 1 - routes.decision.confidence },
+              { value: routes.decision.choice, probability: routes.decision.confidence },
+            ],
+          },
           { type: 'predicate', name: 'worth', probability: routes.decision.worth ?? 0.9 },
         ],
       });
@@ -213,6 +222,7 @@ describe('getGenUi', () => {
       url: PRODUCT_URL,
     });
     expect(result.block).not.toHaveProperty('image');
+    expect(result.decision).toMatchObject({ outcome: 'shown', buildModel: 'gpt-6-luna' });
   });
 
   it('skips the decision when the agent already put a visual block in the answer', async () => {
@@ -234,7 +244,20 @@ describe('getGenUi', () => {
     mockOpenAI({ decision: { choice: 'new', confidence: 0.9, worth: 0.3 } });
     await getGenUi(deps, { user: USER, messageId: 'm1', run: true });
 
-    expect(await settle('m1')).toMatchObject({ status: 'none' });
+    expect(await settle('m1')).toMatchObject({
+      status: 'none',
+      decision: {
+        model: 'gpt-6-luna',
+        choice: 'new',
+        confidence: 0.9,
+        worth: 0.3,
+        outcome: 'not worth a new component (worth < 0.6)',
+        options: [
+          { value: 'new', probability: 0.9 },
+          { value: 'none', probability: expect.closeTo(0.1) },
+        ],
+      },
+    });
     expect(calls.map((call) => call.path)).toEqual(['/decisions']);
   });
 
@@ -270,5 +293,24 @@ describe('getGenUi', () => {
 
     expect(results.map((result) => result.status)).toEqual(['pending', 'pending']);
     expect(calls.filter((call) => call.path === '/decisions')).toHaveLength(1);
+  });
+
+  it('lists every card the decision model can pick, saved ones included', async () => {
+    await deps.saveGenUiComponent({
+      key: 'winter_plan',
+      name: 'Winter plan',
+      description: 'Seasonal maintenance steps.',
+      propsSchema: {},
+      html: COMPONENT_HTML,
+      authorModel: 'gpt-6.1-sol',
+    });
+    const catalog = await getGenUiCatalog(deps);
+    const values = catalog.entries.map((entry) => entry.value);
+
+    expect(catalog).toMatchObject({ decisionModel: 'gpt-6-luna', minConfidence: 0.45 });
+    expect(values[0]).toBe('none');
+    expect(values).toContain('block:comparison');
+    expect(values).toContain('saved:winter_plan');
+    expect(values[values.length - 1]).toBe('new');
   });
 });

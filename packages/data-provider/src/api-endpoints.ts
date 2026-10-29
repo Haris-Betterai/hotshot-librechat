@@ -182,6 +182,8 @@ export const guestSession = () => `${BASE_URL}/api/auth/guest`;
 export const guestEmbedSession = (embedId: string) =>
   `${BASE_URL}/api/auth/guest/embed/${encodeURIComponent(embedId)}`;
 
+export const genUiCatalog = () => `${BASE_URL}/api/genui/catalog`;
+
 export const genUi = (messageId: string) =>
   `${BASE_URL}/api/genui/${encodeURIComponent(messageId)}`;
 

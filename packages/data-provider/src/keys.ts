@@ -87,6 +87,7 @@ export enum QueryKeys {
   /* General user favorites */
   favorites = 'favorites',
   embedWidgets = 'embedWidgets',
+  genUiCatalog = 'genUiCatalog',
 }
 
 // Dynamic query keys that require parameters

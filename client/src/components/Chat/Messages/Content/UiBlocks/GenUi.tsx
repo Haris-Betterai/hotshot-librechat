@@ -1,8 +1,12 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useAtomValue } from 'jotai';
 import { Sparkles } from 'lucide-react';
-import { MessageContext } from '~/Providers';
+import Decision from '~/components/Chat/Developer/Decision';
 import { useGenUiQuery } from '~/data-provider';
+import { devModeAtom } from '~/store/devMode';
+import { MessageContext } from '~/Providers';
 import { useLocalize } from '~/hooks';
+import AutoHeight from './AutoHeight';
 import { CARD_CLASS } from './shared';
 import Generated from './Generated';
 import UiBlock from './index';
@@ -16,6 +20,7 @@ type GenUiProps = {
 };
 
 const BAR = 'rounded bg-neutral-100 dark:bg-neutral-800';
+const ENTER = 'animate-in fade-in-0 slide-in-from-bottom-1 duration-300 motion-reduce:animate-none';
 
 function Building({ isNew }: { isNew: boolean }) {
   const localize = useLocalize();
@@ -23,22 +28,25 @@ function Building({ isNew }: { isNew: boolean }) {
     <div
       role="status"
       aria-busy="true"
-      className={cn(CARD_CLASS, 'flex max-w-2xl animate-pulse flex-col gap-3')}
+      className={cn(CARD_CLASS, 'my-0 flex max-w-2xl flex-col gap-3', ENTER)}
     >
       <p className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
-        <Sparkles className="size-3.5" aria-hidden="true" />
+        <Sparkles className="size-3.5 animate-pulse" aria-hidden="true" />
         {localize(isNew ? 'com_ui_genui_building_new' : 'com_ui_genui_building')}
       </p>
-      <div className={cn('h-4 w-1/3', BAR)} />
-      <div className={cn('h-3 w-full', BAR)} />
-      <div className={cn('h-3 w-2/3', BAR)} />
+      <div className="flex animate-pulse flex-col gap-3">
+        <div className={cn('h-4 w-1/3', BAR)} />
+        <div className={cn('h-3 w-full', BAR)} />
+        <div className={cn('h-3 w-2/3', BAR)} />
+      </div>
     </div>
   );
 }
 
 /**
  * The UI that OpenAI's Decisions model picked for an assistant message: a built-in answer
- * block, a saved generated component, or one written for this answer.
+ * block, a saved generated component, or one written for this answer. It grows in smoothly;
+ * a generated component stays behind its placeholder until it has laid out.
  */
 export default function GenUi({
   messageId,
@@ -47,49 +55,72 @@ export default function GenUi({
   isSubmitting,
 }: GenUiProps) {
   const localize = useLocalize();
+  const devMode = useAtomValue(devModeAtom);
   const hydrated = messageId !== '' && !messageId.endsWith('_');
-  const { data } = useGenUiQuery({
-    messageId,
-    conversationId,
-    run: isLatestMessage,
-    enabled: hydrated && !(isLatestMessage && isSubmitting),
-  });
+  const enabled = hydrated && !(isLatestMessage && isSubmitting);
+  const { data } = useGenUiQuery({ messageId, conversationId, run: isLatestMessage, enabled });
+  const [frameReady, setFrameReady] = useState(false);
+  const [frameFailed, setFrameFailed] = useState(false);
+  const onReady = useCallback(() => setFrameReady(true), []);
+  const onFail = useCallback(() => setFrameFailed(true), []);
+  const componentKey = data?.component?.key;
+
+  useEffect(() => {
+    setFrameReady(false);
+    setFrameFailed(false);
+  }, [componentKey]);
+
   const context = useMemo(
-    () => ({
-      messageId,
-      conversationId,
-      isExpanded: true as const,
-      isSubmitting,
-      isLatestMessage,
-    }),
+    () => ({ messageId, conversationId, isExpanded: true as const, isSubmitting, isLatestMessage }),
     [messageId, conversationId, isSubmitting, isLatestMessage],
   );
   const blockSource = useMemo(() => (data?.block ? JSON.stringify(data.block) : ''), [data]);
 
-  if (!data) {
-    return null;
-  }
-  if (data.status === 'pending') {
-    const choice = data.choice ?? '';
-    return choice && choice !== 'none' ? <Building isNew={choice === 'new'} /> : null;
-  }
-  if (data.status !== 'ready') {
-    return null;
-  }
+  const choice = data?.choice ?? '';
+  const ready = data?.status === 'ready';
+  const deciding = data?.status === 'pending' && choice !== '' && choice !== 'none';
+  const component = ready && !frameFailed ? data?.component : undefined;
+  const showBuilding = deciding || (component != null && !frameReady);
+
   return (
     <MessageContext.Provider value={context}>
-      {blockSource && <UiBlock source={blockSource} />}
-      {data.component && (
-        <>
-          <Generated component={data.component} props={data.props ?? {}} />
-          {data.created && (
-            <p className="-mt-1 mb-2 flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-              <Sparkles className="size-3" aria-hidden="true" />
-              {localize('com_ui_genui_created', { 0: data.component.name })}
-            </p>
-          )}
-        </>
-      )}
+      <AutoHeight follow={isLatestMessage}>
+        {(showBuilding || (ready && (blockSource || component))) && (
+          <div className="py-1.5">
+            {showBuilding && <Building isNew={choice === 'new'} />}
+            {ready && blockSource && (
+              <div className={ENTER}>
+                <UiBlock source={blockSource} />
+              </div>
+            )}
+            {component && (
+              <div
+                className={cn(
+                  'transition-opacity duration-300 motion-reduce:transition-none',
+                  frameReady
+                    ? 'opacity-100'
+                    : 'pointer-events-none absolute inset-x-0 top-0 opacity-0',
+                )}
+                aria-hidden={!frameReady}
+              >
+                <Generated
+                  component={component}
+                  props={data?.props ?? {}}
+                  onReady={onReady}
+                  onFail={onFail}
+                />
+                {data?.created && (
+                  <p className="mt-1.5 flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+                    <Sparkles className="size-3" aria-hidden="true" />
+                    {localize('com_ui_genui_created', { 0: component.name })}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </AutoHeight>
+      {devMode && enabled && <Decision result={data} />}
     </MessageContext.Provider>
   );
 }

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { DynamicQueryKeys, dataService } from 'librechat-data-provider';
-import type { TGenUiResult } from 'librechat-data-provider';
+import { QueryKeys, DynamicQueryKeys, dataService } from 'librechat-data-provider';
+import type { TGenUiCatalog, TGenUiResult } from 'librechat-data-provider';
 
 const POLL_MS = 1500;
 
@@ -31,3 +31,11 @@ export const useGenUiQuery = (params: {
       refetchInterval: (data) => (data?.status === 'pending' ? POLL_MS : false),
     },
   );
+
+/** Every card the decision model can pick; for the developer panel. */
+export const useGenUiCatalogQuery = (enabled: boolean) =>
+  useQuery<TGenUiCatalog>([QueryKeys.genUiCatalog], () => dataService.getGenUiCatalog(), {
+    enabled,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
