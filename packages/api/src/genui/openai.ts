@@ -73,7 +73,10 @@ const outputText = (result: ResponsesOutput): string =>
     .map((part) => (part.type === 'output_text' ? (part.text ?? '') : ''))
     .join('');
 
-/** Runs a Responses API call whose answer must be one JSON object. */
+/**
+ * Runs a Responses API call whose answer must be one JSON object. JSON mode needs the word
+ * "json" in the input itself (instructions do not count), so it is appended there.
+ */
 export async function respondJson<T>(
   credentials: OpenAICredentials,
   params: {
@@ -94,7 +97,7 @@ export async function respondJson<T>(
     {
       model: params.model,
       instructions: params.instructions,
-      input: params.input,
+      input: params.schema ? params.input : `${params.input}\n\nReply with one JSON object.`,
       text: { format },
       ...(params.effort ? { reasoning: { effort: params.effort } } : {}),
       store: false,

@@ -169,7 +169,7 @@ describe('getGenUi', () => {
       replacesText: true,
       decision: { covers: 0.85 },
     });
-    expect(calls.map((call) => call.path)).toEqual(['/decisions', '/responses']);
+    expect(calls.map((call) => call.path)).toEqual(['/decisions', '/responses', '/decisions']);
     expect(calls[0].body.model).toBe('gpt-6-luna');
 
     const decisionChoices = () =>
@@ -195,6 +195,10 @@ describe('getGenUi', () => {
     });
     expect(second.created).toBe(false);
     expect(second.replacesText).toBe(false);
+    const fill = calls.find((call) => call.path === '/responses');
+    expect(String(fill?.body.input)).toMatch(/json/i);
+    const coversCall = calls.filter((call) => call.path === '/decisions')[1];
+    expect(JSON.stringify(coversCall.body.input)).toContain('Still no power');
     const [saved] = await deps.listGenUiComponents();
     expect(saved.uses).toBe(2);
   });

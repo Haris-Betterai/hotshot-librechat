@@ -193,20 +193,12 @@ async function chooseUi(
         instructions:
           'A visual or interactive component would make this answer clearly easier to understand or act on than the text alone.',
       },
-      {
-        type: 'predicate',
-        name: 'covers',
-        instructions:
-          'The main body of the answer is a list of steps, items or rows that a component under it would show in full, so the reader would otherwise see the same list twice.',
-      },
     ],
   );
   const decideMs = elapsed(start);
   const ui = answerNamed(answers, 'ui');
   const worth = answerNamed(answers, 'worth');
   const worthProbability = worth?.type === 'predicate' ? worth.probability : undefined;
-  const covers = answerNamed(answers, 'covers');
-  const coversProbability = covers?.type === 'predicate' ? covers.probability : undefined;
   if (ui?.type !== 'choice' || typeof ui.choice !== 'string') {
     return {
       model: DECISION_MODEL,
@@ -225,7 +217,6 @@ async function chooseUi(
     choice: ui.choice,
     confidence: ui.confidence,
     worth: worthProbability,
-    covers: coversProbability,
     options,
     outcome: 'shown',
     decideMs,
@@ -283,6 +274,37 @@ Use only facts that appear in the conversation or tool results; never invent pri
   return keepKnownUrls(props, `${transcript.answer}\n${transcript.evidence}`);
 }
 
+/**
+ * Asks the Decisions API, once the card's data exists, whether the card shows the answer's main
+ * list in full. Only then can the list in the text fold away without losing anything.
+ */
+async function checkCovers(
+  credentials: OpenAICredentials,
+  transcript: Transcript,
+  card: object,
+): Promise<number | undefined> {
+  const answers = await decide(
+    credentials,
+    [
+      { role: 'assistant', content: transcript.answer },
+      {
+        role: 'user',
+        content: `Card shown under the answer:\n${JSON.stringify(card).slice(0, 8000)}`,
+      },
+    ],
+    [
+      {
+        type: 'predicate',
+        name: 'covers',
+        instructions:
+          "The card contains every item of the answer's main list, table or steps, so hiding that list from the answer text would lose nothing.",
+      },
+    ],
+  );
+  const covers = answerNamed(answers, 'covers');
+  return covers?.type === 'predicate' ? covers.probability : undefined;
+}
+
 const startOfToday = () => {
   const now = new Date();
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
@@ -337,17 +359,23 @@ async function build(deps: GenUiDeps, request: GenUiRequest): Promise<void> {
   );
 
   const buildStart = performance.now();
-  const finish = (update: GenUiRenderUpdate, outcome = decision.outcome, buildModel?: string) =>
-    deps.updateGenUiRender(messageId, {
+  const finish = async (
+    update: GenUiRenderUpdate,
+    outcome = decision.outcome,
+    buildModel?: string,
+  ) => {
+    const timing = buildModel ? { buildModel, buildMs: elapsed(buildStart) } : {};
+    const card = update.status === 'ready' ? (update.block ?? update.props) : undefined;
+    const covers = card
+      ? await checkCovers(credentials, transcript, card).catch(() => undefined)
+      : undefined;
+    await deps.updateGenUiRender(messageId, {
       choice,
       confidence,
       ...update,
-      decision: {
-        ...decision,
-        outcome,
-        ...(buildModel ? { buildModel, buildMs: elapsed(buildStart) } : {}),
-      },
+      decision: { ...decision, outcome, ...timing, ...(covers != null ? { covers } : {}) },
     });
+  };
 
   if (choice === NONE) {
     await finish({ status: 'none' });

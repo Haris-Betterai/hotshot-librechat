@@ -169,7 +169,7 @@ export default function Developer() {
   return (
     <Dialog.Root open={open} onOpenChange={setOpen} modal={false}>
       <Dialog.Trigger
-        className="bg-surface-primary/90 !absolute bottom-4 left-4 z-30 hidden items-center gap-1.5 rounded-full border border-border-light px-3 py-1.5 text-xs font-medium text-text-secondary shadow-sm backdrop-blur transition hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 md:flex"
+        className="bg-surface-primary/90 !absolute bottom-4 left-4 !z-40 hidden items-center gap-1.5 rounded-full border border-border-light px-3 py-1.5 text-xs font-medium text-text-secondary shadow-sm backdrop-blur transition hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 md:flex"
         aria-label={localize('com_ui_dev_open')}
       >
         <Code2 className="size-3.5" aria-hidden="true" />
