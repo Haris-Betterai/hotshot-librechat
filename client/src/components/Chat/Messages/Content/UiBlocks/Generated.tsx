@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { safeUiUrl } from 'librechat-data-provider';
 import type { TGenUiComponent } from 'librechat-data-provider';
+import { DARK, LIGHT, kitCss } from './kit';
+import type { Palette } from './kit';
 import { SendGate, useIsEmbed } from './shared';
 import { useLocalize } from '~/hooks';
 
@@ -8,35 +10,8 @@ const MIN_HEIGHT = 40;
 const MAX_HEIGHT = 1400;
 const MAX_SEND = 500;
 
-const CSP =
-  "default-src 'none'; img-src https: data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; font-src data:";
-
-type Palette = Record<
-  'ink' | 'muted' | 'line' | 'surface' | 'soft' | 'accent' | 'accentInk' | 'scheme',
-  string
->;
-
-const LIGHT: Palette = {
-  ink: '#171717',
-  muted: '#525252',
-  line: '#e5e5e5',
-  surface: '#ffffff',
-  soft: '#f5f5f5',
-  accent: '#171717',
-  accentInk: '#ffffff',
-  scheme: 'light',
-};
-
-const DARK: Palette = {
-  ink: '#f5f5f5',
-  muted: '#a3a3a3',
-  line: '#404040',
-  surface: '#171717',
-  soft: '#262626',
-  accent: '#ffffff',
-  accentInk: '#171717',
-  scheme: 'dark',
-};
+const csp = (origin: string) =>
+  `default-src 'none'; img-src https: data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; font-src ${origin} data:`;
 
 const LINE_SEPARATOR = new RegExp('\\u2028', 'g');
 const PARAGRAPH_SEPARATOR = new RegExp('\\u2029', 'g');
@@ -54,18 +29,14 @@ export function buildFrameDocument(params: {
   props: Record<string, unknown>;
   token: string;
   palette: Palette;
+  /** Where the chat's own fonts are served from. */
+  origin?: string;
 }): string {
-  const { palette } = params;
+  const origin = params.origin ?? window.location.origin;
   return `<!doctype html><html><head><meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="${CSP}">
+<meta http-equiv="Content-Security-Policy" content="${csp(origin)}">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-:root{--hs-ink:${palette.ink};--hs-muted:${palette.muted};--hs-line:${palette.line};--hs-surface:${palette.surface};--hs-soft:${palette.soft};--hs-accent:${palette.accent};--hs-accent-ink:${palette.accentInk};--hs-radius:16px;color-scheme:${palette.scheme}}
-*{box-sizing:border-box}
-html,body{margin:0;padding:0;background:transparent;color:var(--hs-ink);font:15px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden}
-body{padding:2px}
-img{max-width:100%}
-</style>
+<style>${kitCss(params.palette, origin)}</style>
 <script>
 (function(){
   var token=${inlineJson(params.token)};

@@ -3,7 +3,7 @@ import type { IGenUiComponent, IGenUiRender } from '~/schema/genUi';
 
 export type GenUiComponentInput = Pick<
   IGenUiComponent,
-  'key' | 'name' | 'description' | 'propsSchema' | 'html' | 'authorModel'
+  'key' | 'name' | 'description' | 'propsSchema' | 'html' | 'authorModel' | 'kitVersion'
 >;
 
 export type GenUiRenderUpdate = Partial<
@@ -14,7 +14,7 @@ export type GenUiRenderUpdate = Partial<
 >;
 
 export type GenUiMethods = {
-  listGenUiComponents: (limit?: number) => Promise<IGenUiComponent[]>;
+  listGenUiComponents: (limit?: number, kitVersion?: number) => Promise<IGenUiComponent[]>;
   getGenUiComponent: (key: string) => Promise<IGenUiComponent | null>;
   saveGenUiComponent: (input: GenUiComponentInput) => Promise<IGenUiComponent>;
   countGenUiComponentsSince: (since: Date) => Promise<number>;
@@ -33,9 +33,9 @@ export function createGenUiMethods(mongoose: typeof import('mongoose')): GenUiMe
   const renders = () => mongoose.models.GenUiRender as Model<IGenUiRender>;
 
   /** Saved components the decision model may pick, most used first. */
-  async function listGenUiComponents(limit = 100): Promise<IGenUiComponent[]> {
+  async function listGenUiComponents(limit = 100, kitVersion?: number): Promise<IGenUiComponent[]> {
     return components()
-      .find({ disabled: { $ne: true } })
+      .find({ disabled: { $ne: true }, ...(kitVersion != null ? { kitVersion } : {}) })
       .sort({ uses: -1, updatedAt: -1 })
       .limit(limit)
       .lean<IGenUiComponent[]>();

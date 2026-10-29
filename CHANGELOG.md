@@ -12,7 +12,8 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 ## 2026-10-29
 
 ### Changed
-- New UI cards are now written by `gpt-6-luna` (was `gpt-6.1-sol`), so the whole generative UI path (deciding, filling and writing cards) runs on GPT-6 Luna. `GENUI_AUTHOR_MODEL` still overrides it.
+- **Generated cards blend into the chat.** The frame now loads a UI kit copied from the chat's own answer blocks: Inter (served from the app), white cards with a thin border, pill buttons like the follow-up chips, a dark primary button, fields, rounded checkboxes with a check mark, progress bars, expandable notes and tables. The writer must build with these classes and may only add layout CSS, so it can no longer invent its own colours, fonts or form controls. Components written for the old look are no longer offered (they still show under their original answers).
+- New cards are written by `gpt-6.1-sol` with **low** reasoning for speed (a brief switch to `gpt-6-luna` was reverted). `GENUI_AUTHOR_EFFORT=medium` raises it; medium is the ceiling.
 
 ### Verified live
 - Asked for a winter checklist: the Decisions API chose `new` at 92% in 188 ms, `gpt-6.1-sol` wrote an interactive "Ordered preparation checklist" (checkboxes, progress, task notes), it rendered under the answer and now appears under **Cards** as a saved component.

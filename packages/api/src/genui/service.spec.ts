@@ -303,6 +303,7 @@ describe('getGenUi', () => {
       propsSchema: {},
       html: COMPONENT_HTML,
       authorModel: 'gpt-6.1-sol',
+      kitVersion: 2,
     });
     const catalog = await getGenUiCatalog(deps);
     const values = catalog.entries.map((entry) => entry.value);

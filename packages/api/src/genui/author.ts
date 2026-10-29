@@ -4,16 +4,31 @@ import { respondJson } from './openai';
 export const MAX_COMPONENT_HTML = 60_000;
 
 /** What a generated component may rely on inside its sandboxed frame. */
-export const FRAME_CONTRACT = `The component runs inside a sandboxed iframe in a chat answer (no same-origin access, no network).
-- Write only the inner content: HTML elements, one <style> and one inline <script>. No <html>, <head> or <body> tags.
+/** Bump when the frame's UI kit changes; components written for an older kit are no longer offered. */
+export const KIT_VERSION = 2;
+
+/** What a generated component may rely on inside its sandboxed frame. */
+export const FRAME_CONTRACT = `The component runs inside a sandboxed iframe under a chat answer (no same-origin access, no network).
+- Write only the inner content: HTML elements, at most one small <style> and one inline <script>. No <html>, <head> or <body> tags.
 - Data arrives as window.hotshot.props (a plain object matching your props schema). Render from it; never hard-code the example values.
 - window.hotshot.send(text) sends text as the customer's next chat message. Use it for buttons that continue the conversation.
 - window.hotshot.open(url) opens an https link in a new tab. Plain <a href> links do not work in the sandbox.
 - No external scripts, stylesheets, fonts, fetch, XHR, WebSocket, forms that submit, localStorage or cookies. Images only from https URLs found in the props.
-- CSS variables are provided: --hs-ink (text), --hs-muted (secondary text), --hs-line (borders), --hs-surface (card background), --hs-soft (subtle fill), --hs-accent (#3b6cf6 brand blue), --hs-accent-ink (text on accent), --hs-radius (16px). The body already uses a system font at 15px on a transparent background.
-- Look modern and calm: one card or a clean list, 12-16px padding, rounded corners, thin borders, no heavy shadows, no emoji. It must fit widths from 300px to 720px with no horizontal scroll.
-- Be accessible: real <button> elements with clear labels, visible focus, enough contrast, and keyboard support (Enter on inputs).
-- Keep it under 400 lines. It must work with any props that match the schema.`;
+
+It must look like part of the chat, which already loads a UI kit in the frame (Inter 14px, neutral greys, white cards). Build only with these classes and plain elements:
+- .hs-card: the outer wrapper (white, thin border, 16px radius). Use exactly one, around everything.
+- Layout: .hs-stack (vertical, 12px gap), .hs-row (wrapping row, 8px gap), .hs-between (space-between row), .hs-grid (responsive tiles).
+- Text: h3 for the title (or .hs-title), .hs-muted for secondary text, .hs-small for fine print, .hs-badge for a small pill label, .hs-divider for a rule.
+- .hs-tile: a small bordered box, e.g. a stat with <strong> value and .hs-small label.
+- Buttons: a plain <button> already looks like the chat's follow-up chips; .hs-btn-primary for the one main action; .hs-btn-ghost for quiet actions such as Reset.
+- Fields: <input>, <select> and <textarea> are pre-styled; checkboxes and radios are pre-styled rounded boxes with a check mark.
+- Lists: <ul class="hs-list"> gives separated rows. A checklist row is <li><label class="hs-check"><input type="checkbox"><span><strong>Step</strong><span class="hs-muted">detail</span></span></label></li>; checked rows fade and strike through on their own.
+- Progress: <div class="hs-progress"><span style="width:40%"></span></div>, or a <progress> element.
+- <details><summary>More</summary>…</details> is pre-styled for expandable notes. Tables are pre-styled.
+Do not set colours, fonts, font sizes, borders, radii, shadows or form-control styles yourself, and do not restyle these classes. Your <style>, if any, may only add layout (grid, flex, widths, gaps, spacing). Use no emoji and no icons.
+- It must fit widths from 300px to 720px with no horizontal scroll, and stay compact: short labels, no repeated paragraphs from the answer.
+- Be accessible: real <button> and <label> elements, clear labels, keyboard support (Enter on inputs).
+- Keep it under 300 lines. It must work with any props that match the schema.`;
 
 export type AuthoredComponent = {
   key: string;
@@ -106,11 +121,16 @@ export function checkComponentHtml(html: string): string | null {
 /** Asks a model to write a new reusable component for this answer. */
 export async function authorComponent(
   credentials: OpenAICredentials,
-  params: { model: string; conversation: string; existingKeys: string[] },
+  params: {
+    model: string;
+    effort: 'low' | 'medium';
+    conversation: string;
+    existingKeys: string[];
+  },
 ): Promise<AuthoredComponent> {
   const output = await respondJson<AuthorOutput>(credentials, {
     model: params.model,
-    effort: 'low',
+    effort: params.effort,
     timeoutMs: 150_000,
     schema: AUTHOR_SCHEMA,
     instructions: `You design small interactive UI components for Hotshot AI, the customer chat of Hot Shot's Secret (diesel and gasoline additives, oils and treatments).

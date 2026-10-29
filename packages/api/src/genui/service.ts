@@ -21,7 +21,7 @@ import type {
 } from '@librechat/data-schemas';
 import type { DecisionAnswer, DecisionChoice, OpenAICredentials } from './openai';
 import { BUILT_IN_BLOCKS, BUILT_IN_BY_TYPE } from './catalog';
-import { authorComponent } from './author';
+import { authorComponent, KIT_VERSION } from './author';
 import { decide, respondJson } from './openai';
 
 export type GenUiDeps = GenUiMethods & {
@@ -56,7 +56,10 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const env = () => ({
   enabled: process.env.GENUI_ENABLED !== 'false',
-  authorModel: process.env.GENUI_AUTHOR_MODEL || 'gpt-6-luna',
+  authorModel: process.env.GENUI_AUTHOR_MODEL || 'gpt-6.1-sol',
+  /** Low keeps new cards quick; medium is the most the author is allowed. */
+  authorEffort:
+    process.env.GENUI_AUTHOR_EFFORT === 'medium' ? ('medium' as const) : ('low' as const),
   maxNewPerDay: Number(process.env.GENUI_MAX_NEW_PER_DAY) || 25,
 });
 
@@ -314,7 +317,7 @@ async function build(deps: GenUiDeps, request: GenUiRequest): Promise<void> {
     throw new Error('no OpenAI key available');
   }
   const credentials: OpenAICredentials = { apiKey: keys.apiKey, baseURL: keys.baseURL };
-  const saved = await deps.listGenUiComponents(80);
+  const saved = await deps.listGenUiComponents(80, KIT_VERSION);
   const decision = await chooseUi(credentials, transcript, saved);
   const choice = decision.outcome === 'shown' ? decision.choice : NONE;
   const { confidence } = decision;
@@ -377,6 +380,7 @@ async function build(deps: GenUiDeps, request: GenUiRequest): Promise<void> {
   }
   const authored = await authorComponent(credentials, {
     model: env().authorModel,
+    effort: env().authorEffort,
     conversation: conversationText(transcript),
     existingKeys: saved.map((item) => item.key),
   });
@@ -387,6 +391,7 @@ async function build(deps: GenUiDeps, request: GenUiRequest): Promise<void> {
     propsSchema: authored.propsSchema,
     html: authored.html,
     authorModel: env().authorModel,
+    kitVersion: KIT_VERSION,
   });
   await deps.markGenUiComponentUsed(component.key);
   await finish(
@@ -430,7 +435,7 @@ async function toResult(deps: GenUiDeps, render: IGenUiRender): Promise<TGenUiRe
 
 /** Every card the decision model can pick, for the developer panel. */
 export async function getGenUiCatalog(deps: GenUiDeps): Promise<TGenUiCatalog> {
-  const saved = await deps.listGenUiComponents(200);
+  const saved = await deps.listGenUiComponents(200, KIT_VERSION);
   const entries: TGenUiCatalogEntry[] = [
     {
       value: NONE,

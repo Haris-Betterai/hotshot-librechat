@@ -13,6 +13,8 @@ export interface IGenUiComponent extends Document {
   /** Self-contained HTML (markup, style and script) rendered in a sandboxed frame. */
   html: string;
   authorModel: string;
+  /** The frame UI kit it was written against. */
+  kitVersion?: number;
   uses: number;
   disabled?: boolean;
   tenantId?: string;
@@ -51,6 +53,7 @@ export const genUiComponentSchema: Schema<IGenUiComponent> = new Schema(
     propsSchema: { type: Schema.Types.Mixed, default: {} },
     html: { type: String, required: true },
     authorModel: { type: String, required: true },
+    kitVersion: { type: Number, default: 1 },
     uses: { type: Number, default: 0 },
     disabled: { type: Boolean, default: false },
     tenantId: { type: String, index: true },
