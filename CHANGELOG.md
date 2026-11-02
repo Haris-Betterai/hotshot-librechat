@@ -11,6 +11,12 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 
 ## 2026-11-02
 
+### Config
+- **Agent instructions** (staff UI → Agent setup), saved and verified in the database: a capacity from `get_all_fluid_capacities` or stated by the customer counts as verified, so whenever the reply states a capacity the `dose_calculator` gets `capacity` and `capacityLabel` and opens with the dose worked out. Live, the 6.7 Cummins FR3 answer had quoted 12 quarts but left the calculator empty.
+
+### Verified live
+- After `a2417b7a0` and the instruction change: "What diesel fuel additives do you sell?" listed five products with no lone product card (the Decisions API leaned to a comparison at 39%, below 0.45); "Which oil additive for my 2017 Ram 2500 6.7 Cummins?" showed FR3 with its Shopify photo and $37.99 1 QT price, and the calculator opened at 12 qt with 18 oz.
+
 ### Changed
 - **The Decisions API picks a card more often when one helps.** Live, it answered "plain text is enough" even when the customer had asked "draw the card for it", and for a step-by-step troubleshooting walk-through ("new" at 28%). It now sees the previous exchange, answers a third question ("did the customer ask for a card, checklist, chart…?", ≥ 0.6 shows the best card), and on a close call shows the best card when it scores ≥ 0.25 (a new card also needs worth ≥ 0.1). "None" is described narrowly: short replies, clarifying questions, urgent safety warnings, refusals, or explanations with nothing to act on.
 - **No lone product card under a list of products.** Live, "What diesel fuel additives do you sell?" got a product card for just one of the five products listed (48%). The Decisions API is now also asked whether the answer recommends exactly one product; below 0.5 no product card is shown ("answer covers several products"), and the product card's description says it is for the one recommended product. The Developer view shows the new score.
