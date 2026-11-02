@@ -27,6 +27,10 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 - **The orb looked blurry.** The orb library sizes its canvas to its preset (at most 64px), so the 125px landing orb was a stretched 58px bitmap. A new `OrbCanvas` paints the library's frames at the shown size and screen density, so every orb (landing, reply avatar, widget) is sharp.
 - **The Developer button was hard to find.** It only showed once a chat had started and only on wide screens, so staff on the start page or a phone never saw it. It now shows on the start page and on phones too (top left on phones, bottom left on wider screens), still only for staff or guests who opened the site with `?dev=1`.
 
+### Verified live
+- Orb: the landing orb's canvas is 125 px for a 125 px slot (was 58 px stretched) and the widget launcher's 56 px for 56 px; the dots are sharp.
+- Streaming: with `752be0ae2`, a 5,000-character answer typed out in 42 steps over about 4 seconds (before: one jump), and the stream stayed connected with no resume.
+
 ---
 
 ## 2026-10-29
