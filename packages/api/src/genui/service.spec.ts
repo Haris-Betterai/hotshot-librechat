@@ -12,7 +12,14 @@ const COMPONENT_HTML =
   '<div id="list"></div><script>document.getElementById("list").textContent = hotshot.props.title;</script>';
 
 type Routes = {
-  decision: { choice: string; confidence: number; worth?: number; covers?: number };
+  decision: {
+    choice: string;
+    confidence: number;
+    worth?: number;
+    covers?: number;
+    asked?: number;
+    probabilities?: Array<{ value: string; probability: number }>;
+  };
   responses?: object[];
 };
 
@@ -42,13 +49,14 @@ function mockOpenAI(routes: Routes) {
             name: 'ui',
             ...routes.decision,
             choice: routes.decision.choice,
-            probabilities: [
+            probabilities: routes.decision.probabilities ?? [
               { value: 'none', probability: 1 - routes.decision.confidence },
               { value: routes.decision.choice, probability: routes.decision.confidence },
             ],
           },
           { type: 'predicate', name: 'worth', probability: routes.decision.worth ?? 0.9 },
           { type: 'predicate', name: 'covers', probability: routes.decision.covers ?? 0.2 },
+          { type: 'predicate', name: 'asked', probability: routes.decision.asked ?? 0 },
         ],
       });
     }
@@ -353,6 +361,83 @@ describe('getGenUi', () => {
     expect(await settle('m1')).toMatchObject({
       status: 'ready',
       component: { key: 'power_loss_checklist_2', html: COMPONENT_HTML },
+    });
+  });
+
+  it('builds a card when the customer asked for one, even if "none" scored highest', async () => {
+    await saveTurn('m1', LONG_ANSWER);
+    mockOpenAI({
+      decision: {
+        choice: 'none',
+        confidence: 0.7,
+        asked: 0.9,
+        probabilities: [
+          { value: 'none', probability: 0.7 },
+          { value: 'new', probability: 0.2 },
+        ],
+      },
+      responses: [
+        {
+          key: 'troubleshooting_card',
+          name: 'Troubleshooting card',
+          description: 'Steps to narrow down a symptom.',
+          props_schema_json: '{}',
+          props_json: JSON.stringify({ title: 'White smoke' }),
+          html: COMPONENT_HTML,
+        },
+      ],
+    });
+    await getGenUi(deps, { user: USER, messageId: 'm1', run: true });
+
+    expect(await settle('m1')).toMatchObject({
+      status: 'ready',
+      choice: 'new',
+      decision: { asked: 0.9, outcome: 'new component written and saved' },
+    });
+  });
+
+  it('shows the best card on a close call and plain text when "none" clearly wins', async () => {
+    await saveTurn('m1', LONG_ANSWER);
+    mockOpenAI({
+      decision: {
+        choice: 'none',
+        confidence: 0.6,
+        worth: 0.15,
+        probabilities: [
+          { value: 'none', probability: 0.6 },
+          { value: 'new', probability: 0.3 },
+        ],
+      },
+      responses: [
+        {
+          key: 'symptom_flow',
+          name: 'Symptom flow',
+          description: 'A diagnosis flow.',
+          props_schema_json: '{}',
+          props_json: JSON.stringify({ title: 'Flow' }),
+          html: COMPONENT_HTML,
+        },
+      ],
+    });
+    await getGenUi(deps, { user: USER, messageId: 'm1', run: true });
+    expect(await settle('m1')).toMatchObject({ status: 'ready', choice: 'new' });
+
+    await saveTurn('m2', LONG_ANSWER);
+    calls = [];
+    mockOpenAI({
+      decision: {
+        choice: 'none',
+        confidence: 0.9,
+        probabilities: [
+          { value: 'none', probability: 0.9 },
+          { value: 'new', probability: 0.08 },
+        ],
+      },
+    });
+    await getGenUi(deps, { user: USER, messageId: 'm2', run: true });
+    expect(await settle('m2')).toMatchObject({
+      status: 'none',
+      decision: { outcome: 'plain text is enough' },
     });
   });
 });

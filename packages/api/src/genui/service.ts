@@ -19,7 +19,7 @@ import type {
   IMessage,
   IGenUiRender,
 } from '@librechat/data-schemas';
-import type { DecisionAnswer, DecisionChoice, OpenAICredentials } from './openai';
+import type { DecisionAnswer, DecisionChoice, DecisionMessage, OpenAICredentials } from './openai';
 import { BUILT_IN_BLOCKS, BUILT_IN_BY_TYPE } from './catalog';
 import { authorComponent, KIT_VERSION } from './author';
 import { decide, respondJson } from './openai';
@@ -40,12 +40,19 @@ const NONE = 'none';
 const NEW = 'new';
 const BLOCK_PREFIX = 'block:';
 const SAVED_PREFIX = 'saved:';
-const NONE_DESCRIPTION = 'Plain text is enough. No visual or interactive element would help.';
+const NONE_DESCRIPTION =
+  'Only a short reply, a clarifying question, an urgent safety warning, a refusal or an explanation with nothing to act on: there is nothing to tick off, follow step by step, compare, calculate or buy.';
 const NEW_DESCRIPTION =
   'None of the other options fit, but a purpose-built visual or interactive component (for example a checklist, step-by-step guide, maintenance schedule, timeline, symptom checker or chart) would make this answer clearly easier to act on.';
 const MIN_CONFIDENCE = 0.45;
 const MIN_NEW_WORTH = 0.5;
 const MIN_NEW_CONFIDENCE = 0.75;
+/** A customer asking for a card, checklist, chart… at this probability gets the best card. */
+const MIN_ASKED = 0.6;
+/** When "none" wins, a card with at least this much probability is still shown. */
+const MIN_CLOSE_CALL = 0.25;
+/** A close-call new card also needs this much "worth a visual". */
+const MIN_CLOSE_CALL_NEW_WORTH = 0.1;
 /** At this probability the card shows the answer's list in full, so the list folds away. */
 const MIN_COVERS = 0.6;
 const MIN_ANSWER_CHARS = 60;
@@ -76,6 +83,8 @@ type Transcript = {
   hasVisualBlock: boolean;
   /** The agent's suggested next messages; a card uses them as its call-to-action buttons. */
   followUps: string[];
+  /** The exchange before this one, so a request like "draw the card for it" has context. */
+  history: DecisionMessage[];
 };
 
 const partText = (part: TMessageContentParts | undefined): string => {
@@ -106,7 +115,11 @@ const messageText = (message: IMessage | null): string => {
   return text || (message.text ?? '');
 };
 
-function readTranscript(question: IMessage | null, message: IMessage): Transcript {
+function readTranscript(
+  question: IMessage | null,
+  message: IMessage,
+  history: DecisionMessage[] = [],
+): Transcript {
   const raw = messageText(message);
   let hasVisualBlock = false;
   let followUps: string[] = [];
@@ -123,7 +136,7 @@ function readTranscript(question: IMessage | null, message: IMessage): Transcrip
     .trim();
   const parts = (message.content ?? []) as Array<TMessageContentParts | undefined>;
   const evidence = parts.map(toolOutput).filter(Boolean).join('\n').slice(0, MAX_EVIDENCE_CHARS);
-  return { question: messageText(question), answer, evidence, hasVisualBlock, followUps };
+  return { question: messageText(question), answer, evidence, hasVisualBlock, followUps, history };
 }
 
 /** Drops any link or image the model wrote that the answer and its tool results never contained. */
@@ -175,6 +188,20 @@ const DECISION_MODEL = 'gpt-6-luna';
 const elapsed = (start: number) => Math.round(performance.now() - start);
 
 /** Asks the Decisions API which UI fits, and keeps its whole answer for the developer panel. */
+/** The one or two non-"none" options most worth showing, best first. */
+const SHOWN = 'shown';
+const ASKED_OUTCOME = 'customer asked for a visual';
+const CLOSE_CALL_OUTCOME = 'close call: showing the best card';
+/** Decision outcomes that go on to build a card; every other outcome shows nothing. */
+const SHOWING_OUTCOMES: ReadonlySet<string> = new Set([SHOWN, ASKED_OUTCOME, CLOSE_CALL_OUTCOME]);
+
+const bestCard = (options: TGenUiDecision['options']) => options.find((o) => o.value !== NONE);
+
+/**
+ * Asks the Decisions API which UI fits, and keeps its whole answer for the developer panel.
+ * "None" wins only when it clearly dominates: a customer who asked for a visual gets the best
+ * card, and a close call goes to the best card when it has real support.
+ */
 async function chooseUi(
   credentials: OpenAICredentials,
   transcript: Transcript,
@@ -184,6 +211,7 @@ async function chooseUi(
   const answers = await decide(
     credentials,
     [
+      ...transcript.history,
       { role: 'user', content: transcript.question },
       { role: 'assistant', content: transcript.answer },
     ],
@@ -192,7 +220,7 @@ async function chooseUi(
         type: 'choice',
         name: 'ui',
         instructions:
-          "Which UI, shown under the assistant's latest answer, would help the customer most? Pick a component only when the answer contains the facts it needs.",
+          "Which UI, shown under the assistant's latest answer, would help the customer most? Prefer a component whenever the answer has structure a customer can act on: steps to follow, a checklist, a schedule, a diagnosis or troubleshooting flow, products to compare or buy, or numbers to calculate. Choose none only for short replies, clarifying questions, urgent safety warnings, refusals, or explanations with nothing to act on.",
         choices: decisionChoices(saved),
       },
       {
@@ -201,12 +229,22 @@ async function chooseUi(
         instructions:
           'A visual or interactive component would make this answer clearly easier to understand or act on than the text alone.',
       },
+      {
+        type: 'predicate',
+        name: 'asked',
+        instructions:
+          'In their latest message or the one before, the customer explicitly asks for a card, view, checklist, chart, table, schedule, tracker, calculator or other visual.',
+      },
     ],
   );
   const decideMs = elapsed(start);
   const ui = answerNamed(answers, 'ui');
-  const worth = answerNamed(answers, 'worth');
-  const worthProbability = worth?.type === 'predicate' ? worth.probability : undefined;
+  const probability = (name: string) => {
+    const answer = answerNamed(answers, name);
+    return answer?.type === 'predicate' ? answer.probability : undefined;
+  };
+  const worth = probability('worth');
+  const asked = probability('asked');
   if (ui?.type !== 'choice' || typeof ui.choice !== 'string') {
     return {
       model: DECISION_MODEL,
@@ -224,19 +262,40 @@ async function chooseUi(
     model: DECISION_MODEL,
     choice: ui.choice,
     confidence: ui.confidence,
-    worth: worthProbability,
+    worth,
+    asked,
     options,
-    outcome: 'shown',
+    outcome: SHOWN,
     decideMs,
   };
+  const card = bestCard(options);
+  if ((asked ?? 0) >= MIN_ASKED && card) {
+    return {
+      ...decision,
+      choice: card.value,
+      confidence: card.probability,
+      outcome: ASKED_OUTCOME,
+    };
+  }
   if (ui.choice === NONE) {
-    return { ...decision, outcome: 'plain text is enough' };
+    const closeCall =
+      card != null &&
+      card.probability >= MIN_CLOSE_CALL &&
+      (card.value !== NEW || (worth ?? 0) >= MIN_CLOSE_CALL_NEW_WORTH);
+    return closeCall
+      ? {
+          ...decision,
+          choice: card.value,
+          confidence: card.probability,
+          outcome: CLOSE_CALL_OUTCOME,
+        }
+      : { ...decision, outcome: 'plain text is enough' };
   }
   if (ui.confidence < MIN_CONFIDENCE) {
     return { ...decision, outcome: `below confidence ${MIN_CONFIDENCE}` };
   }
   const confidentNew = ui.confidence >= MIN_NEW_CONFIDENCE;
-  if (ui.choice === NEW && !confidentNew && (worthProbability ?? 0) < MIN_NEW_WORTH) {
+  if (ui.choice === NEW && !confidentNew && (worth ?? 0) < MIN_NEW_WORTH) {
     return {
       ...decision,
       outcome: `not worth a new component (worth < ${MIN_NEW_WORTH}, confidence < ${MIN_NEW_CONFIDENCE})`,
@@ -313,6 +372,30 @@ async function checkCovers(
   return covers?.type === 'predicate' ? covers.probability : undefined;
 }
 
+const HISTORY_CHARS = 1500;
+
+/** The exchange before the latest question, oldest first, trimmed for the Decisions API. */
+async function previousExchange(
+  deps: GenUiDeps,
+  user: string,
+  question: IMessage | null,
+): Promise<DecisionMessage[]> {
+  const answer = question?.parentMessageId
+    ? await deps.getMessage({ user, messageId: question.parentMessageId })
+    : null;
+  if (!answer || answer.isCreatedByUser) {
+    return [];
+  }
+  const asked = answer.parentMessageId
+    ? await deps.getMessage({ user, messageId: answer.parentMessageId })
+    : null;
+  const trim = (message: IMessage | null) => messageText(message).slice(0, HISTORY_CHARS);
+  return [
+    ...(asked ? [{ role: 'user' as const, content: trim(asked) }] : []),
+    { role: 'assistant' as const, content: trim(answer).replace(BLOCK_PATTERN, '') },
+  ];
+}
+
 const startOfToday = () => {
   const now = new Date();
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
@@ -342,7 +425,11 @@ async function build(deps: GenUiDeps, request: GenUiRequest): Promise<void> {
   const question = message.parentMessageId
     ? await deps.getMessage({ user, messageId: message.parentMessageId })
     : null;
-  const transcript = readTranscript(question, message);
+  const transcript = readTranscript(
+    question,
+    message,
+    await previousExchange(deps, user, question),
+  );
   if (transcript.hasVisualBlock || transcript.answer.length < MIN_ANSWER_CHARS) {
     const outcome = transcript.hasVisualBlock ? 'agent drew a block itself' : 'answer too short';
     await deps.updateGenUiRender(messageId, {
@@ -360,7 +447,7 @@ async function build(deps: GenUiDeps, request: GenUiRequest): Promise<void> {
   const credentials: OpenAICredentials = { apiKey: keys.apiKey, baseURL: keys.baseURL };
   const saved = await deps.listGenUiComponents(80, KIT_VERSION);
   const decision = await chooseUi(credentials, transcript, saved);
-  const choice = decision.outcome === 'shown' ? decision.choice : NONE;
+  const choice = SHOWING_OUTCOMES.has(decision.outcome) ? decision.choice : NONE;
   const { confidence } = decision;
   logger.info(
     `[genui] ${messageId} → ${decision.choice} (${confidence.toFixed(2)}): ${decision.outcome}`,

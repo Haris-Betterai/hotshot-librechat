@@ -4,7 +4,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { Code2, Sparkles, X } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { TGenUiResult, TGenUiCatalogEntry } from 'librechat-data-provider';
-import { Bars, choiceLabel, percent } from './Decision';
+import { Bars, choiceLabel, percent, wasSkipped } from './Decision';
 import { useGenUiCatalogQuery } from '~/data-provider';
 import { useAuthContext, useLocalize } from '~/hooks';
 import { devModeAtom } from '~/store/devMode';
@@ -133,9 +133,15 @@ function Decisions({ active }: { active: boolean }) {
               className="mb-2 flex w-full flex-wrap items-center gap-x-2 text-left text-xs"
             >
               <span className="font-mono font-semibold text-text-primary">
-                {choiceLabel(decision.choice)}
+                {wasSkipped(decision)
+                  ? localize('com_ui_dev_skipped')
+                  : choiceLabel(decision.choice)}
               </span>
-              <span className="font-mono text-text-secondary">{percent(decision.confidence)}</span>
+              {!wasSkipped(decision) && (
+                <span className="font-mono text-text-secondary">
+                  {percent(decision.confidence)}
+                </span>
+              )}
               <span className="text-text-secondary">· {decision.outcome}</span>
               {decision.decideMs != null && (
                 <span className="ml-auto font-mono text-[11px] text-text-tertiary">

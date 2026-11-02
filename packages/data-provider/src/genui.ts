@@ -21,6 +21,8 @@ export type TGenUiDecision = {
   confidence: number;
   /** Probability that any visual beats plain text. */
   worth?: number;
+  /** Probability that the customer explicitly asked for a visual. */
+  asked?: number;
   /** Probability that the card shows the answer's main list in full. */
   covers?: number;
   /** Every option the model weighed, most likely first. */

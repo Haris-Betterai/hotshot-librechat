@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 import { ChevronDown, Cpu } from 'lucide-react';
-import type { TGenUiResult } from 'librechat-data-provider';
+import type { TGenUiDecision, TGenUiResult } from 'librechat-data-provider';
 import { useLocalize } from '~/hooks';
 import { cn } from '~/utils';
 
 const MAX_OPTIONS = 8;
 
 export const percent = (value?: number) => (value == null ? '–' : `${Math.round(value * 100)}%`);
+
+/** The Decisions API was never asked (the agent drew its own card, or the answer was too short). */
+export const wasSkipped = (decision: TGenUiDecision) =>
+  decision.options.length === 0 && decision.decideMs == null;
 
 /** `block:comparison` → `comparison`, `saved:winter_plan` → `winter_plan`. */
 export const choiceLabel = (value: string) => value.replace(/^(block|saved):/, '');
@@ -84,8 +88,10 @@ export default function Decision({ result }: { result?: TGenUiResult }) {
         </span>
         <span className="font-mono">{decision.model}</span>
         <span aria-hidden="true">·</span>
-        <span className="font-mono text-text-primary">{choiceLabel(decision.choice)}</span>
-        <span className="font-mono">{percent(decision.confidence)}</span>
+        <span className="font-mono text-text-primary">
+          {wasSkipped(decision) ? localize('com_ui_dev_skipped') : choiceLabel(decision.choice)}
+        </span>
+        {!wasSkipped(decision) && <span className="font-mono">{percent(decision.confidence)}</span>}
         <span aria-hidden="true">·</span>
         <span>{decision.outcome}</span>
         {decision.decideMs != null && (
@@ -104,6 +110,8 @@ export default function Decision({ result }: { result?: TGenUiResult }) {
           <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5">
             <dt>{localize('com_ui_dev_worth')}</dt>
             <dd className="font-mono">{percent(decision.worth)}</dd>
+            <dt>{localize('com_ui_dev_asked')}</dt>
+            <dd className="font-mono">{percent(decision.asked)}</dd>
             <dt>{localize('com_ui_dev_covers')}</dt>
             <dd className="font-mono">
               {percent(decision.covers)}

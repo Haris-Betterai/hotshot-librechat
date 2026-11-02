@@ -11,7 +11,12 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 
 ## 2026-11-02
 
+### Changed
+- **The Decisions API picks a card more often when one helps.** Live, it answered "plain text is enough" even when the customer had asked "draw the card for it", and for a step-by-step troubleshooting walk-through ("new" at 28%). It now sees the previous exchange, answers a third question ("did the customer ask for a card, checklist, chart…?", ≥ 0.6 shows the best card), and on a close call shows the best card when it scores ≥ 0.25 (a new card also needs worth ≥ 0.1). "None" is described narrowly: short replies, clarifying questions, urgent safety warnings, refusals, or explanations with nothing to act on.
+- Developer view: answers where the Decisions API was never asked (the agent drew its own card, or the answer was too short) say "skipped" instead of "none 0%", and each decision shows the new "customer asked for a visual" score.
+
 ### Fixed
+- **Widget demo page images.** Hot Shot's Secret moved to Shopify, so the demo page's WordPress logo, banner and product photos 404'd. They now load from Shopify (the banner is a dark gradient).
 - **Answers did not stream.** While the model thought or used tools, the event stream could stay silent for over a minute; nginx closes an upstream that sends nothing for 60 seconds, so the stream died (`ERR_HTTP2_PROTOCOL_ERROR`) and the page's resume delivered the whole answer at once (live: nothing for 89 seconds, then 5,302 characters in one jump). The stream route now sends an SSE keep-alive comment every 20 seconds, which the page ignores.
 - **The orb looked blurry.** The orb library sizes its canvas to its preset (at most 64px), so the 125px landing orb was a stretched 58px bitmap. A new `OrbCanvas` paints the library's frames at the shown size and screen density, so every orb (landing, reply avatar, widget) is sharp.
 - **The Developer button was hard to find.** It only showed once a chat had started and only on wide screens, so staff on the start page or a phone never saw it. It now shows on the start page and on phones too (top left on phones, bottom left on wider screens), still only for staff or guests who opened the site with `?dev=1`.
