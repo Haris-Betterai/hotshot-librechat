@@ -9,6 +9,13 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 
 ---
 
+## 2026-11-02
+
+### Fixed
+- **The Developer button was hard to find.** It only showed once a chat had started and only on wide screens, so staff on the start page or a phone never saw it. It now shows on the start page and on phones too (top left on phones, bottom left on wider screens), still only for staff or guests who opened the site with `?dev=1`.
+
+---
+
 ## 2026-10-29
 
 ### Changed

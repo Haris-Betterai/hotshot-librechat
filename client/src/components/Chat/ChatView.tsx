@@ -123,7 +123,7 @@ function ChatView({ index = 0, project }: { index?: number; project?: TChatProje
               )}
             >
               <Header />
-              {!isEmbed && !isLandingPage && <Developer />}
+              {!isEmbed && <Developer />}
               <>
                 <div className={cn('flex flex-col', columnLayout(isLandingPage, isEmbed))}>
                   {content}
