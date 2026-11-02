@@ -2,6 +2,7 @@ import { memo, useMemo, ReactElement } from 'react';
 import { useRecoilValue } from 'recoil';
 import MarkdownLite from '~/components/Chat/Messages/Content/MarkdownLite';
 import Markdown from '~/components/Chat/Messages/Content/Markdown';
+import useTypedText from '~/hooks/Messages/useTypedText';
 import { useMessageContext } from '~/Providers';
 import { cn } from '~/utils';
 import store from '~/store';
@@ -21,16 +22,17 @@ const TextPart = memo(function TextPart({ text, isCreatedByUser, showCursor }: T
   const { isSubmitting = false, isLatestMessage = false } = useMessageContext();
   const enableUserMsgMarkdown = useRecoilValue(store.enableUserMsgMarkdown);
   const showCursorState = useMemo(() => showCursor && isSubmitting, [showCursor, isSubmitting]);
+  const typed = useTypedText(text, !isCreatedByUser && isLatestMessage);
 
   const content: ContentType = useMemo(() => {
     if (!isCreatedByUser) {
-      return <Markdown content={text} isLatestMessage={isLatestMessage} />;
+      return <Markdown content={typed} isLatestMessage={isLatestMessage} />;
     } else if (enableUserMsgMarkdown) {
       return <MarkdownLite content={text} />;
     } else {
       return <>{text}</>;
     }
-  }, [isCreatedByUser, enableUserMsgMarkdown, text, isLatestMessage]);
+  }, [isCreatedByUser, enableUserMsgMarkdown, text, typed, isLatestMessage]);
 
   return (
     <div
