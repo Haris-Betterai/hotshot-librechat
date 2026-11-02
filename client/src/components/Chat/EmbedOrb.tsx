@@ -1,8 +1,8 @@
 import { memo, useEffect, useState, useContext, createContext } from 'react';
-import { ThinkingOrb } from 'thinking-orbs';
 import { useReducedMotion } from 'framer-motion';
 import type { CSSProperties } from 'react';
 import type { OrbState } from 'thinking-orbs';
+import OrbCanvas from './OrbCanvas';
 
 type EmbedOrbProps = {
   size?: number;
@@ -71,12 +71,12 @@ function EmbedOrb({ size = 32, className, state, paused }: EmbedOrbProps) {
         data-testid="embed-orb"
       >
         {copies.map((copy) => (
-          <ThinkingOrb
+          <OrbCanvas
             key={copy}
             state={state ?? 'searching'}
-            size={preset}
+            preset={preset}
+            size={drawn}
             paused={still}
-            aria-hidden="true"
             className={ink}
             style={layer}
           />
@@ -96,21 +96,21 @@ function EmbedOrb({ size = 32, className, state, paused }: EmbedOrbProps) {
       data-testid="embed-orb"
     >
       {copies.map((copy) => (
-        <ThinkingOrb
+        <OrbCanvas
           key={`even-${copy}`}
           state={even}
-          size={preset}
-          aria-hidden="true"
+          preset={preset}
+          size={drawn}
           className={ink}
           style={{ ...layer, opacity: evenActive ? 1 : 0 }}
         />
       ))}
       {copies.map((copy) => (
-        <ThinkingOrb
+        <OrbCanvas
           key={`odd-${copy}`}
           state={odd}
-          size={preset}
-          aria-hidden="true"
+          preset={preset}
+          size={drawn}
           className={ink}
           style={{ ...layer, opacity: evenActive ? 0 : 1 }}
         />
