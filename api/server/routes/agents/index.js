@@ -61,6 +61,8 @@ router.use(uaParser);
  * These are GET requests and don't need message body validation or rate limiting
  */
 
+const STREAM_KEEPALIVE_MS = 20_000;
+
 /**
  * @route GET /chat/stream/:streamId
  * @desc Subscribe to an ongoing generation job's SSE stream with replay support
@@ -114,6 +116,19 @@ router.get('/chat/stream/:streamId', async (req, res) => {
 
     return false;
   };
+
+  /** SSE comments keep proxies from closing the stream while the model thinks or calls tools. */
+  const keepAlive = setInterval(() => {
+    if (res.writableEnded) {
+      clearInterval(keepAlive);
+      return;
+    }
+    res.write(': keepalive\n\n');
+    if (typeof res.flush === 'function') {
+      res.flush();
+    }
+  }, STREAM_KEEPALIVE_MS);
+  res.on('close', () => clearInterval(keepAlive));
 
   const onDone = (event) => {
     streamTelemetry.recordFinalEventEmitted();

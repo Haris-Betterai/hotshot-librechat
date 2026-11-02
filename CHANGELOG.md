@@ -12,6 +12,7 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 ## 2026-11-02
 
 ### Fixed
+- **Answers did not stream.** While the model thought or used tools, the event stream could stay silent for over a minute; nginx closes an upstream that sends nothing for 60 seconds, so the stream died (`ERR_HTTP2_PROTOCOL_ERROR`) and the page's resume delivered the whole answer at once (live: nothing for 89 seconds, then 5,302 characters in one jump). The stream route now sends an SSE keep-alive comment every 20 seconds, which the page ignores.
 - **The orb looked blurry.** The orb library sizes its canvas to its preset (at most 64px), so the 125px landing orb was a stretched 58px bitmap. A new `OrbCanvas` paints the library's frames at the shown size and screen density, so every orb (landing, reply avatar, widget) is sharp.
 - **The Developer button was hard to find.** It only showed once a chat had started and only on wide screens, so staff on the start page or a phone never saw it. It now shows on the start page and on phones too (top left on phones, bottom left on wider screens), still only for staff or guests who opened the site with `?dev=1`.
 
