@@ -15,6 +15,7 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 - **Agent instructions** (staff UI → Agent setup), saved and verified in the database: a capacity from `get_all_fluid_capacities` or stated by the customer counts as verified, so whenever the reply states a capacity the `dose_calculator` gets `capacity` and `capacityLabel` and opens with the dose worked out. Live, the 6.7 Cummins FR3 answer had quoted 12 quarts but left the calculator empty.
 
 ### Verified live
+- After `951b4d1ec` (recorded on video): a new comparison of EDT, Diesel Extreme and Diesel Winter Anti-Gel showed all three Shopify photos and opened the product viewer; the staff chat's three older comparisons dropped their dead WordPress photos and render cleanly.
 - After `a2417b7a0` and the instruction change: "What diesel fuel additives do you sell?" listed five products with no lone product card (the Decisions API leaned to a comparison at 39%, below 0.45); "Which oil additive for my 2017 Ram 2500 6.7 Cummins?" showed FR3 with its Shopify photo and $37.99 1 QT price, and the calculator opened at 12 qt with 18 oz.
 
 ### Changed
