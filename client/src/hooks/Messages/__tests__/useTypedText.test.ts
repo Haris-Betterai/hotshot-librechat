@@ -2,44 +2,59 @@ import { act, renderHook } from '@testing-library/react';
 import useTypedText from '../useTypedText';
 
 const long = 'word '.repeat(200);
+const opts = (enabled: boolean, live: boolean, slot = 'c1:0') => ({ enabled, live, slot });
 
 describe('useTypedText', () => {
   beforeEach(() => jest.useFakeTimers());
   afterEach(() => jest.useRealTimers());
 
-  it('shows text present on mount at once', () => {
-    const { result } = renderHook(() => useTypedText(long, true));
+  it('shows history at once', () => {
+    const { result } = renderHook(() => useTypedText(long, opts(true, false, 'history')));
     expect(result.current).toBe(long);
   });
 
   it('types out a large block that lands at once on the latest answer', () => {
-    const { result, rerender } = renderHook(({ text }) => useTypedText(text, true), {
-      initialProps: { text: '' },
-    });
+    const { result, rerender } = renderHook(
+      ({ text }) => useTypedText(text, opts(true, true, 'grow')),
+      {
+        initialProps: { text: '' },
+      },
+    );
     rerender({ text: long });
-    expect(result.current.length).toBeLessThan(long.length);
-
     act(() => jest.advanceTimersByTime(200));
     const partway = result.current.length;
     expect(partway).toBeGreaterThan(0);
     expect(partway).toBeLessThan(long.length);
     expect(long.startsWith(result.current)).toBe(true);
 
-    act(() => jest.advanceTimersByTime(2000));
+    act(() => jest.advanceTimersByTime(3000));
     expect(result.current).toBe(long);
   });
 
-  it('types out an answer whose text part mounts already complete while the reply is live', () => {
-    const { result } = renderHook(() => useTypedText(long, true, true));
+  it('types out text that mounts already complete while the reply is live', () => {
+    const { result } = renderHook(() => useTypedText(long, opts(true, true, 'mount')));
     expect(result.current.length).toBeLessThan(long.length);
     act(() => jest.advanceTimersByTime(3000));
     expect(result.current).toBe(long);
   });
 
+  it('keeps typing when the finished reply remounts the text part', () => {
+    const first = renderHook(() => useTypedText(long, opts(true, true, 'remount')));
+    act(() => jest.advanceTimersByTime(200));
+    const before = first.result.current.length;
+    first.unmount();
+
+    const second = renderHook(() => useTypedText(long, opts(true, false, 'remount')));
+    expect(second.result.current.length).toBe(before);
+    act(() => jest.advanceTimersByTime(3000));
+    expect(second.result.current).toBe(long);
+  });
+
   it('shows small streamed steps and older answers at once', () => {
-    const { result, rerender } = renderHook(({ text, on }) => useTypedText(text, on), {
-      initialProps: { text: 'Hello', on: true },
-    });
+    const { result, rerender } = renderHook(
+      ({ text, on }) => useTypedText(text, opts(on, true, 'small')),
+      { initialProps: { text: 'Hello', on: true } },
+    );
     rerender({ text: 'Hello there, friend.', on: true });
     expect(result.current).toBe('Hello there, friend.');
 

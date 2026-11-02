@@ -19,10 +19,19 @@ type ContentType =
   | ReactElement;
 
 const TextPart = memo(function TextPart({ text, isCreatedByUser, showCursor }: TextPartProps) {
-  const { isSubmitting = false, isLatestMessage = false } = useMessageContext();
+  const {
+    isSubmitting = false,
+    isLatestMessage = false,
+    conversationId,
+    partIndex,
+  } = useMessageContext();
   const enableUserMsgMarkdown = useRecoilValue(store.enableUserMsgMarkdown);
   const showCursorState = useMemo(() => showCursor && isSubmitting, [showCursor, isSubmitting]);
-  const typed = useTypedText(text, !isCreatedByUser && isLatestMessage, isSubmitting);
+  const typed = useTypedText(text, {
+    enabled: !isCreatedByUser && isLatestMessage,
+    live: isSubmitting,
+    slot: `${conversationId ?? ''}:${partIndex ?? 0}`,
+  });
 
   const content: ContentType = useMemo(() => {
     if (!isCreatedByUser) {
