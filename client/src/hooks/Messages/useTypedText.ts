@@ -8,9 +8,12 @@ const CHARS_PER_TICK = Math.ceil((CHARS_PER_SECOND * TICK_MS) / 1000);
 
 /**
  * Reveal progress by slot (conversation and part), so a reveal survives the text part remounting
- * when the finished reply replaces the streamed one under a new message id.
+ * when the finished reply replaces the streamed one under a new message id. The streamed copy stops
+ * being the latest message first, so it keeps (rather than clears) the progress when disabled.
  */
-const progress = new Map<string, number>();
+const progress = new Map<string, { shown: number; opening: string }>();
+/** Enough of the text to tell whether a remounted part shows the same answer. */
+const OPENING_CHARS = 80;
 
 const prefersReducedMotion = (): boolean =>
   typeof window.matchMedia === 'function' &&
@@ -45,8 +48,8 @@ export default function useTypedText(
 ): string {
   const initial = (() => {
     const saved = progress.get(slot);
-    if (enabled && saved != null) {
-      return Math.min(saved, text.length);
+    if (enabled && saved != null && text.startsWith(saved.opening)) {
+      return Math.min(saved.shown, text.length);
     }
     return enabled && live ? 0 : text.length;
   })();
@@ -58,13 +61,18 @@ export default function useTypedText(
     const kept = Math.min(shownRef.current, commonPrefix(targetRef.current, text));
     targetRef.current = text;
     const remaining = text.length - kept;
-    const reveal = enabled && remaining >= JUMP_CHARS && !prefersReducedMotion();
-    if (!reveal) {
+    if (!enabled) {
+      shownRef.current = text.length;
+      setShown(text.length);
+      return;
+    }
+    if (remaining < JUMP_CHARS || prefersReducedMotion()) {
       shownRef.current = text.length;
       setShown(text.length);
       progress.delete(slot);
       return;
     }
+    const opening = text.slice(0, OPENING_CHARS);
     shownRef.current = kept;
     setShown(kept);
     const timer = setInterval(() => {
@@ -72,7 +80,7 @@ export default function useTypedText(
       shownRef.current = next;
       setShown(next);
       if (next < targetRef.current.length) {
-        progress.set(slot, next);
+        progress.set(slot, { shown: next, opening });
         return;
       }
       progress.delete(slot);

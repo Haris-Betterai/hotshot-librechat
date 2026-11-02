@@ -39,15 +39,28 @@ describe('useTypedText', () => {
   });
 
   it('keeps typing when the finished reply remounts the text part', () => {
-    const first = renderHook(() => useTypedText(long, opts(true, true, 'remount')));
+    const first = renderHook(({ on }) => useTypedText(long, opts(on, true, 'remount')), {
+      initialProps: { on: true },
+    });
     act(() => jest.advanceTimersByTime(200));
     const before = first.result.current.length;
+    first.rerender({ on: false });
+    expect(first.result.current).toBe(long);
     first.unmount();
 
     const second = renderHook(() => useTypedText(long, opts(true, false, 'remount')));
     expect(second.result.current.length).toBe(before);
     act(() => jest.advanceTimersByTime(3000));
     expect(second.result.current).toBe(long);
+  });
+
+  it('does not resume another answer from a previous reveal in the same slot', () => {
+    const first = renderHook(() => useTypedText(long, opts(true, true, 'reuse')));
+    act(() => jest.advanceTimersByTime(200));
+    first.unmount();
+    const other = `Different ${long}`;
+    const second = renderHook(() => useTypedText(other, opts(true, false, 'reuse')));
+    expect(second.result.current).toBe(other);
   });
 
   it('shows small streamed steps and older answers at once', () => {
