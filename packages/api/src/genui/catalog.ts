@@ -18,7 +18,7 @@ export const BUILT_IN_BLOCKS: BuiltIn[] = [
   {
     type: 'product_card',
     description:
-      'One recommended Hot Shot\'s Secret product: photo, price, size picker and a "View product" link.',
+      'The one Hot Shot\'s Secret product the answer recommends: photo, price, size picker and a "View product" link. Not for answers that list or survey several products.',
     format:
       '{"type":"product_card","name":string,"url":string,"image"?:string,"price"?:string,"sizes"?:[{"label":string,"price"?:string}],"summary"?:string,"dose"?:string}',
   },

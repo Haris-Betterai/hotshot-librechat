@@ -18,6 +18,7 @@ type Routes = {
     worth?: number;
     covers?: number;
     asked?: number;
+    single?: number;
     probabilities?: Array<{ value: string; probability: number }>;
   };
   responses?: object[];
@@ -57,6 +58,7 @@ function mockOpenAI(routes: Routes) {
           { type: 'predicate', name: 'worth', probability: routes.decision.worth ?? 0.9 },
           { type: 'predicate', name: 'covers', probability: routes.decision.covers ?? 0.2 },
           { type: 'predicate', name: 'asked', probability: routes.decision.asked ?? 0 },
+          { type: 'predicate', name: 'single', probability: routes.decision.single ?? 0.9 },
         ],
       });
     }
@@ -439,5 +441,21 @@ describe('getGenUi', () => {
       status: 'none',
       decision: { outcome: 'plain text is enough' },
     });
+  });
+
+  it('shows no product card when the answer lists several products', async () => {
+    await saveTurn('m1', `${LONG_ANSWER} Options: ${PRODUCT_URL}`);
+    mockOpenAI({ decision: { choice: 'block:product_card', confidence: 0.48, single: 0.1 } });
+    await getGenUi(deps, { user: USER, messageId: 'm1', run: true });
+
+    expect(await settle('m1')).toMatchObject({
+      status: 'none',
+      decision: {
+        choice: 'block:product_card',
+        single: 0.1,
+        outcome: 'answer covers several products',
+      },
+    });
+    expect(calls.map((call) => call.path)).toEqual(['/decisions']);
   });
 });

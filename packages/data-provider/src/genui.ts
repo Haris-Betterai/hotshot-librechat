@@ -23,6 +23,8 @@ export type TGenUiDecision = {
   worth?: number;
   /** Probability that the customer explicitly asked for a visual. */
   asked?: number;
+  /** Probability that the answer recommends exactly one product (a product card needs it). */
+  single?: number;
   /** Probability that the card shows the answer's main list in full. */
   covers?: number;
   /** Every option the model weighed, most likely first. */

@@ -13,6 +13,7 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 
 ### Changed
 - **The Decisions API picks a card more often when one helps.** Live, it answered "plain text is enough" even when the customer had asked "draw the card for it", and for a step-by-step troubleshooting walk-through ("new" at 28%). It now sees the previous exchange, answers a third question ("did the customer ask for a card, checklist, chart…?", ≥ 0.6 shows the best card), and on a close call shows the best card when it scores ≥ 0.25 (a new card also needs worth ≥ 0.1). "None" is described narrowly: short replies, clarifying questions, urgent safety warnings, refusals, or explanations with nothing to act on.
+- **No lone product card under a list of products.** Live, "What diesel fuel additives do you sell?" got a product card for just one of the five products listed (48%). The Decisions API is now also asked whether the answer recommends exactly one product; below 0.5 no product card is shown ("answer covers several products"), and the product card's description says it is for the one recommended product. The Developer view shows the new score.
 - Developer view: answers where the Decisions API was never asked (the agent drew its own card, or the answer was too short) say "skipped" instead of "none 0%", and each decision shows the new "customer asked for a visual" score.
 
 ### Fixed

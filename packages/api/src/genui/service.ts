@@ -53,6 +53,9 @@ const MIN_ASKED = 0.6;
 const MIN_CLOSE_CALL = 0.25;
 /** A close-call new card also needs this much "worth a visual". */
 const MIN_CLOSE_CALL_NEW_WORTH = 0.1;
+/** A product card needs an answer that recommends one product, at this probability. */
+const MIN_SINGLE = 0.5;
+const PRODUCT_CARD = `${BLOCK_PREFIX}product_card`;
 /** At this probability the card shows the answer's list in full, so the list folds away. */
 const MIN_COVERS = 0.6;
 const MIN_ANSWER_CHARS = 60;
@@ -235,6 +238,12 @@ async function chooseUi(
         instructions:
           'In their latest message or the one before, the customer explicitly asks for a card, view, checklist, chart, table, schedule, tracker, calculator or other visual.',
       },
+      {
+        type: 'predicate',
+        name: 'single',
+        instructions:
+          'The answer recommends exactly one product, rather than listing, comparing or surveying several.',
+      },
     ],
   );
   const decideMs = elapsed(start);
@@ -245,6 +254,7 @@ async function chooseUi(
   };
   const worth = probability('worth');
   const asked = probability('asked');
+  const single = probability('single');
   if (ui?.type !== 'choice' || typeof ui.choice !== 'string') {
     return {
       model: DECISION_MODEL,
@@ -264,44 +274,53 @@ async function chooseUi(
     confidence: ui.confidence,
     worth,
     asked,
+    single,
     options,
     outcome: SHOWN,
     decideMs,
   };
   const card = bestCard(options);
-  if ((asked ?? 0) >= MIN_ASKED && card) {
-    return {
-      ...decision,
-      choice: card.value,
-      confidence: card.probability,
-      outcome: ASKED_OUTCOME,
-    };
-  }
-  if (ui.choice === NONE) {
-    const closeCall =
-      card != null &&
-      card.probability >= MIN_CLOSE_CALL &&
-      (card.value !== NEW || (worth ?? 0) >= MIN_CLOSE_CALL_NEW_WORTH);
-    return closeCall
-      ? {
-          ...decision,
-          choice: card.value,
-          confidence: card.probability,
-          outcome: CLOSE_CALL_OUTCOME,
-        }
-      : { ...decision, outcome: 'plain text is enough' };
-  }
-  if (ui.confidence < MIN_CONFIDENCE) {
-    return { ...decision, outcome: `below confidence ${MIN_CONFIDENCE}` };
-  }
-  const confidentNew = ui.confidence >= MIN_NEW_CONFIDENCE;
-  if (ui.choice === NEW && !confidentNew && (worth ?? 0) < MIN_NEW_WORTH) {
-    return {
-      ...decision,
-      outcome: `not worth a new component (worth < ${MIN_NEW_WORTH}, confidence < ${MIN_NEW_CONFIDENCE})`,
-    };
-  }
-  return decision;
+  const pick = (): TGenUiDecision => {
+    if ((asked ?? 0) >= MIN_ASKED && card) {
+      return {
+        ...decision,
+        choice: card.value,
+        confidence: card.probability,
+        outcome: ASKED_OUTCOME,
+      };
+    }
+    if (ui.choice === NONE) {
+      const closeCall =
+        card != null &&
+        card.probability >= MIN_CLOSE_CALL &&
+        (card.value !== NEW || (worth ?? 0) >= MIN_CLOSE_CALL_NEW_WORTH);
+      return closeCall
+        ? {
+            ...decision,
+            choice: card.value,
+            confidence: card.probability,
+            outcome: CLOSE_CALL_OUTCOME,
+          }
+        : { ...decision, outcome: 'plain text is enough' };
+    }
+    if (ui.confidence < MIN_CONFIDENCE) {
+      return { ...decision, outcome: `below confidence ${MIN_CONFIDENCE}` };
+    }
+    const confidentNew = ui.confidence >= MIN_NEW_CONFIDENCE;
+    if (ui.choice === NEW && !confidentNew && (worth ?? 0) < MIN_NEW_WORTH) {
+      return {
+        ...decision,
+        outcome: `not worth a new component (worth < ${MIN_NEW_WORTH}, confidence < ${MIN_NEW_CONFIDENCE})`,
+      };
+    }
+    return decision;
+  };
+  const picked = pick();
+  const lonelyCard =
+    SHOWING_OUTCOMES.has(picked.outcome) &&
+    picked.choice === PRODUCT_CARD &&
+    (single ?? 1) < MIN_SINGLE;
+  return lonelyCard ? { ...picked, outcome: 'answer covers several products' } : picked;
 }
 
 async function fillBuiltIn(

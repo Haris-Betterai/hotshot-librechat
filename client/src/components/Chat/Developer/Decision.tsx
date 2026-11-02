@@ -112,6 +112,8 @@ export default function Decision({ result }: { result?: TGenUiResult }) {
             <dd className="font-mono">{percent(decision.worth)}</dd>
             <dt>{localize('com_ui_dev_asked')}</dt>
             <dd className="font-mono">{percent(decision.asked)}</dd>
+            <dt>{localize('com_ui_dev_single')}</dt>
+            <dd className="font-mono">{percent(decision.single)}</dd>
             <dt>{localize('com_ui_dev_covers')}</dt>
             <dd className="font-mono">
               {percent(decision.covers)}

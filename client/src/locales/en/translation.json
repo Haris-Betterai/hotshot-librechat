@@ -2279,6 +2279,7 @@
   "com_ui_dev_open": "Open the developer panel",
   "com_ui_dev_show_inline": "Show Decisions API results under answers",
   "com_ui_dev_shown": "Shown",
+  "com_ui_dev_single": "Recommends one product",
   "com_ui_dev_skipped": "skipped",
   "com_ui_dev_tab_cards": "Cards",
   "com_ui_dev_tab_decisions": "Decisions",
