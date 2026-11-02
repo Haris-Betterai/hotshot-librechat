@@ -22,7 +22,7 @@ const TextPart = memo(function TextPart({ text, isCreatedByUser, showCursor }: T
   const { isSubmitting = false, isLatestMessage = false } = useMessageContext();
   const enableUserMsgMarkdown = useRecoilValue(store.enableUserMsgMarkdown);
   const showCursorState = useMemo(() => showCursor && isSubmitting, [showCursor, isSubmitting]);
-  const typed = useTypedText(text, !isCreatedByUser && isLatestMessage);
+  const typed = useTypedText(text, !isCreatedByUser && isLatestMessage, isSubmitting);
 
   const content: ContentType = useMemo(() => {
     if (!isCreatedByUser) {

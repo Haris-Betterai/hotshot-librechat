@@ -29,6 +29,13 @@ describe('useTypedText', () => {
     expect(result.current).toBe(long);
   });
 
+  it('types out an answer whose text part mounts already complete while the reply is live', () => {
+    const { result } = renderHook(() => useTypedText(long, true, true));
+    expect(result.current.length).toBeLessThan(long.length);
+    act(() => jest.advanceTimersByTime(3000));
+    expect(result.current).toBe(long);
+  });
+
   it('shows small streamed steps and older answers at once', () => {
     const { result, rerender } = renderHook(({ text, on }) => useTypedText(text, on), {
       initialProps: { text: 'Hello', on: true },

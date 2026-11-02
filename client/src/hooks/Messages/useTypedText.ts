@@ -15,11 +15,14 @@ const prefersReducedMotion = (): boolean =>
  * on the Responses API) send the whole final answer as one chunk, even after the stream itself has
  * ended, so the reply would otherwise appear in a single jump.
  *
- * Text present on mount, small streamed steps, replaced text and reduced motion all show at once.
+ * Text present on mount shows at once unless `live` (the reply is still being received): the text
+ * part only mounts once its text arrives, so a one-chunk answer is already complete on mount.
+ * Small streamed steps, replaced text and reduced motion also show at once.
  */
-export default function useTypedText(text: string, enabled: boolean): string {
-  const [shown, setShown] = useState(text.length);
-  const shownRef = useRef(text.length);
+export default function useTypedText(text: string, enabled: boolean, live = false): string {
+  const start = enabled && live ? 0 : text.length;
+  const [shown, setShown] = useState(start);
+  const shownRef = useRef(start);
   const targetRef = useRef(text);
 
   useEffect(() => {
