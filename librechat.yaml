@@ -375,6 +375,12 @@ endpoints:
     # capabilities: ["deferred_tools", "execute_code", "file_search", "actions", "tools"]
     capabilities: ['tools']
 
+  # GPT-6 models on the Responses API send the final answer in one large chunk after reasoning,
+  # so answers appeared all at once. streamRate (ms) splits big chunks into word-sized pieces and
+  # paces them, so text types out; small chunks from models that already stream are barely delayed.
+  openAI:
+    streamRate: 6
+
   # (optional) Custom request headers for the built-in OpenAI / Google endpoints.
   # Forwarded on every request to the provider (or an AI gateway / reverse proxy
   # in front of it) while keeping provider-native request shaping intact. Values
