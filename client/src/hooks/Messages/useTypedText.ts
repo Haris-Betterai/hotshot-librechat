@@ -7,11 +7,11 @@ const TICK_MS = 40;
 const CHARS_PER_TICK = Math.ceil((CHARS_PER_SECOND * TICK_MS) / 1000);
 
 /**
- * Reveal progress by slot (conversation and part), so a reveal survives the text part remounting
- * when the finished reply replaces the streamed one under a new message id. The streamed copy stops
- * being the latest message first, so it keeps (rather than clears) the progress when disabled.
+ * Reveal progress keyed by the answer's opening text, so a reveal survives the text part remounting
+ * when the finished reply replaces the streamed one (its message, conversation and part ids can all
+ * change). The streamed copy stops being the latest message first, so it keeps the progress then.
  */
-const progress = new Map<string, { shown: number; opening: string }>();
+const progress = new Map<string, number>();
 /** Enough of the text to tell whether a remounted part shows the same answer. */
 const OPENING_CHARS = 80;
 
@@ -33,8 +33,6 @@ type TypedTextOptions = {
   enabled: boolean;
   /** The reply is still being received: text already present on mount is new, not history. */
   live: boolean;
-  /** Identifies the answer's text slot across remounts. */
-  slot: string;
 };
 
 /**
@@ -42,14 +40,11 @@ type TypedTextOptions = {
  * on the Responses API) send the whole final answer as one chunk, so the reply would otherwise
  * appear in a single jump. Small streamed steps, history and reduced motion show at once.
  */
-export default function useTypedText(
-  text: string,
-  { enabled, live, slot }: TypedTextOptions,
-): string {
+export default function useTypedText(text: string, { enabled, live }: TypedTextOptions): string {
   const initial = (() => {
-    const saved = progress.get(slot);
-    if (enabled && saved != null && text.startsWith(saved.opening)) {
-      return Math.min(saved.shown, text.length);
+    const saved = progress.get(text.slice(0, OPENING_CHARS));
+    if (enabled && saved != null) {
+      return Math.min(saved, text.length);
     }
     return enabled && live ? 0 : text.length;
   })();
@@ -69,7 +64,7 @@ export default function useTypedText(
     if (remaining < JUMP_CHARS || prefersReducedMotion()) {
       shownRef.current = text.length;
       setShown(text.length);
-      progress.delete(slot);
+      progress.delete(text.slice(0, OPENING_CHARS));
       return;
     }
     const opening = text.slice(0, OPENING_CHARS);
@@ -80,14 +75,14 @@ export default function useTypedText(
       shownRef.current = next;
       setShown(next);
       if (next < targetRef.current.length) {
-        progress.set(slot, { shown: next, opening });
+        progress.set(opening, next);
         return;
       }
-      progress.delete(slot);
+      progress.delete(opening);
       clearInterval(timer);
     }, TICK_MS);
     return () => clearInterval(timer);
-  }, [text, enabled, slot]);
+  }, [text, enabled]);
 
   return shown >= text.length ? text : text.slice(0, shown);
 }
