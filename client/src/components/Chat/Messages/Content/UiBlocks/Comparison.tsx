@@ -12,10 +12,13 @@ const STICKY_CELL = 'sticky left-0 z-10 bg-white dark:bg-neutral-900';
 export default function Comparison({ block }: { block: TUiComparison }) {
   const localize = useLocalize();
   const [photo, setPhoto] = useState<number | null>(null);
+  /** Photos that failed to load, e.g. WordPress links in answers from before the move to Shopify. */
+  const [broken, setBroken] = useState<ReadonlySet<string>>(() => new Set());
+  const markBroken = (src: string) => setBroken((prev) => new Set(prev).add(src));
   const photos = useMemo(
     () =>
       block.products.flatMap((product, column): GalleryItem[] =>
-        product.image
+        product.image && !broken.has(product.image)
           ? [
               {
                 src: product.image,
@@ -29,7 +32,7 @@ export default function Comparison({ block }: { block: TUiComparison }) {
             ]
           : [],
       ),
-    [block.products, block.rows],
+    [block.products, block.rows, broken],
   );
 
   return (
@@ -47,7 +50,7 @@ export default function Comparison({ block }: { block: TUiComparison }) {
               {block.products.map((product) => (
                 <th key={product.name} scope="col" className="px-3 py-3 align-top font-medium">
                   <div className="flex items-start gap-2">
-                    {product.image && (
+                    {product.image && !broken.has(product.image) && (
                       <button
                         type="button"
                         onClick={() => setPhoto(photos.findIndex((p) => p.src === product.image))}
@@ -58,6 +61,7 @@ export default function Comparison({ block }: { block: TUiComparison }) {
                           src={product.image}
                           alt=""
                           loading="lazy"
+                          onError={() => markBroken(product.image as string)}
                           className="size-12 rounded-lg object-contain"
                         />
                       </button>
