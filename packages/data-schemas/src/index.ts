@@ -7,6 +7,8 @@ export * from './utils';
 export { createModels } from './models';
 export { createLearningModel } from './models/learning';
 export type { LearningState } from './models/learning';
+export { createFeedbackReportModel } from './models/feedbackReport';
+export type { FeedbackReportDoc } from './models/feedbackReport';
 export {
   createMethods,
   RoleConflictError,

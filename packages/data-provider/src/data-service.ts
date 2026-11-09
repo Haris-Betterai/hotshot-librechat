@@ -1445,3 +1445,19 @@ export const updateAgentLearning = (
   }
   return request.post(endpoints.agentLearning(agentId, action));
 };
+
+export const submitFeedbackReport = (
+  input: import('./review').FeedbackReportInput,
+): Promise<import('./review').FeedbackReport> => request.post(endpoints.reviewFeedback(), input);
+
+export const listFeedbackReports = (params?: {
+  cursor?: string;
+  limit?: number;
+}): Promise<import('./review').ReviewPage<import('./review').FeedbackReport>> =>
+  request.get(endpoints.reviewFeedback(params));
+
+export const listLoggedQuestions = (params?: {
+  cursor?: string;
+  limit?: number;
+}): Promise<import('./review').ReviewPage<import('./review').LoggedQuestion>> =>
+  request.get(endpoints.reviewQuestions(params));

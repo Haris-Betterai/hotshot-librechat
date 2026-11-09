@@ -1,5 +1,7 @@
 export enum QueryKeys {
   agentLearning = 'agentLearning',
+  reviewQuestions = 'reviewQuestions',
+  reviewFeedback = 'reviewFeedback',
   messages = 'messages',
   sharedMessages = 'sharedMessages',
   sharedStartupConfig = 'sharedStartupConfig',
@@ -99,6 +101,7 @@ export const DynamicQueryKeys = {
 
 export enum MutationKeys {
   agentLearning = 'agentLearning',
+  submitFeedbackReport = 'submitFeedbackReport',
   createAgentApiKey = 'createAgentApiKey',
   deleteAgentApiKey = 'deleteAgentApiKey',
   fileUpload = 'fileUpload',

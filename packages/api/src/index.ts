@@ -79,6 +79,11 @@ export { memoryDiagnostics } from './utils/memory';
 export * from './rum/proxy';
 export { learningHandler } from './agents/learning/handlers';
 export { startLearningScheduler } from './agents/learning/service';
+export {
+  listQuestionsHandler,
+  listFeedbackHandler,
+  submitFeedbackHandler,
+} from './review/handlers';
 /* types */
 export type * from './mcp/types';
 export type * from './flow/types';

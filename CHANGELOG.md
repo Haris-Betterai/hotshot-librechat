@@ -11,6 +11,10 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 
 ## 2026-11-09
 
+### Added
+- **Feedback button for testers.** A "Feedback" tab on the right edge of the public chat, and a feedback icon in the widget header, open a short form: type (wrong answer, something broke, suggestion, other), message, optional name and email. The open conversation and page are attached automatically. Reports are saved in a new `feedbackreports` collection; one person can send up to 30 an hour. `POST /api/review/feedback`, open to guests.
+- **Questions & feedback page for admins** at `/staff/review` (sidebar: clipboard icon). The Questions tab lists every question asked in the chat and widget, newest first, with the answer, the thumbs rating and comment, who asked (staff name, or "Guest · last 6 of their id") and the conversation. The Feedback tab lists the reports. Both load 50 at a time and export to CSV (up to 10,000 rows). `GET /api/review/questions` and `GET /api/review/feedback`, admin only. Questions were already stored with every chat; this page reads them.
+
 ### Changed
 - **Smaller thinking-level popover in the widget.** It took too much of the small panel. The label and level name now share one line, the track and handle are thinner, the stop names are smaller, and the popover is 192 px wide instead of 256 px with tighter padding. (`ab2ff4aec`)
 

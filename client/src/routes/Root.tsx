@@ -26,6 +26,7 @@ import { TermsAndConditionsModal } from '~/components/ui';
 import { useHealthCheck } from '~/data-provider';
 import { useEmbedAppearance } from '~/hooks/useEmbedWidgetSettings';
 import SiteWidget from '~/components/Chat/SiteWidget';
+import { FeedbackTab } from '~/components/Feedback';
 import { Banner } from '~/components/Banners';
 import store from '~/store';
 
@@ -118,6 +119,7 @@ export default function Root() {
             <PromptGroupsProvider>
               {!isEmbed && <Banner onHeightChange={setBannerHeight} />}
               {!isEmbed && !isStaffView && <SiteWidget />}
+              {!isEmbed && !isStaffView && <FeedbackTab />}
               <div className="flex" style={{ height: `calc(100dvh - ${bannerHeight}px)` }}>
                 <div className="relative z-0 flex h-full w-full overflow-hidden">
                   {isStaffView && !isAgentBuilderPage && <UnifiedSidebar />}

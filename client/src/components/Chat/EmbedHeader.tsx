@@ -1,8 +1,9 @@
 import { memo, useCallback, useEffect, useState } from 'react';
 import { QueryKeys } from 'librechat-data-provider';
 import { useQueryClient } from '@tanstack/react-query';
-import { Maximize, Minimize, Plus, X } from 'lucide-react';
+import { Maximize, MessageSquareText, Minimize, Plus, X } from 'lucide-react';
 import EmbedOrb from '~/components/Chat/EmbedOrb';
+import { FeedbackDialog } from '~/components/Feedback';
 import useEmbedWidgetSettings from '~/hooks/useEmbedWidgetSettings';
 import { useChatContext, useAgentsMapContext } from '~/Providers';
 import { useLocalize, useNewConvo } from '~/hooks';
@@ -33,6 +34,7 @@ function EmbedHeader() {
   const agentsMap = useAgentsMapContext();
   const { settings, iconUrl } = useEmbedWidgetSettings();
   const [expanded, setExpanded] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   const agent = conversation?.agent_id != null ? agentsMap?.[conversation.agent_id] : undefined;
   const title = settings.title || agent?.name || conversation?.title || localize('com_ui_chat');
@@ -98,6 +100,15 @@ function EmbedHeader() {
       </div>
       <button
         type="button"
+        aria-label={localize('com_ui_report_title')}
+        title={localize('com_ui_report_title')}
+        onClick={() => setFeedbackOpen(true)}
+        className={buttonClass}
+      >
+        <MessageSquareText className="h-4 w-4" aria-hidden="true" />
+      </button>
+      <button
+        type="button"
         aria-label={localize('com_ui_embed_new_chat')}
         title={localize('com_ui_embed_new_chat')}
         onClick={startNewChat}
@@ -128,6 +139,7 @@ function EmbedHeader() {
       >
         <X className="h-5 w-5" aria-hidden="true" />
       </button>
+      <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} source="widget" />
     </header>
   );
 }

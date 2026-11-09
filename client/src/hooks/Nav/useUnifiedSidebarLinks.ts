@@ -1,20 +1,28 @@
 import { useMemo } from 'react';
 import { useRecoilValue } from 'recoil';
-import { MessagesSquare } from 'lucide-react';
+import { ClipboardList, MessagesSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUserKeyQuery } from 'librechat-data-provider/react-query';
-import { EModelEndpoint, getConfigDefaults, getEndpointField } from 'librechat-data-provider';
+import {
+  SystemRoles,
+  EModelEndpoint,
+  getConfigDefaults,
+  getEndpointField,
+} from 'librechat-data-provider';
 import type { TEndpointsConfig } from 'librechat-data-provider';
 import type { NavLink } from '~/common';
 import ConversationsSection from '~/components/UnifiedSidebar/ConversationsSection';
 import { useGetEndpointsQuery, useGetStartupConfig } from '~/data-provider';
 import useSideNavLinks from '~/hooks/Nav/useSideNavLinks';
+import { useAuthContext } from '~/hooks/AuthContext';
 import store from '~/store';
 
 const defaultInterface = getConfigDefaults().interface;
 
 export default function useUnifiedSidebarLinks() {
   const navigate = useNavigate();
+  const { user } = useAuthContext();
+  const isAdmin = user?.role === SystemRoles.ADMIN;
   const conversation = useRecoilValue(store.conversationByIndex(0));
   const endpoint = conversation?.endpoint;
   const { data: startupConfig } = useGetStartupConfig();
@@ -75,8 +83,18 @@ export default function useUnifiedSidebarLinks() {
       };
     });
 
-    return [conversationLink, ...staffLinks];
-  }, [sideNavLinks, conversation?.agent_id, navigate]);
+    const reviewLink: NavLink = {
+      title: 'com_ui_review_title',
+      label: '',
+      icon: ClipboardList,
+      id: 'review',
+      onClick: () => navigate('/staff/review'),
+    };
+
+    return isAdmin
+      ? [conversationLink, ...staffLinks, reviewLink]
+      : [conversationLink, ...staffLinks];
+  }, [sideNavLinks, conversation?.agent_id, navigate, isAdmin]);
 
   return links;
 }

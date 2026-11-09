@@ -192,6 +192,12 @@ export const embeds = () => embedsRoot;
 export const embedWidget = (embedId: string) => `${embedsRoot}/${encodeURIComponent(embedId)}`;
 export const embedWidgetIcon = (embedId: string) => `${embedWidget(embedId)}/icon`;
 
+const reviewRoot = `${BASE_URL}/api/review`;
+export const reviewFeedback = (params?: { cursor?: string; limit?: number }) =>
+  `${reviewRoot}/feedback${buildQuery(params ?? {})}`;
+export const reviewQuestions = (params?: { cursor?: string; limit?: number }) =>
+  `${reviewRoot}/questions${buildQuery(params ?? {})}`;
+
 export const requestPasswordReset = () => `${BASE_URL}/api/auth/requestPasswordReset`;
 
 export const resetPassword = () => `${BASE_URL}/api/auth/resetPassword`;
