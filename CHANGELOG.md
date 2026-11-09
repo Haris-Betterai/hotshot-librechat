@@ -9,6 +9,13 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 
 ---
 
+## 2026-11-09
+
+### Changed
+- **Smaller thinking-level popover in the widget.** It took too much of the small panel. The label and level name now share one line, the track and handle are thinner, the stop names are smaller, and the popover is 192 px wide instead of 256 px with tighter padding.
+
+---
+
 ## 2026-11-02
 
 ### Config
