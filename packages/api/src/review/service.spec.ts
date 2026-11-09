@@ -3,6 +3,7 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import { createModels, createFeedbackReportModel, runAsSystem } from '@librechat/data-schemas';
 import {
   messageText,
+  readableAnswer,
   listQuestions,
   FeedbackRateError,
   FeedbackInputError,
@@ -174,4 +175,13 @@ it('reads text from content parts when the message text is empty', () => {
   expect(messageText({ text: '', content: [{ type: 'text', text: { value: 'Hello' } }] })).toBe(
     'Hello',
   );
+});
+
+it('replaces answer-card code with a short label', () => {
+  const text =
+    'Use 1 oz per 25 gallons.\n\n```hotshot-ui\n{"type":"dose_calculator","ratio":{}}\n```\n\nAnything else?';
+  expect(readableAnswer(text)).toBe(
+    'Use 1 oz per 25 gallons.\n\n[Card: dose calculator]\n\nAnything else?',
+  );
+  expect(readableAnswer('```hotshot-ui\nnot json\n```')).toBe('[Card]');
 });

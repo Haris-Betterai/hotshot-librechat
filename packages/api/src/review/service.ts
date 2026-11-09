@@ -1,6 +1,10 @@
 import mongoose from 'mongoose';
 import { createModels, createFeedbackReportModel } from '@librechat/data-schemas';
-import { FEEDBACK_REPORT_LIMITS, isFeedbackReportKind } from 'librechat-data-provider';
+import {
+  UI_BLOCK_LANGUAGE,
+  FEEDBACK_REPORT_LIMITS,
+  isFeedbackReportKind,
+} from 'librechat-data-provider';
 import type {
   FeedbackReport,
   FeedbackReportInput,
@@ -65,6 +69,22 @@ export function messageText(message: Pick<StoredMessage, 'text' | 'content'>): s
     .map((part) => (typeof part.text === 'string' ? part.text : (part.text?.value ?? '')))
     .join('\n')
     .trim();
+}
+
+const CARD_BLOCK = new RegExp(`\`\`\`${UI_BLOCK_LANGUAGE}\\s*([\\s\\S]*?)\`\`\``, 'g');
+
+const cardLabel = (json: string): string => {
+  try {
+    const type = (JSON.parse(json) as { type?: unknown }).type;
+    return typeof type === 'string' ? `[Card: ${type.replace(/_/g, ' ')}]` : '[Card]';
+  } catch {
+    return '[Card]';
+  }
+};
+
+/** Answer text with each answer-card block replaced by a short "[Card: …]" label. */
+export function readableAnswer(text: string): string {
+  return text.replace(CARD_BLOCK, (_match, json: string) => cardLabel(json)).trim();
 }
 
 /** "Guest · 3f9a1c" for anonymous testers, otherwise the staff member's name or email. */
@@ -212,7 +232,7 @@ export async function listQuestions(
       messageId: question.messageId,
       conversationId: question.conversationId,
       question: messageText(question),
-      answer: reply ? messageText(reply).slice(0, ANSWER_MAX) : '',
+      answer: reply ? readableAnswer(messageText(reply)).slice(0, ANSWER_MAX) : '',
       rating: reply?.feedback?.rating,
       ratingText: reply?.feedback?.text,
       userLabel: userLabel(question.user, users.get(question.user)),
