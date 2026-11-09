@@ -20,6 +20,7 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 - **Smaller thinking-level popover in the widget.** It took too much of the small panel. The label and level name now share one line, the track and handle are thinner, the stop names are smaller, and the popover is 192 px wide instead of 256 px with tighter padding. (`ab2ff4aec`)
 
 ### Deployed
+- `9c36a37c9` with `./deploy.sh`. Checked live: the Feedback tab opens the form, a test report ("[TEST by Claude after deploy]") saved, and `/staff/review` lists today's questions with answers and the test report under Feedback. The card-label clean-up (`3750a349e`) is not deployed yet.
 - `ab2ff4aec` with `./deploy.sh` at 13:10 UTC. Checked live on the widget demo store: the popover opens above the input as one compact card ("THINKING LEVEL · Auto", then Auto / Deep / Ultra).
 
 ---
