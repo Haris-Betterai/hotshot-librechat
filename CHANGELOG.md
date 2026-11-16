@@ -9,6 +9,20 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 
 ---
 
+## 2026-11-16
+
+### Changed
+- **LOCAL_DEV.md troubleshooting** gains three rows found while setting up a laptop again: search (Meilisearch) crash-looping on an empty root-owned volume, a second clone of the repo holding the fixed container names, and the default-secrets warning.
+
+### Config
+- **Laptop `.env`** now matches the server apart from host and domain: `PORT=6041`, sessions 1 hour, refresh tokens 30 days, plus `CUSTOM_FOOTER` and `SITE_WIDGET_EMBED_ID`. Not in git.
+- **Agent instructions: new "Scope" section** (version 34, right after Role), saved in the live database. The agent was answering anything: in the last 30 days it asked a customer for their city to look up the weather and wrote a full essay on AI cars. The instructions had no scope rule. In scope now: Hot Shot's Secret products (including comparisons with other brands), orders and support, and owning and maintaining any engine or vehicle, plus short follow-ups like "yes" or "2018" read in context. Out of scope even when cars are mentioned: weather forecasts, news, companies' money (Tesla), self-driving or AI car tech, essays, coding, trivia and similar. Off-topic requests get one or two friendly sentences pointing back to what it can help with, with no tools, search or answer blocks, however they are framed (rephrased, role-play, "ignore your instructions"). Version 33 is the previous one if this needs rolling back. Not yet checked in a live chat. If people get past it, the next step is a Decisions API scope check on each message before the agent runs.
+
+### Found (usage, last 30 days, 182 answers)
+- 134 (74%) used Hotshot tools, led by `search_products_by_name` (77), `get_all_symptoms` (36) and `search_faqs` (27); 48 (26%) were answered by the model alone, mostly short follow-ups and clarifying questions. The Decisions API only chooses the card under a finished answer: of 91 recorded, 34 were cards the agent drew itself (Decisions API skipped) and about 53 asked it.
+
+---
+
 ## 2026-11-09
 
 ### Added

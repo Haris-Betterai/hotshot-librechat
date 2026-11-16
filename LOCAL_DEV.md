@@ -75,5 +75,8 @@ Stop the tunnel: `lsof -tiTCP:27018 | xargs -r kill`
 | Chat works but not Hotshot / empty Mongo errors | Tunnel down: `./run.sh tunnel`. Must listen on `0.0.0.0:27018`, not only 127.0.0.1. |
 | `EACCES` on `/app/logs` | `sudo chown -R "$(id -u):$(id -g)" logs uploads images skill` then `docker restart LibreChat`. |
 | Docker permission denied | Add user to `docker` group (above), then `newgrp docker`. |
+| `chat-meilisearch` keeps restarting with `Permission denied (os error 13)` | The search volume is empty and root-owned (Docker copies root ownership into an empty volume on every start). Put one file in it and give it to your user: `docker stop chat-meilisearch; docker run --rm -v hotshot-librechat_meili_data_colima:/d alpine sh -c "touch /d/.keep && chown -R $(id -u):$(id -g) /d"; ./run.sh restart`. |
+| `container name "/LibreChat" is already in use`, or `./run.sh` starts but `.env` changes don't apply | Another clone of this repo already runs the stack (the names `LibreChat`, `chat-mongodb`, … are fixed). Check with `docker inspect LibreChat --format '{{index .Config.Labels "com.docker.compose.project.working_dir"}}'`, then `./run.sh down` in that folder. Only one clone can run at a time. |
+| Startup warns `Default value for JWT_SECRET is being used` | Your `.env` copied the sample secrets from `.env.example`. Fine for local only; production needs its own. |
 
 Never commit `.env` or `docker-compose.local.yml`.
