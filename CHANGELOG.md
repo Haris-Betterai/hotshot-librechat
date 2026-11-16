@@ -21,6 +21,9 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 ### Found (usage, last 30 days, 182 answers)
 - 134 (74%) used Hotshot tools, led by `search_products_by_name` (77), `get_all_symptoms` (36) and `search_faqs` (27); 48 (26%) were answered by the model alone, mostly short follow-ups and clarifying questions. The Decisions API only chooses the card under a finished answer: of 91 recorded, 34 were cards the agent drew itself (Decisions API skipped) and about 53 asked it.
 
+### Deployed
+- `0294fbd8e` with `./deploy.sh` (image built 13:18 UTC, app up 13:24 UTC). Docs only; the agent scope rules were already live from the database. Checked live: the guest page, its scripts and `/login?staff=1` load (200), and the bind-mounted guest `index.html` matches the new image.
+
 ---
 
 ## 2026-11-09
