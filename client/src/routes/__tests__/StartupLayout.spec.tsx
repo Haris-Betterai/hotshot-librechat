@@ -24,7 +24,7 @@ jest.mock('~/data-provider', () => ({
 
 jest.mock('~/hooks', () => ({
   useLocalize: jest.fn(() => (key: string) => key),
-  useAuthContext: jest.fn(() => ({
+  useOptionalAuthContext: jest.fn(() => ({
     user: { provider: 'local', email: 'staff@example.com' },
     logout: jest.fn(),
   })),
@@ -72,7 +72,7 @@ describe('StartupLayout — redirect race condition', () => {
 
   afterEach(() => {
     window.history.replaceState({}, '', '/');
-    jest.requireMock('~/hooks').useAuthContext.mockReturnValue({
+    jest.requireMock('~/hooks').useOptionalAuthContext.mockReturnValue({
       user: { provider: 'local', email: 'staff@example.com' },
       logout: jest.fn(),
     });
@@ -125,7 +125,7 @@ describe('StartupLayout — redirect race condition', () => {
 
   it('keeps a guest on /login?staff=1 without calling logout', async () => {
     const logout = jest.fn();
-    jest.requireMock('~/hooks').useAuthContext.mockReturnValue({
+    jest.requireMock('~/hooks').useOptionalAuthContext.mockReturnValue({
       user: { provider: 'anonymous' },
       logout,
     });
@@ -140,4 +140,38 @@ describe('StartupLayout — redirect race condition', () => {
     expect(router.state.location.search).toBe('?staff=1');
     expect(logout).not.toHaveBeenCalled();
   });
+});
+
+describe('StartupLayout — pages outside AuthContextProvider', () => {
+  afterEach(() => {
+    jest.requireMock('~/hooks').useOptionalAuthContext.mockReturnValue({
+      user: { provider: 'local', email: 'staff@example.com' },
+      logout: jest.fn(),
+    });
+  });
+
+  it.each(['/register', '/forgot-password', '/reset-password'])(
+    'renders %s without an auth provider and stays on the page',
+    async (path) => {
+      jest.requireMock('~/hooks').useOptionalAuthContext.mockReturnValue(undefined);
+      window.history.replaceState({}, '', path);
+      const router = createMemoryRouter(
+        [
+          {
+            path,
+            element: <StartupLayout />,
+            children: [{ index: true, element: <ChildRoute /> }],
+          },
+          { path: '/c/new', element: <NewConversation /> },
+        ],
+        { initialEntries: [path] },
+      );
+
+      const { getByTestId } = render(<RouterProvider router={router} />);
+
+      expect(getByTestId('child-route')).toBeInTheDocument();
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(router.state.location.pathname).toBe(path);
+    },
+  );
 });

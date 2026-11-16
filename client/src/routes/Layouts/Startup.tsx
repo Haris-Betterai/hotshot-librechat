@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import type { TStartupConfig } from 'librechat-data-provider';
 import { REDIRECT_PARAM, SESSION_KEY, staffHomePath, wantsStaffLogin, markStaffLoginIntent } from '~/utils';
-import { TranslationKeys, useLocalize, useAuthContext } from '~/hooks';
+import { TranslationKeys, useLocalize, useOptionalAuthContext } from '~/hooks';
 import { useGetStartupConfig } from '~/data-provider';
 import AuthLayout from '~/components/Auth/AuthLayout';
 
@@ -28,7 +28,7 @@ export default function StartupLayout({ isAuthenticated }: { isAuthenticated?: b
   const localize = useLocalize();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuthContext();
+  const user = useOptionalAuthContext()?.user;
   const isGuest = user?.provider === 'anonymous';
 
   useEffect(() => {

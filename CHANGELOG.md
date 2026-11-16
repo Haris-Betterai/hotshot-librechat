@@ -11,6 +11,9 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 
 ## 2026-11-16
 
+### Fixed
+- **`/register`, `/forgot-password` and `/reset-password` crashed** with "useAuthContext should be used inside AuthProvider". The staff-login fix of 2026-08-12 (`057b9e12c`) made the shared startup layout read the logged-in user, but these three pages render outside the login provider. The layout now reads the user only when the provider is there (`useOptionalAuthContext`), so those pages see "nobody logged in", and `/login` (including `?staff=1` for guests) behaves exactly as before. Tests cover all three pages.
+
 ### Changed
 - **LOCAL_DEV.md troubleshooting** gains three rows found while setting up a laptop again: search (Meilisearch) crash-looping on an empty root-owned volume, a second clone of the repo holding the fixed container names, and the default-secrets warning.
 

@@ -661,4 +661,7 @@ const useAuthContext = () => {
   return context;
 };
 
-export { AuthContextProvider, useAuthContext, AuthContext };
+/** For layouts that also render outside AuthContextProvider (/register, /forgot-password, /reset-password). */
+const useOptionalAuthContext = (): TAuthContext | undefined => useContext(AuthContext);
+
+export { AuthContextProvider, useAuthContext, useOptionalAuthContext, AuthContext };
