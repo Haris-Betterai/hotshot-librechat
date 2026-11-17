@@ -20,7 +20,6 @@ import { useGetMessagesByConvoId } from '~/data-provider';
 import ProjectLandingChip from './ProjectLandingChip';
 import MessagesView from './Messages/MessagesView';
 import { cn, isEmbedWidget } from '~/utils';
-import PinnedProduct from './PinnedProduct';
 import Presentation from './Presentation';
 import Developer from './Developer';
 import ChatForm from './Input/ChatForm';
@@ -138,7 +137,6 @@ function ChatView({ index = 0, project }: { index?: number; project?: TChatProje
                   >
                     {isProjectLandingPage && project && <ProjectLandingChip project={project} />}
                     {isLandingPage && !isEmbed && <ConversationStarters />}
-                    {!isEmbed && <PinnedProduct />}
                     <ChatForm
                       index={index}
                       placeholder={chatFormPlaceholder}

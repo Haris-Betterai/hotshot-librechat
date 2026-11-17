@@ -39,6 +39,7 @@ import FileFormChat from './Files/FileFormChat';
 import InFlightSteers from './InFlightSteers';
 import TextareaHeader from './TextareaHeader';
 import PromptsCommand from './PromptsCommand';
+import PinnedProduct from './PinnedProduct';
 import SkillsCommand from './SkillsCommand';
 import AudioRecorder from './AudioRecorder';
 import CollapseChat from './CollapseChat';
@@ -498,6 +499,7 @@ const ChatForm = memo(function ChatForm({
                   handleSaveBadges={handleSaveBadges}
                   setBadges={setBadges}
                 />
+                {!isEmbed && <PinnedProduct />}
                 <FileFormChat
                   conversation={conversation}
                   files={files}
