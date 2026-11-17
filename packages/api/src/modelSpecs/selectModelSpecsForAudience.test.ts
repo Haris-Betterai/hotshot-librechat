@@ -10,6 +10,8 @@ const makeSpec = (name: string, extra: Partial<TModelSpec> = {}): TModelSpec => 
 });
 
 const makeConfig = (): TSpecsConfig => ({
+  enforce: false,
+  prioritize: true,
   list: [
     makeSpec('guest', { default: true }),
     makeSpec('staff', { audience: 'staff' }),
@@ -34,7 +36,11 @@ describe('selectModelSpecsForAudience', () => {
   });
 
   it('leaves the list alone for employees when there is no staff spec', () => {
-    const config: TSpecsConfig = { list: [makeSpec('guest', { default: true })] };
+    const config: TSpecsConfig = {
+      enforce: false,
+      prioritize: true,
+      list: [makeSpec('guest', { default: true })],
+    };
     expect(selectModelSpecsForAudience(config, true)).toBe(config);
   });
 

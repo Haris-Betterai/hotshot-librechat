@@ -20,6 +20,8 @@ export type RequestBody = {
   timezone?: string;
   /** Message text of the current turn, classified by the Auto intelligence router. */
   text?: string;
+  /** Store product pinned to the chat (validated against the catalog before use). */
+  productUrl?: string | null;
 };
 
 export type ServerRequest = Request<unknown, unknown, RequestBody> & {
