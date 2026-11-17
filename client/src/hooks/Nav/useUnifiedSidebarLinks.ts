@@ -12,8 +12,8 @@ import {
 import type { TEndpointsConfig } from 'librechat-data-provider';
 import type { NavLink } from '~/common';
 import ConversationsSection from '~/components/UnifiedSidebar/ConversationsSection';
-import { ProductsPanel } from '~/components/SidePanel/Products';
 import { useGetEndpointsQuery, useGetStartupConfig } from '~/data-provider';
+import { ProductsPanel } from '~/components/SidePanel/Products';
 import useSideNavLinks from '~/hooks/Nav/useSideNavLinks';
 import { useAuthContext } from '~/hooks/AuthContext';
 import store from '~/store';

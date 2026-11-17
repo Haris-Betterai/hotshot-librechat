@@ -1,8 +1,10 @@
 import mongoose from 'mongoose';
 import { isStoreProductUrl } from 'librechat-data-provider';
-import { logger, createModels } from '@librechat/data-schemas';
+import { logger } from '@librechat/data-schemas';
 import type { PinProductInput } from 'librechat-data-provider';
+import type { IConversation } from '@librechat/data-schemas';
 import type { Response } from 'express';
+import type { Model } from 'mongoose';
 import { findCatalogProduct, loadCatalog } from './catalog';
 
 type ProductsRequest = {
@@ -34,9 +36,12 @@ export async function pinProductHandler(req: ProductsRequest, res: Response): Pr
     if (productUrl !== null && !(await findCatalogProduct(productUrl))) {
       return res.status(400).json({ error: 'Unknown product' });
     }
-    const { Conversation } = createModels(mongoose);
+    const Conversation = mongoose.models.Conversation as Model<IConversation>;
     const update = productUrl === null ? { $unset: { productUrl: 1 } } : { $set: { productUrl } };
-    const result = await Conversation.updateOne({ conversationId, user: req.user.id }, update);
+    /** `timestamps: false` keeps the chat where it is in the sidebar. */
+    const result = await Conversation.updateOne({ conversationId, user: req.user.id }, update, {
+      timestamps: false,
+    });
     if (result.matchedCount === 0) {
       return res.status(404).json({ error: 'Conversation not found' });
     }

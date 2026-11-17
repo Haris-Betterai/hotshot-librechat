@@ -33,7 +33,7 @@ const rawCatalog = {
 const mockFetch = (body: unknown, ok = true) =>
   jest
     .spyOn(global, 'fetch')
-    .mockResolvedValue({ ok, status: ok ? 200 : 500, json: async () => body } as Response);
+    .mockImplementation(async () => new Response(JSON.stringify(body), { status: ok ? 200 : 500 }));
 
 afterEach(() => {
   jest.restoreAllMocks();
@@ -66,9 +66,19 @@ describe('loadCatalog', () => {
     expect(first).toBe(second);
   });
 
-  it('throws when the first fetch fails and there is no copy yet', async () => {
-    mockFetch({}, false);
+  it('throws when the first fetch fails, then backs off instead of retrying straight away', async () => {
+    const fetchSpy = mockFetch({}, false);
     await expect(loadCatalog()).rejects.toThrow('Catalog request failed with 500');
+    await expect(loadCatalog()).rejects.toThrow('recent failure');
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('serves the last good copy when a refresh fails', async () => {
+    mockFetch(rawCatalog);
+    const first = await loadCatalog();
+    jest.spyOn(Date, 'now').mockReturnValue(Date.now() + 11 * 60 * 1000);
+    jest.spyOn(global, 'fetch').mockRejectedValue(new Error('offline'));
+    expect(await loadCatalog()).toBe(first);
   });
 });
 

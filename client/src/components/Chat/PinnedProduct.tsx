@@ -1,6 +1,7 @@
 import { memo, useMemo } from 'react';
 import { X, ExternalLink } from 'lucide-react';
 import { useToastContext } from '@librechat/client';
+import { isStoreProductUrl } from 'librechat-data-provider';
 import { useGetStartupConfig, useProductCatalogQuery } from '~/data-provider';
 import { useLocalize, usePinnedProduct } from '~/hooks';
 
@@ -18,9 +19,11 @@ function PinnedProduct() {
     [catalog, productUrl],
   );
 
-  if (!isStaff || !product) {
+  if (!isStaff || !isStoreProductUrl(productUrl)) {
     return null;
   }
+
+  const title = product?.title ?? productUrl.split('/').pop() ?? productUrl;
 
   const unpin = async () => {
     try {
@@ -37,21 +40,21 @@ function PinnedProduct() {
       className="mx-auto mb-2 flex w-full max-w-3xl items-center gap-3 rounded-xl border border-border-light bg-surface-primary px-3 py-2 xl:max-w-4xl"
     >
       <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-surface-secondary">
-        {product.image ? (
+        {product?.image ? (
           <img src={product.image} alt="" className="size-full object-contain" />
         ) : null}
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-xs text-text-secondary">{localize('com_ui_products_pinned')}</p>
-        <p className="truncate text-sm font-medium text-text-primary">{product.title}</p>
+        <p className="truncate text-sm font-medium text-text-primary">{title}</p>
       </div>
-      {product.price ? (
+      {product?.price ? (
         <span className="hidden shrink-0 text-sm text-text-secondary sm:inline">
           {product.price}
         </span>
       ) : null}
       <a
-        href={product.url}
+        href={productUrl}
         target="_blank"
         rel="noopener noreferrer"
         aria-label={localize('com_ui_products_open')}

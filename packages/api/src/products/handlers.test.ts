@@ -1,7 +1,8 @@
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { createModels, runAsSystem } from '@librechat/data-schemas';
-import type { Response } from 'express';
+import type { PinProductInput } from 'librechat-data-provider';
+import type { Response as ExpressResponse } from 'express';
 import { getCatalogHandler, pinProductHandler } from './handlers';
 import { resetCatalogCache } from './catalog';
 
@@ -21,10 +22,10 @@ const makeRes = () => {
       return api;
     },
   };
-  return { res, api: api as unknown as Response };
+  return { res, api: api as unknown as ExpressResponse };
 };
 
-const pin = async (userId: string, body: Record<string, unknown>) => {
+const pin = async (userId: string, body: Partial<PinProductInput>) => {
   const { res, api } = makeRes();
   await runAsSystem(() => pinProductHandler({ user: { id: userId }, body }, api));
   return res;
@@ -47,14 +48,11 @@ afterAll(async () => {
 });
 beforeEach(async () => {
   resetCatalogCache();
-  jest.spyOn(global, 'fetch').mockResolvedValue({
-    ok: true,
-    status: 200,
-    json: async () => ({
-      updated_at: 1_790_000_000,
-      products: [{ title: 'DIESEL EXTREME', url: DIESEL_EXTREME, category: 'Diesel' }],
-    }),
-  } as Response);
+  const body = JSON.stringify({
+    updated_at: 1_790_000_000,
+    products: [{ title: 'DIESEL EXTREME', url: DIESEL_EXTREME, category: 'Diesel' }],
+  });
+  jest.spyOn(global, 'fetch').mockImplementation(async () => new Response(body));
   await runAsSystem(async () => {
     const { Conversation } = createModels(mongoose);
     await Conversation.deleteMany({});
@@ -75,6 +73,19 @@ describe('pinProductHandler', () => {
     const unpinned = await pin('staff-1', { conversationId: 'mine', productUrl: null });
     expect(unpinned.body).toEqual({ conversationId: 'mine', productUrl: null });
     expect(await storedPin('mine')).toBeUndefined();
+  });
+
+  it('keeps the chat where it is in the sidebar', async () => {
+    const before = await runAsSystem(async () => {
+      const { Conversation } = createModels(mongoose);
+      return (await Conversation.findOne({ conversationId: 'mine' }).lean())?.updatedAt;
+    });
+    await pin('staff-1', { conversationId: 'mine', productUrl: DIESEL_EXTREME });
+    const after = await runAsSystem(async () => {
+      const { Conversation } = createModels(mongoose);
+      return (await Conversation.findOne({ conversationId: 'mine' }).lean())?.updatedAt;
+    });
+    expect(after?.getTime()).toBe(before?.getTime());
   });
 
   it("does not touch another user's chat", async () => {

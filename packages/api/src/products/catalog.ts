@@ -4,7 +4,9 @@ import type { CatalogProduct, ProductCatalog } from 'librechat-data-provider';
 
 const DEFAULT_CATALOG_URL = 'https://mcp.hotshot.thebetterai.com/catalog';
 const CACHE_MS = 10 * 60 * 1000;
-const FETCH_TIMEOUT_MS = 8000;
+const FETCH_TIMEOUT_MS = 4000;
+/** After a failed first load, chats skip the catalog for this long instead of waiting again. */
+const FAILURE_BACKOFF_MS = 60 * 1000;
 const MAX_TEXT = 200;
 
 /** What the tool server's `/catalog` route returns. */
@@ -20,6 +22,7 @@ export type LoadedCatalog = {
 
 let cached: { value: LoadedCatalog; at: number } | null = null;
 let inFlight: Promise<LoadedCatalog> | null = null;
+let failedAt = 0;
 
 const text = (value: unknown): string | null =>
   typeof value === 'string' && value.trim() ? value.trim().slice(0, MAX_TEXT) : null;
@@ -67,6 +70,10 @@ export function normalizeCatalog(raw: RawCatalog): LoadedCatalog {
       byUrl.set(product.url, product);
     }
   }
+  const dropped = (raw.products?.length ?? 0) - byUrl.size;
+  if (dropped > 0) {
+    logger.debug(`[products] Skipped ${dropped} catalog entries without a valid store link`);
+  }
   const updatedAt =
     typeof raw.updated_at === 'number' ? new Date(raw.updated_at * 1000).toISOString() : null;
   return { catalog: { products: [...byUrl.values()], updatedAt }, byUrl };
@@ -89,10 +96,14 @@ export async function loadCatalog(): Promise<LoadedCatalog> {
   if (cached && Date.now() - cached.at < CACHE_MS) {
     return cached.value;
   }
+  if (!cached && !inFlight && Date.now() - failedAt < FAILURE_BACKOFF_MS) {
+    throw new Error('Catalog unavailable (recent failure)');
+  }
   if (!inFlight) {
     inFlight = fetchCatalog()
       .then((value) => {
         cached = { value, at: Date.now() };
+        failedAt = 0;
         return value;
       })
       .catch((error) => {
@@ -100,6 +111,7 @@ export async function loadCatalog(): Promise<LoadedCatalog> {
           logger.warn('[products] Catalog refresh failed; serving the last copy', error);
           return cached.value;
         }
+        failedAt = Date.now();
         throw error;
       })
       .finally(() => {
@@ -122,4 +134,5 @@ export async function findCatalogProduct(url: unknown): Promise<CatalogProduct |
 export function resetCatalogCache(): void {
   cached = null;
   inFlight = null;
+  failedAt = 0;
 }

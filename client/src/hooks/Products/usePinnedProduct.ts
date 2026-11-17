@@ -19,7 +19,9 @@ export default function usePinnedProduct(index = 0) {
       if (conversationId && conversationId !== Constants.NEW_CONVO) {
         await mutateAsync({ conversationId, productUrl });
       }
-      setConversation((prev) => (prev ? { ...prev, productUrl } : prev));
+      setConversation((prev) =>
+        prev && prev.conversationId === conversationId ? { ...prev, productUrl } : prev,
+      );
     },
     [conversationId, mutateAsync, setConversation],
   );
