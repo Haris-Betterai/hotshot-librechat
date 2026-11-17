@@ -23,6 +23,9 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 - **New Employees group** in the live database with the admin and the existing staff account. Add a person to it to give them employee mode; a new sign-up gets nothing until then.
 - **New staff agent `agent_FBqLCdSISl3m1fDoMJWYC`** ("Hotshot Staff AI"), copied from the guest agent (version 34) with a Staff scope section in place of the Scope rules, no web-search domain limit, and the competitor rule changed from "don't recommend competitors" to fair side-by-side comparisons. Shared with the Employees group only (viewer), owned by the admin. The guest agent is unchanged. Product rules now live in both agents; change both when one changes.
 
+### Deployed
+- `42fae5683` (employee mode, `b754b140d` and `f7d34a2f3`) with `./deploy.sh` at 11:43 UTC, after the Employees group and staff agent were created. Tests run on the server in a Node 24 container: data-schemas 111, api package 16, api config routes 48 passed; client type check and lint clean. One client test (`AuthContext.spec` "does not re-trigger silentRefresh after successful redirect") fails, and fails the same way with `main`'s previous code. Checked live with the app's own permission code: the staff account can open the staff agent and gets the admin's OpenAI key; a guest is refused the staff agent and keeps the guest agent; the config file loaded with the staff entry. The staff menu and a staff chat are not yet checked in a browser.
+
 ---
 
 ## 2026-11-16
