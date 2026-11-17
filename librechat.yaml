@@ -680,6 +680,25 @@ modelSpecs:
         # endpoint: "agents"
         # agent_id: "agent_0MfryHPf-3lu93P9Kr5dH"
 
+    # Employees only: listed for members of the Employees group (and admins),
+    # who get it as their default. Access is enforced by the agent's sharing.
+    # Keep private text out of this preset; instructions live on the agent.
+    - name: 'hotshot-staff-ai'
+      label: 'Hotshot Staff AI'
+      description: "Products, competitor comparisons, market research and content for the Hot Shot's Secret team."
+      audience: 'staff'
+      showOnLanding: true
+      iconURL: '/assets/hotshot-orb.svg'
+      conversation_starters:
+        - 'Compare Diesel Extreme with a competitor'
+        - 'Improve a product description'
+        - 'What will customers ask about a product?'
+        - 'Draft a reply to a customer'
+      preset:
+        endpoint: 'agents'
+        agent_id: 'agent_FBqLCdSISl3m1fDoMJWYC'
+        iconURL: '/assets/hotshot-orb.svg'
+
     # Widget variant of the spec above. Same agent and tools; only the
     # formatting instructions differ, because the embedded widget is a narrow
     # column on someone else's page. The client picks the `<spec>-widget`

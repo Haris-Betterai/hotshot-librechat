@@ -9,6 +9,22 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 
 ---
 
+## 2026-11-17
+
+### Added
+- **Employee mode.** Members of a new local **Employees** group (and admins) get a second menu entry, **Hotshot Staff AI**, as their default. It runs a separate staff agent that can search the whole web, compares Hot Shot's Secret products with other brands (fairly, from the competitor's own published figures, in the comparison card), helps with market questions, and drafts product descriptions, FAQs and replies. Guests and the website widget keep the current agent and its scope rules, and never see the staff entry. The staff agent is shared only with the Employees group, so the server refuses it to everyone else even if they ask for it by name. Model specs take a new `audience: 'staff'` field for this. (`b754b140d`)
+- Employees use the admin's stored API keys the same way guests do, so they don't need their own key. (`b754b140d`)
+
+### Changed
+- **Agent building and sharing are admin-only** (`interface.agents.create` and `share` are off for the user role). (`b754b140d`)
+- The model menu reloads when someone signs in or switches account in the same tab, so it matches the new user straight away. (`b754b140d`)
+
+### Config
+- **New Employees group** in the live database with the admin and the existing staff account. Add a person to it to give them employee mode; a new sign-up gets nothing until then.
+- **New staff agent `agent_FBqLCdSISl3m1fDoMJWYC`** ("Hotshot Staff AI"), copied from the guest agent (version 34) with a Staff scope section in place of the Scope rules, no web-search domain limit, and the competitor rule changed from "don't recommend competitors" to fair side-by-side comparisons. Shared with the Employees group only (viewer), owned by the admin. The guest agent is unchanged. Product rules now live in both agents; change both when one changes.
+
+---
+
 ## 2026-11-16
 
 ### Fixed
