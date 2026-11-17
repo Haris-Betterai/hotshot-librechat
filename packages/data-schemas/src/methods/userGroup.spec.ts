@@ -1,6 +1,6 @@
 import mongoose, { Types } from 'mongoose';
 import { MongoMemoryReplSet } from 'mongodb-memory-server';
-import { PrincipalType, SystemRoles } from 'librechat-data-provider';
+import { PrincipalType, SystemRoles, STAFF_GROUP_NAME } from 'librechat-data-provider';
 import type * as t from '~/types';
 import { tenantStorage } from '~/config/tenantContext';
 import { createUserGroupMethods } from './userGroup';
@@ -1707,5 +1707,25 @@ describe('userGroup methods', () => {
       );
       expect(result.modifiedCount).toBe(0);
     });
+  });
+});
+
+describe('isStaffMember', () => {
+  it('is true only for members of the local Employees group', async () => {
+    const employee = await createTestUser();
+    const outsider = await createTestUser();
+    await Group.create({
+      name: STAFF_GROUP_NAME,
+      source: 'local',
+      memberIds: [employee._id.toString()],
+    });
+    await Group.create({
+      name: 'Customers',
+      source: 'local',
+      memberIds: [outsider._id.toString()],
+    });
+
+    expect(await methods.isStaffMember(employee._id.toString())).toBe(true);
+    expect(await methods.isStaffMember(outsider._id.toString())).toBe(false);
   });
 });

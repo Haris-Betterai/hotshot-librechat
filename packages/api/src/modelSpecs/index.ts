@@ -205,6 +205,40 @@ export function excludeHiddenModelSpecs<T extends Partial<TSpecsConfig> | null |
   } as T;
 }
 
+const withDefault = (modelSpec: TModelSpec, isDefault: boolean): TModelSpec =>
+  Boolean(modelSpec?.default) === isDefault ? modelSpec : { ...modelSpec, default: isDefault };
+
+/**
+ * Lists `audience: 'staff'` specs only for employees. For an employee, the first staff
+ * spec becomes the default and the others lose theirs, so staff land on the staff agent.
+ * Visibility only: access to the spec's agent is still enforced by the agent's sharing.
+ */
+export function selectModelSpecsForAudience<T extends Partial<TSpecsConfig> | null | undefined>(
+  modelSpecs: T,
+  isStaff: boolean,
+): T {
+  if (!modelSpecs?.list || !Array.isArray(modelSpecs.list)) {
+    return modelSpecs;
+  }
+
+  if (!isStaff) {
+    return {
+      ...modelSpecs,
+      list: modelSpecs.list.filter((modelSpec) => modelSpec?.audience !== 'staff'),
+    } as T;
+  }
+
+  const staffDefault = modelSpecs.list.find((modelSpec) => modelSpec?.audience === 'staff');
+  if (!staffDefault) {
+    return modelSpecs;
+  }
+
+  return {
+    ...modelSpecs,
+    list: modelSpecs.list.map((modelSpec) => withDefault(modelSpec, modelSpec === staffDefault)),
+  } as T;
+}
+
 export function sanitizeModelSpecs<T extends Partial<TSpecsConfig> | null | undefined>(
   modelSpecs: T,
 ): T {

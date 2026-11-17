@@ -127,8 +127,9 @@ interface:
   multiConvo: false
   agents:
     use: true
-    create: true
-    share: true
+    # Agent building and sharing are admin-only.
+    create: false
+    share: false
     public: false
   peoplePicker:
     users: true

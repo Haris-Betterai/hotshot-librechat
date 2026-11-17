@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { AgentSubagentsConfig } from './types/assistants';
 import type { TModelSpecPreset } from './schemas';
+import type { ModelSpecAudience } from './staff';
 import {
   EModelEndpoint,
   tModelSpecPresetSchema,
@@ -45,6 +46,8 @@ export type TModelSpec = {
    * Defaults to true (listed).
    */
   showInMenu?: boolean;
+  /** `staff` lists the spec only for members of the Employees group; they also get it as their default. */
+  audience?: ModelSpecAudience;
   iconURL?: string | EModelEndpoint; // Allow using project-included icons
   authType?: AuthType;
   /** Hide the chat input tool badge row while this model spec is active. */
@@ -88,6 +91,7 @@ export const tModelSpecSchema = z.object({
   showOnLanding: z.boolean().optional(),
   conversation_starters: z.array(z.string()).optional(),
   showInMenu: z.boolean().optional(),
+  audience: z.literal('staff').optional(),
   iconURL: z.union([z.string(), eModelEndpointSchema]).optional(),
   authType: authTypeSchema.optional(),
   hideBadgeRow: z.boolean().optional(),

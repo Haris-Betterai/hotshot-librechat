@@ -9,9 +9,11 @@ import {
 } from 'react';
 import { debounce } from 'lodash';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRecoilState, useSetRecoilState } from 'recoil';
 import {
   request,
+  QueryKeys,
   apiBaseUrl,
   SystemRoles,
   getTokenHeader,
@@ -113,6 +115,8 @@ const AuthContextProvider = ({
   const transientRetriesRef = useRef(0);
   const silentRefreshRef = useRef<() => void>(() => undefined);
   const userRef = useRef<t.TUser | undefined>(undefined);
+  const contextUserIdRef = useRef<string | undefined>(undefined);
+  const queryClient = useQueryClient();
 
   const userRoleName = user?.role ?? '';
   const isCustomRole = isAuthenticated && !!user?.role && !isSystemRoleName(user.role);
@@ -134,9 +138,15 @@ const AuthContextProvider = ({
     () =>
       debounce((userContext: TUserContext) => {
         const { token, isAuthenticated, user, redirect } = userContext;
+        const previousUserId = contextUserIdRef.current;
+        contextUserIdRef.current = user?.id;
         setUser(user);
         setToken(token);
         setTokenHeader(token);
+        if (previousUserId != null && user?.id != null && previousUserId !== user.id) {
+          /** Model specs in the startup config differ per user (staff-only specs). */
+          queryClient.invalidateQueries([QueryKeys.startupConfig]);
+        }
         setIsAuthenticated(isAuthenticated);
         if (isAuthenticated) {
           setQueriesEnabled(true);
@@ -177,7 +187,7 @@ const AuthContextProvider = ({
 
         navigate(finalRedirect, { replace: true });
       }, 50),
-    [navigate, setUser, setQueriesEnabled],
+    [navigate, setUser, setQueriesEnabled, queryClient],
   );
   const doSetError = useTimeout({ callback: (error) => setError(error as string | undefined) });
   const { mutate: refreshToken } = useRefreshTokenMutation();

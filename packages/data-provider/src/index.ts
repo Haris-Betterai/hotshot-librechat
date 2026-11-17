@@ -15,6 +15,7 @@ export * from './generate';
 export * from './models';
 export * from './intelligence';
 export * from './websearch';
+export * from './staff';
 export * from './embed';
 export * from './uiblocks';
 export * from './genui';

@@ -1,7 +1,8 @@
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { ErrorTypes, SystemRoles } from 'librechat-data-provider';
+import { ErrorTypes, SystemRoles, STAFF_GROUP_NAME } from 'librechat-data-provider';
 import { createKeyMethods } from './key';
+import groupSchema from '~/schema/group';
 import userSchema from '~/schema/user';
 import keySchema from '~/schema/key';
 
@@ -25,6 +26,7 @@ beforeAll(async () => {
   await mongoose.connect(mongoServer.getUri());
   mongoose.models.User || mongoose.model('User', userSchema);
   mongoose.models.Key || mongoose.model('Key', keySchema);
+  mongoose.models.Group || mongoose.model('Group', groupSchema);
   methods = createKeyMethods(mongoose);
 });
 
@@ -89,6 +91,72 @@ describe('createKeyMethods guest admin fallback', () => {
     await expect(
       methods.getUserKey({
         userId: staff._id.toString(),
+        name: 'hotshot',
+      }),
+    ).rejects.toThrow(JSON.stringify({ type: ErrorTypes.NO_USER_KEY }));
+  });
+
+  it('lends the admin key to members of the Employees group', async () => {
+    const admin = await mongoose.models.User.create({
+      email: 'admin@test.com',
+      name: 'Admin',
+      provider: 'local',
+      role: SystemRoles.ADMIN,
+    });
+    const employee = await mongoose.models.User.create({
+      email: 'employee@test.com',
+      name: 'Employee',
+      provider: 'local',
+      role: SystemRoles.USER,
+    });
+    await mongoose.models.Group.create({
+      name: STAFF_GROUP_NAME,
+      source: 'local',
+      memberIds: [employee._id.toString()],
+    });
+
+    await methods.updateUserKey({
+      userId: admin._id.toString(),
+      name: 'hotshot',
+      value: JSON.stringify({ apiKey: 'sk-admin-key' }),
+    });
+
+    const values = await methods.getUserKeyValues({
+      userId: employee._id.toString(),
+      name: 'hotshot',
+    });
+
+    expect(values.apiKey).toBe('sk-admin-key');
+  });
+
+  it('does not lend the admin key to members of other groups', async () => {
+    const admin = await mongoose.models.User.create({
+      email: 'admin@test.com',
+      name: 'Admin',
+      provider: 'local',
+      role: SystemRoles.ADMIN,
+    });
+    const member = await mongoose.models.User.create({
+      email: 'member@test.com',
+      name: 'Member',
+      provider: 'local',
+      role: SystemRoles.USER,
+    });
+    await mongoose.models.Group.create({
+      name: 'Customers',
+      source: 'local',
+      memberIds: [member._id.toString()],
+    });
+
+    await methods.updateUserKey({
+      userId: admin._id.toString(),
+      name: 'hotshot',
+      value: JSON.stringify({ apiKey: 'sk-admin-key' }),
+    });
+
+    await expect(
+      methods.getUserKey({
+        userId: member._id.toString(),
         name: 'hotshot',
       }),
     ).rejects.toThrow(JSON.stringify({ type: ErrorTypes.NO_USER_KEY }));

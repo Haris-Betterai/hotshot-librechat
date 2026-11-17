@@ -14,6 +14,11 @@ jest.mock('~/server/middleware/roles/capabilities', () => ({
   hasCapability: (...args) => mockHasCapability(...args),
 }));
 
+const mockIsStaffMember = jest.fn();
+jest.mock('~/models', () => ({
+  isStaffMember: (...args) => mockIsStaffMember(...args),
+}));
+
 const mockGetTenantId = jest.fn(() => undefined);
 jest.mock('@librechat/data-schemas', () => ({
   ...jest.requireActual('@librechat/data-schemas'),
@@ -321,6 +326,77 @@ describe('GET /api/config', () => {
       expect(response.body.modelSpecs).toEqual({ list: [{ name: 'test-spec' }] });
       expect(response.body.balance).toEqual({ enabled: true, startBalance: 10000 });
       expect(response.body.webSearch).toEqual({ searchProvider: 'tavily' });
+    });
+
+    describe('staff-only model specs', () => {
+      const staffSpecsConfig = {
+        ...baseAppConfig,
+        modelSpecs: {
+          list: [
+            { name: 'guest-spec', default: true },
+            { name: 'staff-spec', audience: 'staff' },
+          ],
+        },
+      };
+      const specSummary = (response) =>
+        response.body.modelSpecs.list.map(({ name, default: isDefault }) => [name, isDefault]);
+
+      it('hides staff specs from users outside the Employees group', async () => {
+        mockGetAppConfig.mockResolvedValue(staffSpecsConfig);
+        mockIsStaffMember.mockResolvedValue(false);
+
+        const response = await request(createApp(mockUser)).get('/api/config');
+
+        expect(mockIsStaffMember).toHaveBeenCalledWith('user123');
+        expect(specSummary(response)).toEqual([['guest-spec', true]]);
+      });
+
+      it('lists staff specs as the default for Employees group members', async () => {
+        mockGetAppConfig.mockResolvedValue(staffSpecsConfig);
+        mockIsStaffMember.mockResolvedValue(true);
+
+        const response = await request(createApp(mockUser)).get('/api/config');
+
+        expect(specSummary(response)).toEqual([
+          ['guest-spec', false],
+          ['staff-spec', true],
+        ]);
+      });
+
+      it('never treats guests as staff and skips the membership lookup', async () => {
+        mockGetAppConfig.mockResolvedValue(staffSpecsConfig);
+
+        const response = await request(createApp({ ...mockUser, provider: 'anonymous' })).get(
+          '/api/config',
+        );
+
+        expect(mockIsStaffMember).not.toHaveBeenCalled();
+        expect(specSummary(response)).toEqual([['guest-spec', true]]);
+      });
+
+      it('treats admins as staff without a membership lookup', async () => {
+        mockGetAppConfig.mockResolvedValue(staffSpecsConfig);
+
+        const response = await request(createApp({ ...mockUser, role: 'ADMIN' })).get(
+          '/api/config',
+        );
+
+        expect(mockIsStaffMember).not.toHaveBeenCalled();
+        expect(specSummary(response)).toEqual([
+          ['guest-spec', false],
+          ['staff-spec', true],
+        ]);
+      });
+
+      it('falls back to hiding staff specs when the membership lookup fails', async () => {
+        mockGetAppConfig.mockResolvedValue(staffSpecsConfig);
+        mockIsStaffMember.mockRejectedValue(new Error('db down'));
+
+        const response = await request(createApp(mockUser)).get('/api/config');
+
+        expect(response.status).toBe(200);
+        expect(specSummary(response)).toEqual([['guest-spec', true]]);
+      });
     });
 
     it('should strip private prompt fields from model spec presets', async () => {

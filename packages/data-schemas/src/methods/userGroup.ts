@@ -1,6 +1,6 @@
 import { Types } from 'mongoose';
 import { AsyncLocalStorage } from 'async_hooks';
-import { CacheKeys, PrincipalType } from 'librechat-data-provider';
+import { CacheKeys, PrincipalType, STAFF_GROUP_NAME } from 'librechat-data-provider';
 import type { TUser, TPrincipalSearchResult } from 'librechat-data-provider';
 import type { Model, ClientSession, FilterQuery } from 'mongoose';
 import type { CacheStore, IGroup, IRole, IUser } from '~/types';
@@ -155,6 +155,7 @@ export function createUserGroupMethods(
     userId: string | Types.ObjectId,
     session?: ClientSession,
   ) => Promise<IGroup[]>;
+  isStaffMember: (userId: string) => Promise<boolean>;
   createGroup: (groupData: Partial<IGroup>, session?: ClientSession) => Promise<IGroup>;
   upsertGroupByExternalId: (
     idOnTheSource: string,
@@ -578,6 +579,17 @@ export function createUserGroupMethods(
       dbQuery.session(session);
     }
     return await dbQuery.lean<IGroup[]>();
+  }
+
+  /** Whether a local user belongs to the local Employees group. */
+  async function isStaffMember(userId: string): Promise<boolean> {
+    const Group = mongoose.models.Group as Model<IGroup>;
+    const group = await Group.exists({
+      name: STAFF_GROUP_NAME,
+      source: 'local',
+      memberIds: userId,
+    });
+    return group != null;
   }
 
   /**
@@ -1334,6 +1346,7 @@ export function createUserGroupMethods(
     findGroupsByExternalIds,
     findGroupsByNamePattern,
     findGroupsByMemberId,
+    isStaffMember,
     createGroup,
     upsertGroupByExternalId,
     addUserToGroup,
