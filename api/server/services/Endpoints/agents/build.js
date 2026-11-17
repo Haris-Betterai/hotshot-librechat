@@ -1,6 +1,11 @@
 const { logger } = require('@librechat/data-schemas');
 const { loadAgent: loadAgentFn } = require('@librechat/api');
-const { isAgentsEndpoint, removeNullishValues, Constants } = require('librechat-data-provider');
+const {
+  Constants,
+  isAgentsEndpoint,
+  isStoreProductUrl,
+  removeNullishValues,
+} = require('librechat-data-provider');
 const { getMCPServerTools } = require('~/server/services/Config');
 const db = require('~/models');
 
@@ -29,6 +34,7 @@ const buildOptions = (req, endpoint, parsedBody, endpointType) => {
     agent_id,
     endpointType,
     chatProjectId,
+    productUrl: isStoreProductUrl(req.body?.productUrl) ? req.body.productUrl : undefined,
     model_parameters,
     agent: agentPromise,
     addedConvo,

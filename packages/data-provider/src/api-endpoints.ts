@@ -192,6 +192,9 @@ export const embeds = () => embedsRoot;
 export const embedWidget = (embedId: string) => `${embedsRoot}/${encodeURIComponent(embedId)}`;
 export const embedWidgetIcon = (embedId: string) => `${embedWidget(embedId)}/icon`;
 
+export const products = () => `${BASE_URL}/api/products`;
+export const productPin = () => `${BASE_URL}/api/products/pin`;
+
 const reviewRoot = `${BASE_URL}/api/review`;
 export const reviewFeedback = (params?: { cursor?: string; limit?: number }) =>
   `${reviewRoot}/feedback${buildQuery(params ?? {})}`;

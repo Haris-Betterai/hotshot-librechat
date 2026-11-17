@@ -989,6 +989,8 @@ export const tConversationSchema = z.object({
   /* DB */
   tags: z.array(z.string()).optional(),
   chatProjectId: z.string().nullable().optional(),
+  /** Store product pinned to the chat (staff product panel). */
+  productUrl: z.string().nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
   /* Files */
@@ -1050,6 +1052,7 @@ export const tPresetSchema = tConversationSchema
   .omit({
     conversationId: true,
     chatProjectId: true,
+    productUrl: true,
     createdAt: true,
     updatedAt: true,
     title: true,

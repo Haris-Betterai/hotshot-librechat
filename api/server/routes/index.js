@@ -32,6 +32,7 @@ const files = require('./files');
 const share = require('./share');
 const embeds = require('./embeds');
 const review = require('./review');
+const products = require('./products');
 const genui = require('./genui');
 const tags = require('./tags');
 const auth = require('./auth');
@@ -62,6 +63,7 @@ module.exports = {
   share,
   embeds,
   review,
+  products,
   genui,
   banner,
   agents,

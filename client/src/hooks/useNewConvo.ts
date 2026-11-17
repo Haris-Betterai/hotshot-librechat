@@ -44,6 +44,9 @@ import { usePauseGlobalAudio } from './Audio';
 import { useHasAccess } from '~/hooks';
 import store from '~/store';
 
+/** Chat context fields that don't count as a model selection in a new-chat template. */
+const CONVO_CONTEXT_KEYS: ReadonlySet<string> = new Set(['chatProjectId', 'productUrl']);
+
 const useNewConvo = (index = 0) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -97,6 +100,7 @@ const useNewConvo = (index = 0) => {
           'chatProjectId',
         );
         const explicitChatProjectId = conversation.chatProjectId;
+        const pinnedProductUrl = conversation.productUrl;
         const activePreset =
           // use default preset only when it's defined,
           // preset is not provided,
@@ -213,6 +217,9 @@ const useNewConvo = (index = 0) => {
           } else {
             delete conversation.chatProjectId;
           }
+          if (pinnedProductUrl) {
+            conversation.productUrl = pinnedProductUrl;
+          }
         }
 
         if (disableParams === true) {
@@ -311,7 +318,11 @@ const useNewConvo = (index = 0) => {
         isParamEndpoint(_preset?.endpoint ?? '', _preset?.endpointType ?? '');
       const template =
         paramEndpoint === true && templateConvoId && templateConvoId === Constants.NEW_CONVO
-          ? { endpoint: _template.endpoint, chatProjectId: _template.chatProjectId }
+          ? {
+              endpoint: _template.endpoint,
+              chatProjectId: _template.chatProjectId,
+              productUrl: _template.productUrl,
+            }
           : _template;
 
       const conversation = {
@@ -332,7 +343,7 @@ const useNewConvo = (index = 0) => {
           : startupConfig?.modelSpecs?.prioritize === true ||
             (startupConfig?.interface?.modelSelect ?? true) !== true ||
             (result?.last != null &&
-              Object.keys(_template).filter((key) => key !== 'chatProjectId').length === 0);
+              Object.keys(_template).filter((key) => !CONVO_CONTEXT_KEYS.has(key)).length === 0);
       if (!preset && startupConfig && shouldApplyModelSpec && defaultModelSpec) {
         preset = getModelSpecPreset(defaultModelSpec);
       }

@@ -184,7 +184,10 @@ export default function useQueryParams({
       }
 
       newConversation({
-        template: { chatProjectId: conversation?.chatProjectId ?? null },
+        template: {
+          chatProjectId: conversation?.chatProjectId ?? null,
+          productUrl: conversation?.productUrl ?? null,
+        },
         preset: newPreset,
         keepAddedConvos: true,
       });

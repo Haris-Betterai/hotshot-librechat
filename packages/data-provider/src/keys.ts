@@ -2,6 +2,7 @@ export enum QueryKeys {
   agentLearning = 'agentLearning',
   reviewQuestions = 'reviewQuestions',
   reviewFeedback = 'reviewFeedback',
+  productCatalog = 'productCatalog',
   messages = 'messages',
   sharedMessages = 'sharedMessages',
   sharedStartupConfig = 'sharedStartupConfig',

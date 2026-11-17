@@ -74,6 +74,7 @@ export type TEndpointOption = Pick<
   // System field
   | 'system'
   | 'chatProjectId'
+  | 'productUrl'
   // Google examples
   | 'examples'
   // Context
@@ -140,6 +141,8 @@ export type TPayload = Partial<TMessage> &
     manualSkills?: string[];
     /** Browser IANA timezone (e.g. `America/New_York`) used to resolve local-time prompt variables server-side. */
     timezone?: string;
+    /** Store product pinned to the chat; the server adds its details to the agent's instructions. */
+    productUrl?: string | null;
   };
 
 export type TEditedContent =

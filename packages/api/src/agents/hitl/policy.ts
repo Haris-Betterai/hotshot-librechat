@@ -247,6 +247,9 @@ export const RESUME_CONTEXT_KEYS = [
   // (#14253). It rides top-level on req.body and flows into model_parameters via the
   // build spread, so replaying it here restores the stable id. Replay-only.
   'modelLabel',
+  // The pinned store product adds a block to the system prompt (initializeAgent), and the
+  // resume POST omits it. Replay-only, not in the fingerprint.
+  'productUrl',
 ] as const;
 
 export type ResumeContext = Partial<Record<(typeof RESUME_CONTEXT_KEYS)[number], unknown>> & {

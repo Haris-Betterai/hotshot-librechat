@@ -5,6 +5,7 @@ export * from './Chat';
 export * from './Config';
 export * from './Conversations';
 export * from './Nav';
+export * from './Products';
 export * from './Files';
 export * from './Generic';
 export * from './Input';

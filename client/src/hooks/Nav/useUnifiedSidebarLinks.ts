@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useRecoilValue } from 'recoil';
-import { ClipboardList, MessagesSquare } from 'lucide-react';
+import { Package, ClipboardList, MessagesSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUserKeyQuery } from 'librechat-data-provider/react-query';
 import {
@@ -12,6 +12,7 @@ import {
 import type { TEndpointsConfig } from 'librechat-data-provider';
 import type { NavLink } from '~/common';
 import ConversationsSection from '~/components/UnifiedSidebar/ConversationsSection';
+import { ProductsPanel } from '~/components/SidePanel/Products';
 import { useGetEndpointsQuery, useGetStartupConfig } from '~/data-provider';
 import useSideNavLinks from '~/hooks/Nav/useSideNavLinks';
 import { useAuthContext } from '~/hooks/AuthContext';
@@ -26,6 +27,7 @@ export default function useUnifiedSidebarLinks() {
   const conversation = useRecoilValue(store.conversationByIndex(0));
   const endpoint = conversation?.endpoint;
   const { data: startupConfig } = useGetStartupConfig();
+  const isStaff = startupConfig?.isStaff === true;
   const { data: endpointsConfig = {} as TEndpointsConfig } = useGetEndpointsQuery();
 
   const interfaceConfig = useMemo(
@@ -91,10 +93,21 @@ export default function useUnifiedSidebarLinks() {
       onClick: () => navigate('/staff/review'),
     };
 
-    return isAdmin
-      ? [conversationLink, ...staffLinks, reviewLink]
-      : [conversationLink, ...staffLinks];
-  }, [sideNavLinks, conversation?.agent_id, navigate, isAdmin]);
+    const productsLink: NavLink = {
+      title: 'com_ui_products',
+      label: '',
+      icon: Package,
+      id: 'products',
+      Component: ProductsPanel,
+    };
+
+    return [
+      conversationLink,
+      ...(isStaff ? [productsLink] : []),
+      ...staffLinks,
+      ...(isAdmin ? [reviewLink] : []),
+    ];
+  }, [sideNavLinks, conversation?.agent_id, navigate, isAdmin, isStaff]);
 
   return links;
 }

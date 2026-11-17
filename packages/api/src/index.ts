@@ -84,6 +84,7 @@ export {
   listFeedbackHandler,
   submitFeedbackHandler,
 } from './review/handlers';
+export * from './products';
 /* types */
 export type * from './mcp/types';
 export type * from './flow/types';

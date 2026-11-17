@@ -991,6 +991,7 @@ const initializeClient = async ({ req, res, signal, endpointOption }) => {
     spec: endpointOption.spec,
     iconURL: endpointOption.iconURL,
     chatProjectId: endpointOption.chatProjectId,
+    productUrl: endpointOption.productUrl,
     attachments: primaryConfig.requestAttachments ?? primaryConfig.attachments,
     agentContextAttachmentsByAgentId,
     endpointType: endpointOption.endpointType,

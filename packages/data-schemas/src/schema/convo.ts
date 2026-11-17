@@ -39,6 +39,9 @@ const convoSchema: Schema<IConversation> = new Schema(
       default: null,
       index: true,
     },
+    productUrl: {
+      type: String,
+    },
     files: {
       type: [String],
     },

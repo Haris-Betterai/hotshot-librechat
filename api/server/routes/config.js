@@ -9,9 +9,10 @@ const {
   sanitizeModelSpecs,
   excludeHiddenModelSpecs,
   isFileSnapshotEnabled,
+  isStaffUser,
   selectModelSpecsForAudience,
 } = require('@librechat/api');
-const { SystemRoles, EModelEndpoint, defaultSocialLogins } = require('librechat-data-provider');
+const { EModelEndpoint, defaultSocialLogins } = require('librechat-data-provider');
 const { logger, getTenantId, SystemCapabilities } = require('@librechat/data-schemas');
 const { hasCapability } = require('~/server/middleware/roles/capabilities');
 const { getLdapConfig } = require('~/server/services/Config/ldap');
@@ -39,22 +40,6 @@ const openidReuseTokens = isEnabled(process.env.OPENID_REUSE_TOKENS);
  * The resolver caches its result after the first call.
  */
 resolveBuildInfo();
-
-/** Admins and members of the Employees group see staff-only model specs. */
-async function isStaffUser(user) {
-  if (user.role === SystemRoles.ADMIN) {
-    return true;
-  }
-  if (user.provider === 'anonymous') {
-    return false;
-  }
-  try {
-    return await isStaffMember(user.id ?? user._id?.toString());
-  } catch (error) {
-    logger.error('[/api/config] Error checking staff membership', error);
-    return false;
-  }
-}
 
 function isBirthday() {
   const today = new Date();
@@ -267,7 +252,7 @@ router.get('/', async function (req, res) {
 
     const [appConfig, isStaff] = await Promise.all([
       getAppConfig(getAppConfigOptionsFromUser(req.user)),
-      isStaffUser(req.user),
+      isStaffUser(req.user, isStaffMember),
     ]);
 
     const balanceConfig = getBalanceConfig(appConfig);
@@ -286,6 +271,7 @@ router.get('/', async function (req, res) {
         endpoint: EModelEndpoint.agents,
       }),
       turnstile: appConfig?.turnstileConfig,
+      isStaff,
       modelSpecs: sanitizeModelSpecs(
         selectModelSpecsForAudience(excludeHiddenModelSpecs(appConfig?.modelSpecs), isStaff),
       ),

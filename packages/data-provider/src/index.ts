@@ -62,6 +62,7 @@ export { default as createPayload } from './createPayload';
 export * from './feedback';
 export * from './learning';
 export * from './review';
+export * from './products';
 export * from './parameterSettings';
 /* code-execution sandbox */
 export * from './codeEnvRef';

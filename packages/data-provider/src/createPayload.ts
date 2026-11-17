@@ -52,6 +52,7 @@ export default function createPayload(submission: t.TSubmission) {
     ephemeralAgent: s.isAssistantsEndpoint(endpoint) ? undefined : ephemeralAgent,
     manualSkills: s.isAssistantsEndpoint(endpoint) ? undefined : manualSkills,
     timezone: getUserTimezone(),
+    productUrl: conversation?.productUrl ?? null,
   };
 
   return { server, payload };

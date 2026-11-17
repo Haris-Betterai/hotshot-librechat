@@ -1461,3 +1461,10 @@ export const listLoggedQuestions = (params?: {
   limit?: number;
 }): Promise<import('./review').ReviewPage<import('./review').LoggedQuestion>> =>
   request.get(endpoints.reviewQuestions(params));
+
+export const getProductCatalog = (): Promise<import('./products').ProductCatalog> =>
+  request.get(endpoints.products());
+
+export const pinProduct = (
+  input: import('./products').PinProductInput,
+): Promise<import('./products').PinProductResult> => request.put(endpoints.productPin(), input);

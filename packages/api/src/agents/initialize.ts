@@ -57,6 +57,7 @@ import { registerMemoryTools, memoryToolUsageGuard } from './memory';
 import { applyBackgroundToolCalls } from './background';
 import { filterFilesByEndpointConfig } from '~/files';
 import { generateArtifactsPrompt } from '~/prompts';
+import { pinnedProductInstructions } from '~/products';
 import { getProviderConfig } from '~/endpoints';
 import { primeResources } from './resources';
 
@@ -632,6 +633,10 @@ export async function initializeAgent(
   const learnedGuidance = learningInstructions(agent.learning);
   if (learnedGuidance) {
     appendAdditionalInstructions(agent, learnedGuidance);
+  }
+
+  if (isInitialAgent) {
+    appendAdditionalInstructions(agent, await pinnedProductInstructions(req.body?.productUrl));
   }
 
   if (
