@@ -24,9 +24,15 @@ let methods: ReturnType<typeof createKeyMethods>;
 beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
   await mongoose.connect(mongoServer.getUri());
-  mongoose.models.User || mongoose.model('User', userSchema);
-  mongoose.models.Key || mongoose.model('Key', keySchema);
-  mongoose.models.Group || mongoose.model('Group', groupSchema);
+  for (const [name, schema] of [
+    ['User', userSchema],
+    ['Key', keySchema],
+    ['Group', groupSchema],
+  ] as const) {
+    if (!mongoose.models[name]) {
+      mongoose.model(name, schema);
+    }
+  }
   methods = createKeyMethods(mongoose);
 });
 
