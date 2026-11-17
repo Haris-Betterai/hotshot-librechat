@@ -10,7 +10,9 @@ describe('isStaffUser', () => {
 
   it('never treats guests as staff', async () => {
     const lookup = jest.fn(async () => true);
-    expect(await isStaffUser({ id: 'g', provider: 'anonymous', role: 'ADMIN' }, lookup)).toBe(false);
+    expect(await isStaffUser({ id: 'g', provider: 'anonymous', role: 'ADMIN' }, lookup)).toBe(
+      false,
+    );
     expect(lookup).not.toHaveBeenCalled();
   });
 

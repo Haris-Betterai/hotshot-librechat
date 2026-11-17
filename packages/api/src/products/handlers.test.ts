@@ -111,7 +111,9 @@ describe('getCatalogHandler', () => {
   it('returns the cleaned catalog', async () => {
     const { res, api } = makeRes();
     await getCatalogHandler({ user: { id: 'staff-1' } }, api);
-    expect(res.body).toMatchObject({ products: [{ title: 'DIESEL EXTREME', url: DIESEL_EXTREME }] });
+    expect(res.body).toMatchObject({
+      products: [{ title: 'DIESEL EXTREME', url: DIESEL_EXTREME }],
+    });
   });
 
   it('answers 503 when the tool server is down', async () => {

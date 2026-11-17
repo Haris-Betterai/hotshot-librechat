@@ -45,12 +45,16 @@ describe('normalizeCatalog', () => {
     const { catalog, byUrl } = normalizeCatalog(rawCatalog);
 
     expect(catalog.products.map((product) => product.title)).toEqual(['DIESEL EXTREME', 'FR3']);
-    expect(byUrl.get(DIESEL_EXTREME)?.price_options).toEqual([{ option: '16 oz', price: '$17.99' }]);
+    expect(byUrl.get(DIESEL_EXTREME)?.price_options).toEqual([
+      { option: '16 oz', price: '$17.99' },
+    ]);
     expect(catalog.updatedAt).toBe(new Date(1_790_000_000 * 1000).toISOString());
   });
 
   it('drops non-https images and fills a missing category', () => {
-    const fr3 = normalizeCatalog(rawCatalog).byUrl.get('https://www.hotshotsecret.com/products/fr3');
+    const fr3 = normalizeCatalog(rawCatalog).byUrl.get(
+      'https://www.hotshotsecret.com/products/fr3',
+    );
     expect(fr3).toMatchObject({ image: null, category: 'Other', sku: null, price: null });
   });
 });

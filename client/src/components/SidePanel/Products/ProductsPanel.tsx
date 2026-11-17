@@ -104,7 +104,9 @@ export default function ProductsPanel() {
       />
       {visible.length === 0 ? (
         <p className="py-6 text-center text-sm text-text-secondary">
-          {localize(filter === FILTER_STARRED ? 'com_ui_products_none_starred' : 'com_ui_products_empty')}
+          {localize(
+            filter === FILTER_STARRED ? 'com_ui_products_none_starred' : 'com_ui_products_empty',
+          )}
         </p>
       ) : (
         <ul className="flex flex-col gap-0.5" aria-label={localize('com_ui_products')}>

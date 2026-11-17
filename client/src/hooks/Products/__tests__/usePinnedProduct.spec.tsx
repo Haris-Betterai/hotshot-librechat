@@ -15,7 +15,9 @@ jest.mock('~/data-provider', () => ({
 const convo = (conversationId: string): TConversation =>
   ({ conversationId, endpoint: 'agents', title: 'Chat' }) as TConversation;
 
-const wrapper = ({ children }: { children: React.ReactNode }) => <RecoilRoot>{children}</RecoilRoot>;
+const wrapper = ({ children }: { children: React.ReactNode }) => (
+  <RecoilRoot>{children}</RecoilRoot>
+);
 
 const setup = () =>
   renderHook(

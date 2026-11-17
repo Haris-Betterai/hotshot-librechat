@@ -17,7 +17,7 @@ describe('isStoreProductUrl', () => {
 describe('createPayload productUrl', () => {
   const submission = (productUrl?: string | null) =>
     ({
-      conversation: { conversationId: 'c1', productUrl },
+      conversation: { conversationId: 'c1', endpoint: EModelEndpoint.agents, productUrl },
       userMessage: { text: 'hi' },
       endpointOption: { endpoint: EModelEndpoint.agents },
       isTemporary: false,

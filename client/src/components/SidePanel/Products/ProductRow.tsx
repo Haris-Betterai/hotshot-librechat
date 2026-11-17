@@ -79,7 +79,10 @@ function ProductRow({
         label={localize(isStarred ? 'com_ui_products_unstar' : 'com_ui_products_star')}
         onClick={() => onToggleStar(product.url)}
       >
-        <Star className={cn('size-4', isStarred && 'fill-current text-amber-500')} aria-hidden="true" />
+        <Star
+          className={cn('size-4', isStarred && 'fill-current text-amber-500')}
+          aria-hidden="true"
+        />
       </ActionButton>
       <ActionButton
         label={localize(isPinned ? 'com_ui_products_unpin' : 'com_ui_products_pin')}
