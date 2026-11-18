@@ -1,9 +1,7 @@
-import { ErrorTypes, SystemRoles, STAFF_GROUP_NAME } from 'librechat-data-provider';
+import { ErrorTypes, SystemRoles } from 'librechat-data-provider';
 // Note: checkUserKeyExpiry moved to @librechat/api (utils/key.ts) as it's a pure validation utility
 import { encrypt, decrypt } from '~/crypto';
 import logger from '~/config/winston';
-
-const GUEST_PROVIDER = 'anonymous';
 
 type StoredKey = {
   value: string;
@@ -26,24 +24,7 @@ export function createKeyMethods(mongoose: typeof import('mongoose')): {
     name: string;
   }) => Promise<{ expiresAt: Date | 'never' | null }>;
 } {
-  /** Guests and members of the local Employees group run on the admin's stored keys. */
-  async function canBorrowAdminKey(
-    userId: string,
-    user: { provider?: string; tenantId?: string },
-  ): Promise<boolean> {
-    if (user.provider === GUEST_PROVIDER) {
-      return true;
-    }
-    const hasTenant = typeof user.tenantId === 'string' && user.tenantId.length > 0;
-    const staffGroup = await mongoose.models.Group?.exists({
-      name: STAFF_GROUP_NAME,
-      source: 'local',
-      memberIds: userId,
-      ...(hasTenant ? { tenantId: user.tenantId } : {}),
-    });
-    return staffGroup != null;
-  }
-
+  /** Any signed-in account without its own key (guest, customer, employee) uses the admin's. */
   async function findAdminKeyForGuest(params: {
     userId: string;
     name: string;
@@ -55,12 +36,11 @@ export function createKeyMethods(mongoose: typeof import('mongoose')): {
 
     const User = mongoose.models.User;
     const Key = mongoose.models.Key;
-    const user = (await User.findById(userId).select('provider tenantId').lean()) as {
-      provider?: string;
+    const user = (await User.findById(userId).select('tenantId').lean()) as {
       tenantId?: string;
     } | null;
 
-    if (!user || !(await canBorrowAdminKey(userId, user))) {
+    if (!user) {
       return null;
     }
 

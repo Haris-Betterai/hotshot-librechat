@@ -6,18 +6,18 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { TGenUiResult, TGenUiCatalogEntry } from 'librechat-data-provider';
 import { Bars, choiceLabel, percent, wasSkipped } from './Decision';
 import { useGenUiCatalogQuery } from '~/data-provider';
-import { useAuthContext, useLocalize } from '~/hooks';
 import { devModeAtom } from '~/store/devMode';
+import useViewer from '~/hooks/useViewer';
+import { useLocalize } from '~/hooks';
 import { cn } from '~/utils';
 
 /**
- * Developer view. Staff can always open it; guests turn it on by visiting with `?dev=1`
+ * Developer view. Staff can always open it; guests and customers turn it on by visiting with `?dev=1`
  * (remembered in this browser until they switch it off or visit with `?dev=0`).
  */
 export function useDevMode() {
   const [enabled, setEnabled] = useAtom(devModeAtom);
-  const { user } = useAuthContext();
-  const isStaff = user != null && user.provider !== 'anonymous';
+  const { isStaff } = useViewer();
 
   return { enabled, setEnabled, available: isStaff || enabled };
 }
