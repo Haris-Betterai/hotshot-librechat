@@ -17,6 +17,7 @@ import ProjectsSection from '~/components/Conversations/ProjectsSection';
 import FavoritesList from '~/components/Nav/Favorites/FavoritesList';
 import { Conversations } from '~/components/Conversations';
 import SearchBar from '~/components/Nav/SearchBar';
+import useViewer from '~/hooks/useViewer';
 import store from '~/store';
 
 const BookmarkNav = lazy(() => import('~/components/Nav/Bookmarks/BookmarkNav'));
@@ -26,6 +27,7 @@ const ConversationsSection = memo(() => {
   const isSmallScreen = useMediaQuery('(max-width: 768px)');
   const setSidebarExpanded = useSetRecoilState(store.sidebarExpanded);
   const { isAuthenticated } = useAuthContext();
+  const { isStaff } = useViewer();
   useTitleGeneration(isAuthenticated);
 
   const [isChatsExpanded, setIsChatsExpanded] = useLocalStorage('chatsExpanded', true);
@@ -118,12 +120,14 @@ const ConversationsSection = memo(() => {
         )}
         {search.enabled && <SearchBar isSmallScreen={isSmallScreen} />}
       </div>
-      {!search.query && (
+      {!search.query && isStaff && (
         <div className="px-3">
           <FavoritesList isSmallScreen={isSmallScreen} toggleNav={toggleNav} />
         </div>
       )}
-      {!search.query && <ProjectsSection toggleNav={toggleNav} isAuthenticated={isAuthenticated} />}
+      {!search.query && isStaff && (
+        <ProjectsSection toggleNav={toggleNav} isAuthenticated={isAuthenticated} />
+      )}
       <div className="flex min-h-0 flex-grow flex-col overflow-hidden">
         <Conversations
           conversations={conversations}

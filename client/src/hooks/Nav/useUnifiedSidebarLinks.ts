@@ -101,12 +101,11 @@ export default function useUnifiedSidebarLinks() {
       Component: ProductsPanel,
     };
 
-    return [
-      conversationLink,
-      ...(isStaff ? [productsLink] : []),
-      ...staffLinks,
-      ...(isAdmin ? [reviewLink] : []),
-    ];
+    if (!isStaff) {
+      return [conversationLink];
+    }
+
+    return [conversationLink, productsLink, ...staffLinks, ...(isAdmin ? [reviewLink] : [])];
   }, [sideNavLinks, conversation?.agent_id, navigate, isAdmin, isStaff]);
 
   return links;

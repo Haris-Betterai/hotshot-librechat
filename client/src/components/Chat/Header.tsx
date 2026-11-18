@@ -14,6 +14,7 @@ import BookmarkMenu from './Menus/BookmarkMenu';
 import { TemporaryChat } from './TemporaryChat';
 import NewChat from '~/components/Nav/NewChat';
 import AddMultiConvo from './AddMultiConvo';
+import useViewer from '~/hooks/useViewer';
 import store from '~/store';
 
 const defaultInterface = getConfigDefaults().interface;
@@ -22,8 +23,8 @@ function Header() {
   const localize = useLocalize();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuthContext();
-  const isGuest = user?.provider === 'anonymous';
+  const { logout } = useAuthContext();
+  const { isGuest, isStaff, isMember } = useViewer();
   const isEmbed = isEmbedWidget();
   const isStaffView = isStaffPath(location.pathname);
   const isPublicChrome = !isEmbed && !isStaffView;
@@ -75,7 +76,7 @@ function Header() {
     ) : null;
 
   const staffWorkspaceButton =
-    isPublicChrome && !isGuest ? (
+    isPublicChrome && isStaff ? (
       <Button
         size="sm"
         variant="outline"
@@ -99,7 +100,7 @@ function Header() {
     ) : null;
 
   const staffLogoutButton =
-    isStaffView ? (
+    isStaffView || (isPublicChrome && isMember) ? (
       <Button
         size="sm"
         variant="outline"
@@ -127,7 +128,7 @@ function Header() {
     <div className="via-presentation/70 md:from-presentation/80 md:via-presentation/50 2xl:from-presentation/0 absolute top-0 z-10 flex h-[52px] w-full items-center justify-between bg-gradient-to-b from-presentation to-transparent p-2 font-semibold text-text-primary 2xl:via-transparent">
       <div className="hide-scrollbar flex w-full items-center justify-between gap-2 overflow-x-auto">
         <div className="mx-1 flex items-center">
-          {isSmallScreen && isStaffView ? <OpenSidebar /> : null}
+          {isSmallScreen && (isStaffView || (isPublicChrome && isMember)) ? <OpenSidebar /> : null}
           {isPublicChrome && <NewChat showOnMobile />}
           {!(navVisible && isSmallScreen) && (
             <div

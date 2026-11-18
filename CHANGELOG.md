@@ -9,6 +9,16 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 
 ---
 
+## 2026-11-18
+
+### Changed
+- **Signed-up accounts that aren't employees get the customer view with their chat history.** They used to land in the staff workspace (files, prompts, model menu) without the staff agent. Now they stay on the customer page with the customer agent, plus a sidebar that holds only their past chats and a Log out button. Opening a `/staff` link sends them to the same chat on the customer page. The sidebar has no Projects or Favorites for them, and the agents, prompts, skills and projects pages send them back to a new chat. Employees and admins are unchanged, and the "Staff workspace" button on the customer page now shows only for them. After sign-in the workspace waits (spinner) until it knows whether the person is staff, so staff never bounce out and customers never see the staff screen. Someone added to Employees sees employee mode after they reload.
+
+### Config
+- **Admin panel moved to `https://admin.hotshot.thebetterai.com`** (new nginx site with a Let's Encrypt certificate, HTTP redirects to HTTPS). The panel's own port now listens only on the server itself, its session cookie is HTTPS-only, and the app's `ADMIN_PANEL_URL` points at the new address (`.env`: `ADMIN_PANEL_PORT`, `ADMIN_PANEL_SESSION_COOKIE_SECURE`, `ADMIN_PANEL_URL`; the app and panel containers restarted at about 12:58 UTC). Use it to add people to the Employees group (Groups → Employees).
+
+---
+
 ## 2026-11-17
 
 ### Added
