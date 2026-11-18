@@ -1,7 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import type { TStartupConfig } from 'librechat-data-provider';
-import { REDIRECT_PARAM, SESSION_KEY, staffHomePath, wantsStaffLogin, markStaffLoginIntent } from '~/utils';
+import {
+  SESSION_KEY,
+  REDIRECT_PARAM,
+  staffHomePath,
+  wantsStaffLogin,
+  shareContinuePath,
+  markStaffLoginIntent,
+  persistRedirectToSession,
+} from '~/utils';
 import { TranslationKeys, useLocalize, useOptionalAuthContext } from '~/hooks';
 import { useGetStartupConfig } from '~/data-provider';
 import AuthLayout from '~/components/Auth/AuthLayout';
@@ -41,8 +49,12 @@ export default function StartupLayout({ isAuthenticated }: { isAuthenticated?: b
 
     if (!isAuthenticated) {
       if (data?.publicGuestMode === true && onLoginPage && !staffWall) {
+        const shareReturn = shareContinuePath(new URLSearchParams(location.search).get(REDIRECT_PARAM));
         try {
           sessionStorage.removeItem(SESSION_KEY);
+          if (shareReturn != null) {
+            persistRedirectToSession(shareReturn);
+          }
         } catch {
           /* ignore */
         }
