@@ -49,7 +49,9 @@ export default function StartupLayout({ isAuthenticated }: { isAuthenticated?: b
 
     if (!isAuthenticated) {
       if (data?.publicGuestMode === true && onLoginPage && !staffWall) {
-        const shareReturn = shareContinuePath(new URLSearchParams(location.search).get(REDIRECT_PARAM));
+        const shareReturn = shareContinuePath(
+          new URLSearchParams(location.search).get(REDIRECT_PARAM),
+        );
         try {
           sessionStorage.removeItem(SESSION_KEY);
           if (shareReturn != null) {
