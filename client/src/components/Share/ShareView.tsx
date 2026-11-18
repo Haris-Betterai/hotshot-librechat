@@ -1,7 +1,7 @@
-import { memo, useRef, useState, useEffect, useCallback, useContext } from 'react';
+import { memo, useState, useCallback, useContext } from 'react';
 import Cookies from 'js-cookie';
 import { buildTree } from 'librechat-data-provider';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useRecoilState, useRecoilCallback } from 'recoil';
 import { CalendarDays, Settings, MessageSquarePlus } from 'lucide-react';
 import { useGetSharedMessages } from 'librechat-data-provider/react-query';
@@ -18,7 +18,7 @@ import {
   useToastContext,
 } from '@librechat/client';
 import { ThemeSelector, LangSelector } from '~/components/Nav/SettingsTabs/General/Selectors';
-import { cn, getResponseStatus, selectActiveBranchTail, SHARE_CONTINUE_PARAM } from '~/utils';
+import { cn, getResponseStatus, selectActiveBranchTail } from '~/utils';
 import { ShareMessagesProvider } from './ShareMessagesProvider';
 import { useForkSharedConvoMutation } from '~/data-provider';
 import { useGetSharedStartupConfig } from '~/data-provider';
@@ -102,28 +102,6 @@ function SharedView() {
     }
     forkSharedConvo({ shareId, targetMessageIndex: getActiveTargetIndex() });
   }, [shareId, forkSharedConvo, getActiveTargetIndex]);
-
-  /** A guest who clicked Continue was sent through the guest sign-in and back here; finish it once. */
-  const [searchParams, setSearchParams] = useSearchParams();
-  const autoContinued = useRef(false);
-  const continueOnArrival = searchParams.get(SHARE_CONTINUE_PARAM) === '1';
-  useEffect(() => {
-    if (!continueOnArrival || autoContinued.current || data?.messages == null) {
-      return;
-    }
-    autoContinued.current = true;
-    setSearchParams({}, { replace: true });
-    const onceKey = `hotshot:shareContinued:${shareId}`;
-    try {
-      if (sessionStorage.getItem(onceKey) != null) {
-        return;
-      }
-      sessionStorage.setItem(onceKey, '1');
-    } catch {
-      /* ignore */
-    }
-    handleContinue();
-  }, [continueOnArrival, data?.messages, handleContinue, setSearchParams, shareId]);
 
   // configure document title
   let docTitle = '';

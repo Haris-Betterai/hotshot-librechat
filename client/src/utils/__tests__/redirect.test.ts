@@ -1,7 +1,7 @@
 import {
   persistRedirectToSession,
   getPostLoginRedirect,
-  shareContinuePath,
+  shareReturnPath,
   isSafeRedirect,
   SESSION_KEY,
 } from '../redirect';
@@ -184,20 +184,18 @@ describe('persistRedirectToSession', () => {
   });
 });
 
-describe('shareContinuePath', () => {
-  it('returns the share page marked to continue', () => {
-    expect(shareContinuePath('/share/vM8QwAx1P-7peuYyFhWTD')).toBe(
-      '/share/vM8QwAx1P-7peuYyFhWTD?continue=1',
-    );
+describe('shareReturnPath', () => {
+  it('returns the share page', () => {
+    expect(shareReturnPath('/share/vM8QwAx1P-7peuYyFhWTD')).toBe('/share/vM8QwAx1P-7peuYyFhWTD');
   });
 
-  it('ignores a query string or hash on the share path', () => {
-    expect(shareContinuePath('/share/abc?x=1#top')).toBe('/share/abc?continue=1');
+  it('drops a query string or hash on the share path', () => {
+    expect(shareReturnPath('/share/abc?x=1#top')).toBe('/share/abc');
   });
 
   it('returns null for non-share redirects', () => {
-    expect(shareContinuePath('/c/new')).toBeNull();
-    expect(shareContinuePath('/share/abc/extra')).toBeNull();
-    expect(shareContinuePath(null)).toBeNull();
+    expect(shareReturnPath('/c/new')).toBeNull();
+    expect(shareReturnPath('/share/abc/extra')).toBeNull();
+    expect(shareReturnPath(null)).toBeNull();
   });
 });

@@ -40,18 +40,10 @@ export function persistRedirectToSession(value: string): void {
   }
 }
 
-export const SHARE_CONTINUE_PARAM = 'continue';
-
 const SHARE_PATH_RE = /^\/share\/([^/?#]+)\/?(?:[?#].*)?$/;
 
-/**
- * For a guest bounced to login from a share page's "Continue this chat", the share page to
- * return to once their guest session exists, marked to continue the chat on arrival.
- */
-export function shareContinuePath(redirect: string | null): string | null {
+/** For a visitor bounced to login from a shared link, the share page to return to as a guest. */
+export function shareReturnPath(redirect: string | null): string | null {
   const shareId = redirect?.match(SHARE_PATH_RE)?.[1];
-  if (shareId == null) {
-    return null;
-  }
-  return `/share/${shareId}?${SHARE_CONTINUE_PARAM}=1`;
+  return shareId == null ? null : `/share/${shareId}`;
 }

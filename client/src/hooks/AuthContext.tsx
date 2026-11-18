@@ -8,7 +8,7 @@ import {
   createContext,
 } from 'react';
 import { debounce } from 'lodash';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRecoilState, useSetRecoilState } from 'recoil';
 import {
@@ -577,6 +577,22 @@ const AuthContextProvider = ({
     retryRefreshAfterTransientError,
   ]);
   silentRefreshRef.current = silentRefresh;
+
+  /**
+   * A visitor with no session who lands on /login skips the guest session there; the login page
+   * then sends them on (e.g. to /c/new). Start the guest session once they leave the auth pages,
+   * otherwise the app waits forever for a session that nothing is creating.
+   */
+  const { pathname } = useLocation();
+  useEffect(() => {
+    if (isAuthenticated || !refreshHaltedRef.current || guestInFlightRef.current) {
+      return;
+    }
+    if (/^\/(login|register|forgot-password|reset-password)(\/|$)/.test(pathname)) {
+      return;
+    }
+    startGuestSession();
+  }, [pathname, isAuthenticated, startGuestSession]);
 
   useEffect(() => {
     if (isExternalRedirectRef.current) {

@@ -6,7 +6,7 @@ import {
   REDIRECT_PARAM,
   staffHomePath,
   wantsStaffLogin,
-  shareContinuePath,
+  shareReturnPath,
   markStaffLoginIntent,
   persistRedirectToSession,
 } from '~/utils';
@@ -49,7 +49,7 @@ export default function StartupLayout({ isAuthenticated }: { isAuthenticated?: b
 
     if (!isAuthenticated) {
       if (data?.publicGuestMode === true && onLoginPage && !staffWall) {
-        const shareReturn = shareContinuePath(
+        const shareReturn = shareReturnPath(
           new URLSearchParams(location.search).get(REDIRECT_PARAM),
         );
         try {
