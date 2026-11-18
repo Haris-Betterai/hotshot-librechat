@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const express = require('express');
 const {
   isEnabled,
+  isStaffUser,
   generateCheckAccess,
   grantCreationPermissions,
   ensureLinkPermissions,
@@ -33,6 +34,7 @@ const {
   getSharedLinkFile,
   backfillSharedLinkFiles,
   getRoleByName,
+  isStaffMember,
 } = require('~/models');
 const { getStrategyFunctions } = require('~/server/services/Files/strategies');
 const { cleanFileName, getContentDisposition } = require('~/server/utils/files');
@@ -278,6 +280,7 @@ if (allowSharedLinks) {
           requestUserId: req.user.id,
           userRole: req.user.role,
           userTenantId: req.user.tenantId,
+          isStaff: await isStaffUser(req.user, isStaffMember),
           targetMessageIndex: req.body?.targetMessageIndex,
           // Viewer-independent: honor the global shared-file kill switch, matching
           // the GET share route so disabled file snapshots aren't copied into forks.

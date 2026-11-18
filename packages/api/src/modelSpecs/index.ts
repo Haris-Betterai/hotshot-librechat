@@ -239,6 +239,18 @@ export function selectModelSpecsForAudience<T extends Partial<TSpecsConfig> | nu
   } as T;
 }
 
+/** The spec a viewer starts on: their audience's menu default, else the first visible spec. */
+export function defaultModelSpecForAudience(
+  modelSpecs: Partial<TSpecsConfig> | null | undefined,
+  isStaff: boolean,
+): TModelSpec | undefined {
+  const list = selectModelSpecsForAudience(excludeHiddenModelSpecs(modelSpecs), isStaff)?.list;
+  if (!Array.isArray(list) || list.length === 0) {
+    return undefined;
+  }
+  return list.find((modelSpec) => modelSpec?.default === true) ?? list[0];
+}
+
 export function sanitizeModelSpecs<T extends Partial<TSpecsConfig> | null | undefined>(
   modelSpecs: T,
 ): T {

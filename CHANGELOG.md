@@ -12,6 +12,7 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 ## 2026-11-18
 
 ### Fixed
+- **A continued shared chat ran on plain GPT-6 Astra (the most expensive model) instead of the Hotshot agent.** The copy didn't keep the agent and fell back to the first model in OpenAI's list, which is Astra. It now continues on the viewer's default Hotshot agent: the customer agent for guests and customers, the staff agent for employees.
 - **Signed-out visitors no longer get stuck on a spinner.** Anyone who reached `/login` without a session (after logging out, opening a shared link, or an expired session) was sent on to a new chat that never finished loading, because the guest sign-in was skipped on the login page and nothing started it afterwards. The guest session now starts as soon as they leave the login page.
 - **Shared links work for visitors who aren't signed in.** A shared chat needs a session to open, so a signed-out visitor was sent to login and then to an empty chat. Now they're signed in as a guest and brought back to the shared chat, where "Continue this chat" makes their own copy, the same as for signed-in users.
 
@@ -25,6 +26,7 @@ How the product works today is in [CHANGES.md](./CHANGES.md). The tool server ha
 - `ddf1be0e8`–`b9b7e68ca` (customer view for signed-up non-employees) with `./deploy.sh`. Tests run on the server in a Node 24 container: 39 of 40 client tests in the new viewer, sidebar and routes suites passed; the one failure (`ConversationsSection` "does not re-render FavoritesList or BookmarkNav … mid-stream") fails the same way on the previous commit `047244075`. Client type check and lint clean.
 
 ### Config
+- **OpenAI model list pinned with the cheap model first** (`OPENAI_MODELS` in the server `.env`): `gpt-5.4-mini` first, then only the models the two agents' intelligence levels use, with `gpt-6-astra` last. Anything that falls back to "the first OpenAI model" (copied or imported chats, a chat without a menu choice) now gets `gpt-5.4-mini` instead of Astra. The model list no longer comes live from OpenAI, so a new OpenAI model has to be added there before an agent can use it.
 - **Admin panel moved to `https://admin.hotshot.thebetterai.com`** (new nginx site with a Let's Encrypt certificate, HTTP redirects to HTTPS). The panel's own port now listens only on the server itself, its session cookie is HTTPS-only, and the app's `ADMIN_PANEL_URL` points at the new address (`.env`: `ADMIN_PANEL_PORT`, `ADMIN_PANEL_SESSION_COOKIE_SECURE`, `ADMIN_PANEL_URL`; the app and panel containers restarted at about 12:58 UTC). Use it to add people to the Employees group (Groups → Employees).
 
 ---

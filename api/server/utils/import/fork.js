@@ -2,6 +2,7 @@ const { v4: uuidv4 } = require('uuid');
 const { logger, tenantStorage } = require('@librechat/data-schemas');
 const { EModelEndpoint, Constants, ForkOptions } = require('librechat-data-provider');
 const { getConvo, getMessages, getSharedMessages } = require('~/models');
+const { defaultModelSpecForAudience } = require('@librechat/api');
 const { createImportBatchBuilder } = require('./importBatchBuilder');
 const { getAppConfig } = require('~/server/services/Config');
 const { resolveImportDefaultEndpoint } = require('./defaults');
@@ -401,6 +402,7 @@ async function forkSharedConversation({
   requestUserId,
   userRole,
   userTenantId,
+  isStaff = false,
   targetMessageIndex,
   snapshotFiles,
   builderFactory = createImportBatchBuilder,
@@ -469,13 +471,31 @@ async function forkSharedConversation({
     // The shared payload strips the original endpoint, so resolve one the viewer
     // can actually use; hard-coding OpenAI breaks the first follow-up message on
     // deployments that don't expose it.
-    const { endpoint, model } = await resolveImportDefaultEndpoint({ requestUserId, userRole });
+    // With model specs configured, continue on the viewer's default spec (e.g. the Hotshot
+    // agent) instead of whichever raw model a provider happens to list first.
+    const spec = defaultModelSpecForAudience(appConfig?.modelSpecs, isStaff);
+    const preset = spec?.preset;
+    const specConvo = preset?.endpoint
+      ? {
+          spec: spec.name,
+          ...(preset.agent_id ? { agent_id: preset.agent_id } : {}),
+          ...(preset.model ? { model: preset.model } : {}),
+        }
+      : null;
+    const { endpoint, model } = specConvo
+      ? { endpoint: preset.endpoint, model: preset.model }
+      : await resolveImportDefaultEndpoint({ requestUserId, userRole });
     const importBatchBuilder = builderFactory(requestUserId, appConfig?.interfaceConfig);
     importBatchBuilder.startConversation(endpoint);
 
     cloneMessagesWithTimestamps(messagesToClone, importBatchBuilder);
 
-    const result = importBatchBuilder.finishConversation(share.title, new Date(), {}, model);
+    const result = importBatchBuilder.finishConversation(
+      share.title,
+      new Date(),
+      specConvo ?? {},
+      model,
+    );
     await importBatchBuilder.saveBatch();
     logger.debug(
       `user: ${requestUserId} | New conversation "${result.conversation.title}" forked from share ID ${shareId}`,

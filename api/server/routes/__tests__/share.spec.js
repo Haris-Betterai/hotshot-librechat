@@ -16,6 +16,7 @@ const mockGetTenantId = jest.fn(() => undefined);
 
 jest.mock('@librechat/api', () => ({
   isEnabled: jest.fn(() => true),
+  isStaffUser: jest.fn(async () => false),
   generateCheckAccess: jest.fn(() => mockSharedLinksAccess),
   grantCreationPermissions: (...args) => mockGrantCreationPermissions(...args),
   updateSharedLinkPermissionsExpiration: (...args) =>
@@ -83,6 +84,7 @@ jest.mock('~/models', () => ({
   getSharedLinkFile: jest.fn(),
   backfillSharedLinkFiles: jest.fn(),
   getRoleByName: jest.fn(),
+  isStaffMember: jest.fn(async () => false),
 }));
 
 const mockGetStrategyFunctions = jest.fn();
@@ -547,6 +549,7 @@ describe('share fork route', () => {
       requestUserId: 'user-123',
       userRole: 'USER',
       userTenantId: 'tenant-viewer',
+      isStaff: false,
       targetMessageIndex: 3,
       snapshotFiles: true,
     });

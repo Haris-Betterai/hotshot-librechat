@@ -519,6 +519,48 @@ describe('forkSharedConversation', () => {
     expect(message.attachments[0].toolCallId).toBe('tool_1');
   });
 
+  test('continues on the default model spec agent instead of a raw provider model', async () => {
+    getSharedMessages.mockResolvedValue(mockShare);
+    const modelSpecs = {
+      list: [
+        {
+          name: 'hotshot-secret-ai',
+          label: 'Hotshot Secret AI',
+          default: true,
+          preset: { endpoint: 'agents', agent_id: 'agent_guest' },
+        },
+        {
+          name: 'hotshot-staff-ai',
+          label: 'Hotshot Staff AI',
+          audience: 'staff',
+          preset: { endpoint: 'agents', agent_id: 'agent_staff' },
+        },
+      ],
+    };
+    const loadAppConfig = jest.fn().mockResolvedValue({ modelSpecs });
+
+    await forkSharedConversation({ shareId: 'share123', requestUserId: 'user1', loadAppConfig });
+    const [guestConvo] = bulkSaveConvos.mock.calls[0][0];
+    expect(guestConvo).toMatchObject({
+      endpoint: 'agents',
+      spec: 'hotshot-secret-ai',
+      agent_id: 'agent_guest',
+    });
+
+    await forkSharedConversation({
+      shareId: 'share123',
+      requestUserId: 'user1',
+      isStaff: true,
+      loadAppConfig,
+    });
+    const [staffConvo] = bulkSaveConvos.mock.calls[1][0];
+    expect(staffConvo).toMatchObject({
+      endpoint: 'agents',
+      spec: 'hotshot-staff-ai',
+      agent_id: 'agent_staff',
+    });
+  });
+
   test('should resolve interfaceConfig from the app config and pass it to the builder', async () => {
     const interfaceConfig = { retentionMode: 'all', retention: { days: 30 } };
     const loadAppConfig = jest.fn().mockResolvedValue({ interfaceConfig });
