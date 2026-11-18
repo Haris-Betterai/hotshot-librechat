@@ -89,6 +89,14 @@ jest.mock('~/components/Conversations/ProjectsSection', () => ({
   default: () => <div data-testid="projects-stub" />,
 }));
 
+const mockViewer = { isGuest: false, isStaff: true, isMember: false, isSettled: true };
+const staffViewer = { ...mockViewer };
+
+jest.mock('~/hooks/useViewer', () => ({
+  __esModule: true,
+  default: () => mockViewer,
+}));
+
 jest.mock('~/components/Nav/SearchBar', () => ({
   __esModule: true,
   default: () => <div data-testid="searchbar-stub" />,
@@ -170,5 +178,34 @@ describe('ConversationsSection streaming re-renders', () => {
     // The memoized children, fed referentially stable props, did not re-render.
     expect(mockUseFavorites.mock.calls.length).toBe(favBaseline);
     expect(mockUseGetConversationTags.mock.calls.length).toBe(tagBaseline);
+  });
+});
+
+describe('ConversationsSection for signed-up customers', () => {
+  beforeEach(() => {
+    mockUseFavorites.mockImplementation(() => ({
+      favorites: [],
+      reorderFavorites: jest.fn(),
+      isLoading: false,
+    }));
+    mockUseGetConversationTags.mockImplementation(() => ({ data: [] }));
+    mockUseTitleGeneration.mockImplementation(() => undefined);
+    Object.assign(mockViewer, { isStaff: false, isMember: true });
+  });
+
+  afterEach(() => {
+    Object.assign(mockViewer, staffViewer);
+  });
+
+  it('shows chat history without projects or favorites', () => {
+    const { queryByTestId } = renderSection();
+    expect(queryByTestId('projects-stub')).toBeNull();
+    expect(mockUseFavorites).not.toHaveBeenCalled();
+  });
+
+  it('shows projects for staff', () => {
+    Object.assign(mockViewer, staffViewer);
+    const { getByTestId } = renderSection();
+    expect(getByTestId('projects-stub')).toBeTruthy();
   });
 });
