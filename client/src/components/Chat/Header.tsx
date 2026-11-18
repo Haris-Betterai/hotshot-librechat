@@ -3,7 +3,15 @@ import { useRecoilValue } from 'recoil';
 import { useMediaQuery, Button } from '@librechat/client';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getConfigDefaults, PermissionTypes, Permissions } from 'librechat-data-provider';
-import { cn, SESSION_KEY, isEmbedWidget, isStaffPath, markStaffLoginIntent, publicHomePath, staffHomePath } from '~/utils';
+import {
+  cn,
+  SESSION_KEY,
+  isEmbedWidget,
+  isStaffPath,
+  markStaffLoginIntent,
+  publicHomePath,
+  staffHomePath,
+} from '~/utils';
 import { useAuthContext, useHasAccess, useLocalize } from '~/hooks';
 import ModelSelector from './Menus/Endpoints/ModelSelector';
 import { useGetStartupConfig } from '~/data-provider';
@@ -87,17 +95,16 @@ function Header() {
       </Button>
     ) : null;
 
-  const customerViewButton =
-    isStaffView ? (
-      <Button
-        size="sm"
-        variant="outline"
-        aria-label={localize('com_ui_customer_view')}
-        onClick={() => navigate(publicHomePath())}
-      >
-        {localize('com_ui_customer_view')}
-      </Button>
-    ) : null;
+  const customerViewButton = isStaffView ? (
+    <Button
+      size="sm"
+      variant="outline"
+      aria-label={localize('com_ui_customer_view')}
+      onClick={() => navigate(publicHomePath())}
+    >
+      {localize('com_ui_customer_view')}
+    </Button>
+  ) : null;
 
   const staffLogoutButton =
     isStaffView || (isPublicChrome && isMember) ? (
@@ -162,7 +169,9 @@ function Header() {
             {hasAccessToTemporaryChat === true && <TemporaryChat />}
           </div>
         )}
-        {isSmallScreen ? <div className="flex items-center gap-2">{headerAccountButton}</div> : null}
+        {isSmallScreen ? (
+          <div className="flex items-center gap-2">{headerAccountButton}</div>
+        ) : null}
       </div>
       {/* Empty div for spacing */}
       <div />
